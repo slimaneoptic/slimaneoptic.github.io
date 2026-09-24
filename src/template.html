@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slimane Chanchoul, optimization engineer</title>
+<meta name="description" content="I replace manual planning with optimized plans: delivery routes, staff rosters, production and pipeline schedules, built with Google OR-Tools.">
+<meta property="og:title" content="Slimane Chanchoul, optimization engineer">
+<meta property="og:description" content="Delivery routes, staff rosters and operations schedules, planned by an optimizer under your real rules.">
+<meta property="og:image" content="img/og.jpg">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #14202B;
+  --paper: #F6F8FA;
+  --white: #FFFFFF;
+  --slate: #5B6B7A;
+  --rule: #D5DBE1;
+  --blue: #2A78D6;
+  --orange: #E8622C;
+  --grey-route: #9AA6B2;
+  --measure: 38rem;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: "Overpass", system-ui, sans-serif; font-size: 1.0625rem; line-height: 1.6;
+  font-feature-settings: "tnum" 1; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--blue); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* header */
+header { border-bottom: 1px solid var(--rule); background: var(--paper); }
+header .wrap { display: flex; align-items: center; justify-content: space-between; height: 4.25rem; gap: 1rem; }
+.name { font-weight: 800; font-size: 1.12rem; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; }
+nav { display: flex; align-items: center; gap: 1.6rem; font-size: 0.97rem; }
+nav a { color: var(--ink); text-decoration: none; }
+nav a:hover { color: var(--blue); }
+.btn {
+  display: inline-block; padding: 0.72rem 1.2rem 0.62rem; border-radius: 8px; font-weight: 600; text-decoration: none;
+  background: var(--ink); color: var(--white); border: 1.5px solid var(--ink); line-height: 1.2;
+}
+.btn:hover { background: #22364a; }
+.btn.quiet { background: transparent; color: var(--ink); }
+.btn.quiet:hover { background: var(--white); }
+nav .btn { padding: 0.55rem 0.95rem 0.45rem; }
+
+/* hero */
+.hero { padding: 4.5rem 0 3.5rem; }
+.hero .wrap { display: grid; grid-template-columns: 5fr 6fr; gap: 3.5rem; align-items: center; }
+h1 { font-size: clamp(2.4rem, 4.6vw, 3.6rem); line-height: 1.04; letter-spacing: -0.025em; font-weight: 800; margin: 0 0 1.4rem; }
+.lede { font-size: 1.2rem; color: #33424f; max-width: 32rem; margin: 0 0 2rem; }
+.actions { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+
+.plan { background: var(--white); border: 1px solid var(--rule); border-radius: 14px; padding: 1.1rem 1.2rem 1rem; }
+.plan-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.4rem; }
+.plan-title { font-weight: 600; font-size: 0.98rem; }
+.switch { display: inline-flex; background: var(--paper); border: 1px solid var(--rule); border-radius: 999px; padding: 3px; }
+.switch button {
+  font: inherit; font-size: 0.88rem; font-weight: 600; border: 0; background: transparent; color: var(--slate);
+  padding: 0.38rem 0.85rem 0.28rem; border-radius: 999px; cursor: pointer;
+}
+.switch button[aria-pressed="true"] { background: var(--ink); color: var(--white); }
+.map { width: 100%; height: auto; display: block; }
+.map .route { fill: none; stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.map .stop { fill: var(--white); stroke: var(--ink); stroke-width: 1.5; }
+.map .depot { fill: var(--ink); }
+.figures { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--rule); margin-top: 0.6rem; padding-top: 0.8rem; }
+.figures div { font-size: 0.85rem; color: var(--slate); }
+.figures b { display: block; font-size: 1.45rem; color: var(--ink); font-weight: 800; line-height: 1.25; transition: color .4s; }
+.plan[data-view="optimized"] .figures b { color: var(--blue); }
+.caption { font-size: 0.86rem; color: var(--slate); margin: 0.8rem 0 0; }
+
+/* sections */
+section { padding: 4.5rem 0; }
+section + section { border-top: 1px solid var(--rule); }
+h2 { font-size: clamp(1.75rem, 3vw, 2.3rem); line-height: 1.12; letter-spacing: -0.02em; font-weight: 800; margin: 0 0 0.9rem; }
+h3 { font-size: 1.35rem; line-height: 1.2; letter-spacing: -0.01em; font-weight: 800; margin: 0 0 0.6rem; }
+.intro { color: #33424f; max-width: var(--measure); margin: 0 0 2.8rem; }
+p { max-width: var(--measure); }
+
+/* flagship case */
+.case { display: grid; grid-template-columns: 6fr 5fr; gap: 3rem; align-items: start; }
+.case figure { margin: 0; }
+.shot { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 12px; background: var(--white); }
+.case figcaption { font-size: 0.85rem; color: var(--slate); margin-top: 0.6rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; margin: 1.3rem 0 0; }
+th, td { text-align: left; padding: 0.55rem 0.6rem 0.45rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-weight: 600; color: var(--slate); font-size: 0.85rem; }
+td:last-child { font-weight: 600; }
+
+/* demos */
+.demo { display: grid; grid-template-columns: 7fr 5fr; gap: 3rem; align-items: center; padding: 2.6rem 0; }
+.demo + .demo { border-top: 1px solid var(--rule); }
+.demo:nth-child(even) .demo-text { order: -1; }
+.demo-text p { margin: 0 0 1rem; }
+.demo-text .result { font-weight: 600; }
+.stack { font-size: 0.9rem; color: var(--slate); }
+.demo-link { font-weight: 600; }
+
+/* process */
+ol.steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; counter-reset: step; }
+ol.steps li { counter-increment: step; border-top: 3px solid var(--ink); padding-top: 1rem; }
+ol.steps li::before { content: counter(step); display: block; font-weight: 800; font-size: 1.6rem; line-height: 1; margin-bottom: 0.7rem; color: var(--blue); }
+ol.steps b { display: block; margin-bottom: 0.3rem; }
+ol.steps span { color: #33424f; font-size: 0.97rem; }
+
+.builds { columns: 2; column-gap: 3rem; padding: 0; margin: 2.8rem 0 0; list-style: none; max-width: 56rem; }
+.builds li { break-inside: avoid; padding: 0.55rem 0 0.45rem; border-bottom: 1px solid var(--rule); }
+
+/* contact */
+.contact { background: var(--ink); color: var(--white); border-top: 0; }
+.contact h2 { color: var(--white); }
+.contact p { color: #C8D2DC; }
+.contact .btn { background: var(--white); color: var(--ink); border-color: var(--white); }
+.contact .btn:hover { background: #e4e9ee; }
+.contact a:focus-visible { outline-color: var(--white); }
+footer { background: var(--ink); color: #8C9AA8; font-size: 0.88rem; padding: 0 0 2.5rem; }
+
+@media (max-width: 900px) {
+  .hero .wrap, .case, .demo { grid-template-columns: 1fr; gap: 2rem; }
+  .demo:nth-child(even) .demo-text { order: 0; }
+  ol.steps { grid-template-columns: 1fr 1fr; }
+  .builds { columns: 1; }
+  nav a:not(.btn) { display: none; }
+}
+@media (max-width: 520px) {
+  .wrap { padding: 0 1rem; }
+  .hero { padding-top: 2.5rem; }
+  ol.steps { grid-template-columns: 1fr; }
+  .plan-top { flex-direction: column; align-items: flex-start; }
+  .figures b { font-size: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="name" href="#top">Slimane Chanchoul</a>
+    <nav aria-label="Main">
+      <a href="#work">Work</a>
+      <a href="#process">How I work</a>
+      <a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>I replace manual planning with optimized plans.</h1>
+        <p class="lede">Delivery routes, staff rosters, production and pipeline schedules. I write your real operating rules into an optimization model (Google OR-Tools) and deliver a tool your team runs every day: a web app, an API or an Excel workflow.</p>
+        <div class="actions">
+          <a class="btn" href="#work">See the live demos</a>
+          <a class="btn quiet" href="__UPWORK__" rel="noopener">Hire me on Upwork</a>
+        </div>
+      </div>
+
+      <figure class="plan" data-view="manual" style="margin:0">
+        <div class="plan-top">
+          <span class="plan-title">25 deliveries in Casablanca</span>
+          <div class="switch" role="group" aria-label="Show plan">
+            <button type="button" data-show="manual" aria-pressed="true">Manual plan</button>
+            <button type="button" data-show="optimized" aria-pressed="false">Optimized</button>
+          </div>
+        </div>
+        <svg class="map" viewBox="0 0 600 480" role="img" aria-labelledby="map-desc">
+          <desc id="map-desc">Delivery routes on the streets of Casablanca. The manual plan uses 3 vans and 147 km; the optimized plan uses 2 vans and 106 km.</desc>
+          <g id="routes"></g>
+          <g id="stops"></g>
+        </svg>
+        <div class="figures" aria-live="polite">
+          <div><b id="f-vans">3</b>vans</div>
+          <div><b id="f-km">147 km</b>driven</div>
+          <div><b id="f-cost">$284</b>per day</div>
+        </div>
+        <figcaption class="caption">Real output from my <a href="https://slimaneoptic-routes.streamlit.app" rel="noopener">route optimizer</a>, on real roads. The manual plan sends each van to the nearest stop that still fits; the optimizer plans all vans together under the same rules.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <section id="work">
+    <div class="wrap">
+      <h2>Pipeline operations scheduler, OCP Group</h2>
+      <p class="intro">Operators planned an industrial phosphate pipeline network by hand, 72 hours ahead: which feeders run, where the flow goes, when the pipeline pumps or stops, with every storage tank kept within safe limits and clients served around the clock.</p>
+      <div class="case">
+        <figure>
+          <img class="shot" src="img/ocp.webp" width="1400" height="1050" loading="lazy" alt="Diagram of the scheduler: feeders, head-station tanks, the pipeline, storage terminals and clients, all decided hourly by one constraint-programming optimizer.">
+        </figure>
+        <div>
+          <p>I built a constraint-programming model of the whole network, about 10,000 decisions and 15,000 operating rules, with the pipeline's transit delay built in. Every schedule is checked by independent mass-balance validators and stress-tested by a simulator, and the planning systems request new schedules through an API.</p>
+          <table>
+            <thead><tr><th scope="col"></th><th scope="col">Before</th><th scope="col">After</th></tr></thead>
+            <tbody>
+              <tr><td>72-hour schedule</td><td>Hours of spreadsheet work</td><td>About 15 seconds</td></tr>
+              <tr><td>Operating rule violations</td><td>Found after the fact</td><td>None, by construction</td></tr>
+              <tr><td>What-if (feeder outage)</td><td>Not possible</td><td>One API call</td></tr>
+            </tbody>
+          </table>
+          <p class="stack" style="margin-top:1.2rem">Python, OR-Tools CP-SAT, FastAPI, Docker</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="demos" aria-labelledby="demos-title">
+    <div class="wrap">
+      <h2 id="demos-title">Live demos you can try</h2>
+      <p class="intro">Each runs in your browser with sample data, and each loads your own file.</p>
+
+      <div class="demos">
+        <article class="demo">
+          <img class="shot" src="img/routes.webp" width="1400" height="875" loading="lazy" alt="Route optimizer showing two delivery vans on the roads of Casablanca, with daily cost, distance and vans compared with a manual plan.">
+          <div class="demo-text">
+            <h3>Route optimizer for delivery fleets</h3>
+            <p>Upload your stops, set your fleet and costs, and get the cheapest routes on real roads, with van capacity, delivery windows and shift length respected.</p>
+            <p class="result">On the sample cities: 11–32% lower daily cost than a manual plan, often one van less.</p>
+            <p class="stack">OR-Tools vehicle routing, OpenStreetMap roads, Excel sheets and Google Maps links for drivers</p>
+            <a class="demo-link" href="https://slimaneoptic-routes.streamlit.app" rel="noopener">Open the route optimizer</a>
+          </div>
+        </article>
+
+        <article class="demo">
+          <img class="shot" src="img/scheduler.webp" width="1400" height="875" loading="lazy" alt="Weekly staff roster built by the optimizer, with shifts per person and coverage per day.">
+          <div class="demo-text">
+            <h3>AI shift scheduler</h3>
+            <p>A weekly staff roster that respects rest times, contracts, leave, a senior on every shift and fair nights. Type a change like "Ahmed is off Thursday" and it re-plans in seconds, moving as few shifts as possible.</p>
+            <p class="result">When a shift can't be covered, it says which rule blocks it instead of failing silently.</p>
+            <p class="stack">OR-Tools CP-SAT, plain-language changes read by an AI model, Excel export</p>
+            <a class="demo-link" href="https://slimaneoptic-scheduler.streamlit.app" rel="noopener">Open the shift scheduler</a>
+          </div>
+        </article>
+
+        <article class="demo">
+          <img class="shot" src="img/chatbot.webp" width="1400" height="1118" loading="lazy" alt="Website chatbot answering a question from a scraped site, with its sources listed.">
+          <div class="demo-text">
+            <h3>Website chatbot and data extraction</h3>
+            <p>Paste a website or upload PDFs: it answers only from that content, cites its sources, and says it doesn't know instead of guessing. Name the fields you need and it extracts them into a table.</p>
+            <p class="stack">Python scraping, search, AI answers, CSV and JSON export</p>
+            <a class="demo-link" href="https://slimaneoptic-chatbot.streamlit.app" rel="noopener">Open the chatbot</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="process" aria-labelledby="process-title">
+    <div class="wrap">
+      <h2 id="process-title">How a project runs</h2>
+      <p class="intro">You keep full control of the rules. I keep the model honest about them.</p>
+      <ol class="steps">
+        <li><b>You explain your rules</b><span>The way you would explain them to a new planner: constraints, priorities, exceptions.</span></li>
+        <li><b>I write them back</b><span>As a short, numbered constraint list. You confirm it before I build anything.</span></li>
+        <li><b>A working version in days</b><span>Tested on your real data and compared with how you plan today.</span></li>
+        <li><b>You own the result</b><span>Code, documentation and a short walkthrough video. No lock-in.</span></li>
+      </ol>
+      <ul class="builds">
+        <li>Delivery and fleet routing: capacities, time windows, driver hours, several depots</li>
+        <li>Staff scheduling: shifts, skills, labor rules, time off, fair rotations</li>
+        <li>Production and batch planning: sequencing, machines, changeovers, due dates</li>
+        <li>Location and coverage: stops, service areas, walking and driving distances</li>
+        <li>The tool around the model: web app, REST API, Excel or Google Sheets</li>
+        <li>Python automation and AI assistants on your documents and data</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="contact" id="contact" aria-labelledby="contact-title">
+    <div class="wrap">
+      <h2 id="contact-title">Tell me how your team plans today.</h2>
+      <p>A spreadsheet, a whiteboard or "from experience" is a fine starting point. Send me a message on Upwork with the rules you plan by, and I'll tell you what an optimizer would change.</p>
+      <p style="margin:1.8rem 0 0"><a class="btn" href="__UPWORK__" rel="noopener">Message me on Upwork</a></p>
+      <p style="margin-top:2.2rem;font-size:0.95rem">Arabic (native), English, French (basic). Based in Morocco, GMT+1, with good overlap with Europe, the Gulf and the US East Coast mornings.</p>
+    </div>
+  </section>
+</main>
+<footer><div class="wrap">© 2026 Slimane Chanchoul</div></footer>
+
+<script>
+const DATA = __DATA__;
+const svgNS = "http://www.w3.org/2000/svg";
+const plan = document.querySelector(".plan");
+const routes = document.getElementById("routes");
+const stops = document.getElementById("stops");
+const colors = { manual: ["#8C98A5", "#5B6B7A", "#B8C0C9"], optimized: ["#2A78D6", "#E8622C"] };
+const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+DATA.stops.forEach(([x, y], i) => {
+  const c = document.createElementNS(svgNS, "circle");
+  c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", i === 0 ? 7 : 4.5);
+  c.setAttribute("class", i === 0 ? "stop depot" : "stop");
+  stops.appendChild(c);
+});
+
+function draw(view, animate) {
+  routes.replaceChildren();
+  DATA[view].forEach((pts, i) => {
+    const p = document.createElementNS(svgNS, "polyline");
+    p.setAttribute("points", pts); p.setAttribute("class", "route"); p.setAttribute("stroke", colors[view][i % colors[view].length]);
+    routes.appendChild(p);
+    if (animate && !still) {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len; p.style.strokeDashoffset = len;
+      p.getBoundingClientRect();
+      p.style.transition = `stroke-dashoffset ${view === "optimized" ? 1.6 : 1.1}s ease-in-out ${i * 0.25}s`;
+      p.style.strokeDashoffset = 0;
+    }
+  });
+  const f = DATA.stats[view === "optimized" ? "opt" : "man"];
+  document.getElementById("f-vans").textContent = f.vans;
+  document.getElementById("f-km").textContent = f.km + " km";
+  document.getElementById("f-cost").textContent = "$" + f.cost;
+  plan.dataset.view = view;
+  document.querySelectorAll(".switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.show === view)));
+}
+
+document.querySelectorAll(".switch button").forEach(b => b.addEventListener("click", () => { clearTimeout(auto); draw(b.dataset.show, true); }));
+draw("manual", true);
+const auto = still ? draw("optimized", false) : setTimeout(() => draw("optimized", true), 2600);
+</script>
+</body>
+</html>
