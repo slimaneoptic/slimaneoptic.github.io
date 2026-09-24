@@ -3,91 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Onboard crew deployment: relays vs. end-to-end crews · Slimane Chanchoul</title>
+<title>Onboard crew deployment · Slimane Chanchoul</title>
+<meta name="description" content="End-to-end crews vs. relays at manpower hubs, under working-hour rules.">
 <meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root { --ink:#14202B; --paper:#F6F8FA; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; }
-* { box-sizing: border-box; }
-body { margin:0; background:var(--paper); color:var(--ink); font-family:"Overpass",system-ui,sans-serif; font-size:1.0625rem; line-height:1.6; font-feature-settings:"tnum" 1; }
-a { color:var(--blue); text-underline-offset:3px; }
-a:focus-visible { outline:3px solid var(--blue); outline-offset:3px; border-radius:4px; }
-.bar { height:3.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); }
-.bar .name { font-weight:800; color:var(--ink); text-decoration:none; }
-.bar nav { display:flex; gap:1.25rem; align-items:center; font-size:.95rem; }
-.bar nav a { color:var(--ink); text-decoration:none; }
-.btn { background:var(--ink); color:#fff !important; padding:.45rem .85rem .35rem; border-radius:7px; font-weight:600; }
-main { max-width:1040px; margin:0 auto; padding:3rem 1.5rem 4rem; }
-h1 { font-size:clamp(2rem,4vw,2.9rem); line-height:1.08; letter-spacing:-.02em; font-weight:800; margin:0 0 1rem; max-width:44rem; }
-h2 { font-size:1.55rem; line-height:1.2; letter-spacing:-.01em; font-weight:800; margin:3.2rem 0 .8rem; }
-p, li { max-width:42rem; }
-.lede { font-size:1.18rem; color:#33424f; }
-.note { font-size:.92rem; color:var(--slate); }
-table { border-collapse:collapse; width:100%; margin:1.2rem 0 .6rem; font-size:.97rem; background:#fff; border:1px solid var(--rule); border-radius:10px; overflow:hidden; }
-th, td { text-align:left; padding:.7rem .8rem .55rem; border-bottom:1px solid var(--rule); vertical-align:top; }
-thead th { font-size:.85rem; color:var(--slate); font-weight:600; background:#FBFCFD; }
-tbody th { font-weight:600; }
-tbody tr:last-child th, tbody tr:last-child td { border-bottom:0; }
-.idx { font-weight:800; }
-.win { background:#EEF5FD; }
-.sub { color:var(--slate); font-size:.85rem; }
-.findings { padding:0; list-style:none; margin:1.4rem 0 0; }
-.findings li { border-left:3px solid var(--blue); padding:.2rem 0 .2rem 1rem; margin:0 0 1rem; }
-.chart { width:100%; height:auto; background:#fff; border:1px solid var(--rule); border-radius:10px; margin-top:1rem; }
-.chart .st { font:600 12px Overpass,sans-serif; fill:var(--ink); }
-.chart .ax { font:11px Overpass,sans-serif; fill:var(--slate); }
-.dot { display:inline-block; width:10px; height:10px; border-radius:5px; margin-right:.5rem; }
-.scroll { overflow-x:auto; }
-footer { border-top:1px solid var(--rule); padding:1.5rem 1.25rem 2.5rem; color:var(--slate); font-size:.9rem; text-align:center; }
-@media (max-width:640px) { .bar nav .all { display:none; } th, td { padding:.55rem .5rem .45rem; font-size:.9rem; } }
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+iframe { border: 0; display: block; width: 100%; height: calc(100vh - var(--bar)); height: calc(100dvh - var(--bar)); }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
 </head>
 <body>
-<header class="bar"><a class="name" href="/">Slimane Chanchoul</a><nav aria-label="Site"><a class="all" href="/#work">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav></header>
-<main>
-<h1>Onboard crew deployment on long-distance trains: relays vs. end-to-end crews</h1>
-<p class="lede">An illustrative model of the question: how to keep onboard service continuous while every worker stays within working-hour and rest rules, without a large jump in manpower or cost. The timetable, rules and costs below are hypothetical; with real ones, the same model gives the real answer.</p>
-
-<h2>Three designs, same train, same rules</h2>
-<p>A daily train pair, A to B and back, 32 hours each way, with 7 stations where a crew could hand over. Service needs 6 staff onboard by day and 3 at night. Rules: at most 8 hours of work in any 24 hours, 48 a week, 8 hours of rest between duties, one day off a week.</p>
-<div class="scroll"><table>
-<thead><tr><th scope="col">Design</th><th scope="col">Staff needed</th><th scope="col">Overtime hours / week</th><th scope="col">Rest nights away / week</th><th scope="col">Within the rules</th><th scope="col">Weekly cost (today = 100)</th></tr></thead>
-<tbody><tr><th scope='row'>End-to-end crews with overtime</th><td>56</td><td>560</td><td>84</td><td>No</td><td class='idx'>100</td></tr><tr><th scope='row'>End-to-end crews within the rules</th><td>75</td><td>0</td><td>112</td><td>Yes</td><td class='idx'>99</td></tr><tr class='win'><th scope='row'>Relays at manpower hubs (optimized)</th><td>61</td><td>0</td><td>168</td><td>Yes</td><td class='idx'>100</td></tr></tbody>
-</table></div>
-<p class="note">Cost = staff paid a full week + overtime at 2× + a rest allowance per night away + the running cost of each manpower hub. Relative units; any currency.</p>
-
-<ul class="findings">
-<li><b>Meeting the rules by adding staff onboard needs 19 more people</b> (75 instead of 56) and more berths. The cost stays about the same (index 99) because overtime disappears.</li>
-<li><b>Relays meet the rules with 5 more people than today and no overtime, at about today's cost.</b> They need manpower hubs at H2, H4, H6 and 168 rest nights away per week; night legs carry 3 staff instead of 6. The optimizer chose those hubs and proved the plan optimal among 130 possible crew tours.</li>
-<li><b>The answer depends on the rules and costs,</b> which is why pinning them down comes first (table below): relays pay off when hubs are cheap to run, and stop paying off under a 10-hour daily limit.</li>
-</ul>
-
-<h2>Where each crew works</h2>
-<p>A time-space diagram, as used in railway planning. Sloped grey lines are the daily trains (down from A to B, up from B to A). Each color is the crews based at one station: a bold stretch is work onboard, a dashed line is rest at a hub before the return train.</p>
-<svg viewBox="0 0 1000 430" role="img" aria-labelledby="chart-desc" class="chart"><desc id="chart-desc">Time-space diagram: daily trains A to B and B to A as sloped lines; each crew's working stretches drawn in color, rests at hubs as dashed lines.</desc><defs><clipPath id="clip"><rect x="52" y="0" width="936" height="430"/></clipPath></defs><line x1="52" y1="18.0" x2="988" y2="18.0" stroke="#E3E8ED"/><text x="44" y="22.0" text-anchor="end" class="st">A</text><line x1="52" y1="64.5" x2="988" y2="64.5" stroke="#E3E8ED"/><text x="44" y="68.5" text-anchor="end" class="st">H1</text><line x1="52" y1="111.0" x2="988" y2="111.0" stroke="#E3E8ED"/><text x="44" y="115.0" text-anchor="end" class="st">H2</text><line x1="52" y1="157.5" x2="988" y2="157.5" stroke="#E3E8ED"/><text x="44" y="161.5" text-anchor="end" class="st">H3</text><line x1="52" y1="204.0" x2="988" y2="204.0" stroke="#E3E8ED"/><text x="44" y="208.0" text-anchor="end" class="st">H4</text><line x1="52" y1="250.5" x2="988" y2="250.5" stroke="#E3E8ED"/><text x="44" y="254.5" text-anchor="end" class="st">H5</text><line x1="52" y1="297.0" x2="988" y2="297.0" stroke="#E3E8ED"/><text x="44" y="301.0" text-anchor="end" class="st">H6</text><line x1="52" y1="343.5" x2="988" y2="343.5" stroke="#E3E8ED"/><text x="44" y="347.5" text-anchor="end" class="st">H7</text><line x1="52" y1="390.0" x2="988" y2="390.0" stroke="#E3E8ED"/><text x="44" y="394.0" text-anchor="end" class="st">B</text><line x1="192.4" y1="18" x2="192.4" y2="390" stroke="#C8D0D8" stroke-dasharray="2 3"/><text x="192.4" y="408" text-anchor="middle" class="ax">day 2, 00:00</text><line x1="473.2" y1="18" x2="473.2" y2="390" stroke="#C8D0D8" stroke-dasharray="2 3"/><text x="473.2" y="408" text-anchor="middle" class="ax">day 3, 00:00</text><line x1="754.0" y1="18" x2="754.0" y2="390" stroke="#C8D0D8" stroke-dasharray="2 3"/><text x="754.0" y="408" text-anchor="middle" class="ax">day 4, 00:00</text><polyline points="-462.8,18.0 -416.0,64.5 -369.2,111.0 -322.4,157.5 -275.6,204.0 -228.8,250.5 -182.0,297.0 -135.2,343.5 -88.4,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="-182.0,18.0 -135.2,64.5 -88.4,111.0 -41.6,157.5 5.2,204.0 52.0,250.5 98.8,297.0 145.6,343.5 192.4,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="98.8,18.0 145.6,64.5 192.4,111.0 239.2,157.5 286.0,204.0 332.8,250.5 379.6,297.0 426.4,343.5 473.2,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="379.6,18.0 426.4,64.5 473.2,111.0 520.0,157.5 566.8,204.0 613.6,250.5 660.4,297.0 707.2,343.5 754.0,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="660.4,18.0 707.2,64.5 754.0,111.0 800.8,157.5 847.6,204.0 894.4,250.5 941.2,297.0 988.0,343.5 1034.8,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="941.2,18.0 988.0,64.5 1034.8,111.0 1081.6,157.5 1128.4,204.0 1175.2,250.5 1222.0,297.0 1268.8,343.5 1315.6,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="-88.4,18.0 -135.2,64.5 -182.0,111.0 -228.8,157.5 -275.6,204.0 -322.4,250.5 -369.2,297.0 -416.0,343.5 -462.8,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="192.4,18.0 145.6,64.5 98.8,111.0 52.0,157.5 5.2,204.0 -41.6,250.5 -88.4,297.0 -135.2,343.5 -182.0,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="473.2,18.0 426.4,64.5 379.6,111.0 332.8,157.5 286.0,204.0 239.2,250.5 192.4,297.0 145.6,343.5 98.8,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="754.0,18.0 707.2,64.5 660.4,111.0 613.6,157.5 566.8,204.0 520.0,250.5 473.2,297.0 426.4,343.5 379.6,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="1034.8,18.0 988.0,64.5 941.2,111.0 894.4,157.5 847.6,204.0 800.8,250.5 754.0,297.0 707.2,343.5 660.4,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><polyline points="1315.6,18.0 1268.8,64.5 1222.0,111.0 1175.2,157.5 1128.4,204.0 1081.6,250.5 1034.8,297.0 988.0,343.5 941.2,390.0" fill="none" stroke="#B8C0C9" stroke-width="1.2" clip-path="url(#clip)"/><line x1="98.8" y1="18.0" x2="192.4" y2="111.0" stroke="#2A78D6" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="192.4" y1="111.0" x2="379.6" y2="111.0" stroke="#2A78D6" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="379.6" y1="111.0" x2="473.2" y2="18.0" stroke="#2A78D6" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="-88.4" y1="111.0" x2="5.2" y2="204.0" stroke="#E8622C" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="5.2" y1="204.0" x2="286.0" y2="204.0" stroke="#E8622C" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="286.0" y1="204.0" x2="379.6" y2="111.0" stroke="#E8622C" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="98.8" y1="111.0" x2="192.4" y2="18.0" stroke="#E8622C" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="192.4" y1="18.0" x2="379.6" y2="18.0" stroke="#E8622C" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="379.6" y1="18.0" x2="473.2" y2="111.0" stroke="#E8622C" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="98.8" y1="297.0" x2="192.4" y2="390.0" stroke="#845EC2" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="192.4" y1="390.0" x2="379.6" y2="390.0" stroke="#845EC2" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="379.6" y1="390.0" x2="473.2" y2="297.0" stroke="#845EC2" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="-88.4" y1="297.0" x2="5.2" y2="204.0" stroke="#845EC2" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="5.2" y1="204.0" x2="286.0" y2="204.0" stroke="#845EC2" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="286.0" y1="204.0" x2="379.6" y2="297.0" stroke="#845EC2" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="98.8" y1="390.0" x2="192.4" y2="297.0" stroke="#B87D00" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/><line x1="192.4" y1="297.0" x2="379.6" y2="297.0" stroke="#B87D00" stroke-width="2" stroke-dasharray="5 4" clip-path="url(#clip)"/><line x1="379.6" y1="297.0" x2="473.2" y2="390.0" stroke="#B87D00" stroke-width="4" stroke-linecap="round" clip-path="url(#clip)"/></svg>
-<div class="scroll"><table>
-<thead><tr><th scope="col">Crew tour</th><th scope="col">Crews starting each day</th><th scope="col">Work</th><th scope="col">Away from base</th><th scope="col">Rests at</th></tr></thead>
-<tbody><tr><td><span class='dot' style='background:#2A78D6'></span>A → H2 → A</td><td>3</td><td>16 h</td><td>32 h</td><td>H2</td></tr><tr><td><span class='dot' style='background:#E8622C'></span>H2 → H4 → H2</td><td>6</td><td>16 h</td><td>40 h</td><td>H4</td></tr><tr><td><span class='dot' style='background:#E8622C'></span>H2 → A → H2</td><td>3</td><td>16 h</td><td>32 h</td><td>A</td></tr><tr><td><span class='dot' style='background:#845EC2'></span>H6 → B → H6</td><td>3</td><td>16 h</td><td>32 h</td><td>B</td></tr><tr><td><span class='dot' style='background:#845EC2'></span>H6 → H4 → H6</td><td>6</td><td>16 h</td><td>40 h</td><td>H4</td></tr><tr><td><span class='dot' style='background:#B87D00'></span>B → H6 → B</td><td>3</td><td>16 h</td><td>32 h</td><td>H6</td></tr></tbody>
-</table></div>
-
-<h2>How sensitive is the answer?</h2>
-<p>Weekly cost of relays (and of end-to-end crews within the rules) for other rules and hub running costs. Today = 100.</p>
-<div class="scroll"><table>
-<thead><tr><th scope="col"></th><th scope="col">Hub cost low</th><th scope="col">Hub cost medium</th><th scope="col">Hub cost high</th></tr></thead>
-<tbody><tr><th scope='row'>Max 8 h of work in 24 h</th><td>95 <span class='sub'>vs. 99</span></td><td>100 <span class='sub'>vs. 99</span></td><td>108 <span class='sub'>vs. 99</span></td></tr><tr><th scope='row'>Max 10 h of work in 24 h</th><td>120 <span class='sub'>vs. 102</span></td><td>126 <span class='sub'>vs. 102</span></td><td>136 <span class='sub'>vs. 102</span></td></tr></tbody>
-</table></div>
-
-<h2>How the model works</h2>
-<ol>
-<li><b>Generate every legal crew tour.</b> From each possible base, the model lists every sequence of duties and rests that returns home and respects the working-hour rules, checked in every 24-hour window.</li>
-<li><b>Choose tours and hubs together.</b> An optimizer (Google OR-Tools CP-SAT) picks how many crews run each tour and which hubs to open, so every stretch of every train has the staff it needs, at the lowest total cost.</li>
-<li><b>Compare designs on the same basis.</b> Headcount includes weekly rest days; cost includes overtime, rest allowances and hub running costs.</li>
-</ol>
-<p><b>With real data,</b> the model would add the full timetable (crews shared across many trains and hubs, where the largest savings usually are), actual rules and contracts, existing depots and rest facilities, staff categories, and service levels by coach and time of day.</p>
-<p class="note">Illustrative case built for a proposal. Hypothetical timetable, rules and costs; not railway data.</p>
-</main>
-<footer>Slimane Chanchoul · Optimization engineer · <a href="/">slimanechanchoul.com</a></footer>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Onboard crew deployment</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<iframe src="https://slimaneoptic-railway.streamlit.app/?embed=true" title="Onboard crew deployment (live demo)" allow="clipboard-write; fullscreen"></iframe>
 </body>
 </html>
