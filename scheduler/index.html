@@ -4,14 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI shift scheduler · Slimane Chanchoul</title>
+<meta name="description" content="A weekly staff roster built by an optimizer, changed in plain words.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-html, body { margin: 0; height: 100%; background: #F6F8FA; }
-iframe { border: 0; display: block; width: 100%; height: 100vh; height: 100dvh; }
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+iframe { border: 0; display: block; width: 100%; height: calc(100vh - var(--bar)); height: calc(100dvh - var(--bar)); }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
 </head>
 <body>
-<iframe src="https://slimaneoptic-scheduler.streamlit.app/?embed=true" title="AI shift scheduler" allow="clipboard-write; fullscreen"></iframe>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">AI shift scheduler</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<iframe src="https://slimaneoptic-scheduler.streamlit.app/?embed=true" title="AI shift scheduler (live demo)" allow="clipboard-write; fullscreen"></iframe>
 </body>
 </html>
