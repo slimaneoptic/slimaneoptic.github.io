@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find your voting districts · Vanderburgh County (demo) · Slimane Chanchoul</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root { --ink:#14202B; --paper:#F6F8FA; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --amber:#B87D00; --red:#C0392B; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; font-feature-settings: "tnum" 1; }
+a { color: var(--blue); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+.bar { height: 3.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0 1.25rem; border-bottom: 1px solid var(--rule); }
+.bar .name { font-weight: 800; color: var(--ink); text-decoration: none; }
+.bar .demo { color: var(--slate); padding-left: .75rem; margin-left: .75rem; border-left: 1px solid var(--rule); }
+.bar nav { display: flex; gap: 1.25rem; align-items: center; font-size: .95rem; }
+.bar nav a { color: var(--ink); text-decoration: none; }
+.btn { background: var(--ink); color: #fff !important; padding: .45rem .85rem .35rem; border-radius: 7px; font-weight: 600; }
+main { display: grid; grid-template-columns: minmax(340px, 440px) 1fr; min-height: calc(100vh - 3.25rem); }
+.panel { padding: 2rem 1.75rem 2.5rem; border-right: 1px solid var(--rule); overflow-y: auto; }
+h1 { font-size: 1.9rem; line-height: 1.1; letter-spacing: -.02em; font-weight: 800; margin: 0 0 .6rem; }
+.lede { color: #33424f; margin: 0 0 1.4rem; line-height: 1.55; }
+form { display: flex; gap: .5rem; }
+label.sr { position: absolute; left: -9999px; }
+input[type=text] { flex: 1; font: inherit; font-size: 1rem; padding: .7rem .8rem .55rem; border: 1.5px solid var(--rule); border-radius: 8px; background: #fff; color: var(--ink); min-width: 0; }
+input[type=text]:focus { border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(42,120,214,.18); }
+button { font: inherit; font-weight: 600; border-radius: 8px; cursor: pointer; }
+.go { background: var(--ink); color: #fff; border: 0; padding: .7rem 1rem .55rem; }
+.go:disabled { opacity: .6; cursor: wait; }
+.alt { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0 0; }
+.alt button { background: #fff; border: 1px solid var(--rule); color: var(--ink); font-size: .85rem; font-weight: 500; padding: .35rem .6rem .25rem; }
+.alt button:hover { border-color: var(--blue); }
+.status { margin: 1.2rem 0 0; font-size: .95rem; color: var(--slate); min-height: 1.4em; }
+.status.err { color: var(--red); }
+.result { margin-top: 1rem; background: #fff; border: 1px solid var(--rule); border-radius: 12px; padding: 1.1rem 1.2rem 1rem; display: none; }
+.result.on { display: block; }
+.matched { font-size: .85rem; color: var(--slate); margin: 0 0 .5rem; }
+.precinct { font-size: 1.35rem; font-weight: 800; letter-spacing: -.01em; margin: 0; }
+.code { color: var(--slate); font-size: .95rem; margin: .1rem 0 .8rem; }
+table { border-collapse: collapse; width: 100%; font-size: .98rem; }
+th, td { text-align: left; padding: .5rem 0 .4rem; border-top: 1px solid var(--rule); }
+th { font-weight: 500; color: var(--slate); width: 55%; }
+td { font-weight: 700; }
+.note { margin: .9rem 0 0; font-size: .88rem; padding: .55rem .7rem .45rem; border-radius: 8px; }
+.note.warn { background: #FFF6E0; color: #6B4A00; }
+.note.info { background: #EEF3FA; color: #1c3f6b; }
+.how { margin-top: 1.8rem; font-size: .9rem; color: #33424f; line-height: 1.55; }
+.how h2 { font-size: 1.05rem; margin: 0 0 .4rem; }
+.how ol { padding-left: 1.1rem; margin: .3rem 0 0; }
+#map { width: 100%; height: 100%; min-height: 420px; }
+.leaflet-tile-pane { filter: saturate(0.35) brightness(1.04); }
+.leaflet-container { font-family: "Overpass", system-ui, sans-serif; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } .panel { border-right: 0; border-bottom: 1px solid var(--rule); } #map { height: 60vh; } .bar .demo, .bar nav .all { display: none; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Voting district lookup</span></div>
+  <nav aria-label="Site"><a class="all" href="/#work">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <section class="panel">
+    <h1>Find your voting districts</h1>
+    <p class="lede">Type an address in Vanderburgh County, Indiana. The page finds it on the map, checks which precinct polygon it falls in, and shows that precinct's districts, straight from the county's precinct file.</p>
+    <form id="f">
+      <label class="sr" for="q">Street address</label>
+      <input id="q" type="text" autocomplete="street-address" placeholder="e.g. 1800 Lincoln Ave, Evansville" required>
+      <button class="go" id="go" type="submit">Find</button>
+    </form>
+    <div class="alt">
+      <button type="button" data-q="1 NW Martin Luther King Jr Blvd, Evansville, IN 47708">Civic Center</button>
+      <button type="button" data-q="1800 Lincoln Ave, Evansville, IN 47714">University of Evansville</button>
+      <button type="button" data-q="7801 Bussing Dr, Evansville, IN 47725">Regional Airport</button>
+      <button type="button" id="here">Use my location</button>
+    </div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    <div class="result" id="result">
+      <p class="matched" id="matched"></p>
+      <p class="precinct" id="pname"></p>
+      <p class="code" id="pcode"></p>
+      <table><tbody id="rows"></tbody></table>
+      <div id="notes"></div>
+    </div>
+    <div class="how">
+      <h2>How it works</h2>
+      <ol>
+        <li>The address is turned into map coordinates (geocoding).</li>
+        <li>A point-in-polygon test finds the precinct that contains it; addresses close to a boundary are flagged, since a geocoded point can be off by a few meters.</li>
+        <li>The precinct's own data gives the Congressional, State Senate, State House, County Commission, County Council and Township districts.</li>
+      </ol>
+      <p>For a WordPress site, the same lookup ships as a small plugin with a <code>[district_lookup]</code> shortcode. It geocodes on the server with the free US Census geocoder, which also returns official districts to cross-check the precinct file. The KML or GeoJSON is uploaded in the WordPress admin, so new district maps need no code changes.</p>
+      <p style="color:var(--slate)">Demo built on Vanderburgh County's public precinct file. Geocoding in this demo: OpenStreetMap Nominatim.</p>
+    </div>
+  </section>
+  <div id="map" role="region" aria-label="Map of Vanderburgh County precincts"></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const LABELS = [["CONGRESS", "Congressional district"], ["SENATE", "State Senate district"], ["HOUSE", "State House district"],
+                ["COMMISSION", "County Commission district"], ["CO_COUNCIL", "County Council district"], ["TOWNSHIP", "Township"]];
+const BOUNDS = [[37.826, -87.701], [38.169, -87.449]];
+const NEAR_M = 25;
+const $ = id => document.getElementById(id);
+const status = (msg, err = false) => { $("status").textContent = msg; $("status").className = "status" + (err ? " err" : ""); };
+
+const map = L.map("map", { zoomControl: true }).fitBounds(BOUNDS);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+let precincts = null, layer = null, pin = null, highlight = null;
+
+fetch("precincts.geojson").then(r => r.json()).then(fc => {
+  precincts = fc;
+  layer = L.geoJSON(fc, { style: { color: "#5B6B7A", weight: 1, fillColor: "#2A78D6", fillOpacity: 0.04 },
+    onEachFeature: (f, l) => l.bindTooltip(titleCase(f.properties.NAME), { sticky: true }) }).addTo(map);
+}).catch(() => status("The precinct map couldn't load. Refresh the page.", true));
+
+function titleCase(s) { return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()); }
+function num(v) { return /^\d+$/.test(v) ? String(parseInt(v, 10)) : titleCase(v); }
+
+// ray casting on one ring ([lon, lat] pairs)
+function inRing(pt, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j];
+    if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function inPolygon(pt, rings) { return inRing(pt, rings[0]) && !rings.slice(1).some(h => inRing(pt, h)); }
+function polygons(g) { return g.type === "Polygon" ? [g.coordinates] : g.coordinates; }
+
+// distance in meters from a point to the nearest edge (local flat projection, fine at county scale)
+function edgeDistance(pt, g) {
+  const ky = 111320, kx = 111320 * Math.cos(pt[1] * Math.PI / 180);
+  let best = Infinity;
+  for (const poly of polygons(g)) for (const ring of poly) for (let i = 1; i < ring.length; i++) {
+    const ax = (ring[i - 1][0] - pt[0]) * kx, ay = (ring[i - 1][1] - pt[1]) * ky;
+    const bx = (ring[i][0] - pt[0]) * kx, by = (ring[i][1] - pt[1]) * ky;
+    const dx = bx - ax, dy = by - ay, len = dx * dx + dy * dy;
+    const t = len ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len)) : 0;
+    best = Math.min(best, Math.hypot(ax + t * dx, ay + t * dy));
+  }
+  return best;
+}
+
+function lookup(lon, lat, label) {
+  const pt = [lon, lat];
+  const hit = precincts.features.find(f => polygons(f.geometry).some(p => inPolygon(pt, p)));
+  if (pin) pin.remove();
+  if (highlight) highlight.remove();
+  pin = L.circleMarker([lat, lon], { radius: 7, color: "#fff", weight: 2, fillColor: "#E8622C", fillOpacity: 1 }).addTo(map);
+  $("matched").textContent = label;
+  if (!hit) {
+    $("result").classList.remove("on");
+    map.setView([lat, lon], 12);
+    status("This address is outside Vanderburgh County's precinct map.", true);
+    return;
+  }
+  const p = hit.properties;
+  highlight = L.geoJSON(hit, { style: { color: "#2A78D6", weight: 3, fillColor: "#2A78D6", fillOpacity: 0.18 } }).addTo(map);
+  map.fitBounds(highlight.getBounds(), { padding: [40, 40], maxZoom: 16 });
+  $("pname").textContent = titleCase(p.NAME);
+  $("pcode").textContent = "Ward-precinct " + p.WARD_PRECINCT;
+  $("rows").innerHTML = LABELS.map(([k, t]) => `<tr><th scope="row">${t}</th><td>${num(p[k] || "–")}</td></tr>`).join("");
+  const notes = [];
+  const d = edgeDistance(pt, hit.geometry);
+  if (d < NEAR_M) notes.push(`<p class="note warn">This point is ${Math.round(d)} m from a precinct boundary. A geocoded address can be off by a few meters: please confirm with the county election office.</p>`);
+  if (p.ChangedPrecincts === "YES" && p.OldPrecinctName && p.OldPrecinctName !== p.NAME) notes.push(`<p class="note info">This precinct changed recently. It was formerly ${titleCase(p.OldPrecinctName)}.</p>`);
+  $("notes").innerHTML = notes.join("");
+  $("result").classList.add("on");
+  status("");
+}
+
+async function geocode(q) {
+  const [[s, w], [n, e]] = BOUNDS;
+  const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=us&bounded=1" +
+    `&viewbox=${w},${n},${e},${s}&q=` + encodeURIComponent(q);
+  const r = await fetch(url, { headers: { "Accept-Language": "en" } });
+  if (!r.ok) throw new Error("geocoder");
+  const res = await r.json();
+  return res[0] || null;
+}
+
+async function run(q) {
+  if (!precincts) { status("The precinct map is still loading…"); return; }
+  $("go").disabled = true; status("Looking up the address…");
+  try {
+    const hit = await geocode(q);
+    if (!hit) { $("result").classList.remove("on"); status("No match for that address in Vanderburgh County. Add the street number and city, e.g. 1800 Lincoln Ave, Evansville.", true); return; }
+    lookup(parseFloat(hit.lon), parseFloat(hit.lat), "Matched: " + hit.display_name.split(",").slice(0, 4).join(","));
+  } catch (e) {
+    status("The address service didn't answer. Try again in a few seconds.", true);
+  } finally { $("go").disabled = false; }
+}
+
+$("f").addEventListener("submit", e => { e.preventDefault(); run($("q").value.trim()); });
+document.querySelectorAll(".alt button[data-q]").forEach(b => b.addEventListener("click", () => { $("q").value = b.dataset.q; run(b.dataset.q); }));
+$("here").addEventListener("click", () => {
+  if (!navigator.geolocation) { status("Your browser can't share its location.", true); return; }
+  status("Waiting for your location…");
+  navigator.geolocation.getCurrentPosition(
+    pos => lookup(pos.coords.longitude, pos.coords.latitude, "Your current location"),
+    () => status("Location not shared. Type an address instead.", true), { enableHighAccuracy: true, timeout: 10000 });
+});
+</script>
+</body>
+</html>
