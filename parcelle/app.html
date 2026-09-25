@@ -76,7 +76,7 @@
   <div class="mapwrap">
     <div id="map" role="region" aria-label="Carte 3D de la parcelle"></div>
     <div class="overlay summary" id="summary" hidden></div>
-    <div class="overlay view" role="group"><button data-view="3d" aria-pressed="true" data-i18n="map.3d"></button><button data-view="2d" aria-pressed="false" data-i18n="map.2d"></button><button data-view="nb" aria-pressed="false" data-i18n="map.neighbors"></button></div>
+    <div class="overlay view" role="group"><button data-view="3d" aria-pressed="true" data-i18n="map.3d"></button><button data-view="street" aria-pressed="false" data-i18n="map.street"></button><button data-view="2d" aria-pressed="false" data-i18n="map.2d"></button><button data-view="nb" aria-pressed="false" data-i18n="map.neighbors"></button></div>
     <div class="overlay drawbar" id="drawbar">
       <span data-i18n="parcel.drawHelp"></span>
       <button class="btn green" id="finish" type="button" data-i18n="parcel.finish"></button>
@@ -85,7 +85,12 @@
     <div class="overlay legend">
       <div><span class="swatch" style="background:rgba(58,124,165,.35);border:1px solid #3A7CA5"></span><i data-i18n="map.envelope"></i></div>
       <div><span class="swatch" style="background:#B7862B"></span><i data-i18n="map.shops"></i></div>
-      <div><span class="swatch" style="background:#0E6B5C"></span><i data-i18n="map.flats"></i></div>
+      <div><span class="swatch" style="background:#8FD3C1"></span><i data-i18n="type.s"></i></div>
+      <div><span class="swatch" style="background:#3AA58B"></span><i data-i18n="type.t2"></i></div>
+      <div><span class="swatch" style="background:#0E6B5C"></span><i data-i18n="type.t3"></i></div>
+      <div><span class="swatch" style="background:#083F37"></span><i data-i18n="type.t4"></i></div>
+      <div><span class="swatch" style="background:#9AA5AA"></span><i data-i18n="map.coreShort"></i></div>
+      <div class="hint" style="margin:0" data-i18n="map.click"></div>
     </div>
     <div class="busy" id="busy"><span data-i18n="result.computing"></span></div>
   </div>

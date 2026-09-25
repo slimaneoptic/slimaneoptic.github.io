@@ -110,3 +110,37 @@ export function isConvex(pts) {
   }
   return true;
 }
+
+// Keep the part of a polygon whose projection on unit vector d lies between t0 and t1.
+export function band(pts, d, t0, t1) {
+  const keep = (poly, sign, t) => {  // keep points with sign * (p·d - t) >= 0
+    const out = [];
+    const f = q => sign * (q[0] * d[0] + q[1] * d[1] - t);
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length], fa = f(a), fb = f(b);
+      if (fa >= 0) out.push(a);
+      if ((fa >= 0) !== (fb >= 0)) { const k = fa / (fa - fb); out.push([a[0] + k * (b[0] - a[0]), a[1] + k * (b[1] - a[1])]); }
+    }
+    return out;
+  };
+  const one = keep(pts, 1, t0);
+  return one.length >= 3 ? keep(one, -1, t1) : [];
+}
+
+// Split a convex polygon into consecutive strips along d whose areas follow `targets` (same total as the polygon).
+export function splitStrips(pts, d, targets) {
+  const proj = pts.map(p => p[0] * d[0] + p[1] * d[1]);
+  const tmin = Math.min(...proj), tmax = Math.max(...proj);
+  const total = Math.abs(area(pts)), sum = targets.reduce((s, v) => s + v, 0) || 1;
+  const areaUpTo = t => { const b = band(pts, d, tmin - 1, t); return b.length >= 3 ? Math.abs(area(b)) : 0; };
+  const cuts = [tmin];
+  let acc = 0;
+  for (let i = 0; i < targets.length - 1; i++) {
+    acc += targets[i] / sum * total;
+    let lo = cuts[cuts.length - 1], hi = tmax;
+    for (let k = 0; k < 40; k++) { const mid = (lo + hi) / 2; if (areaUpTo(mid) < acc) lo = mid; else hi = mid; }
+    cuts.push((lo + hi) / 2);
+  }
+  cuts.push(tmax);
+  return targets.map((_, i) => band(pts, d, cuts[i], cuts[i + 1]));
+}

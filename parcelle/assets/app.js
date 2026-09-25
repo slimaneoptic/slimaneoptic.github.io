@@ -1,5 +1,5 @@
 import { SAMPLES, ZONES, MARKETS, UNIT_TYPES, TECH } from "./data.js";
-import { projector, area, edges, facing, buildable, scaleTo, isConvex } from "./geo.js";
+import { projector, area, edges, facing, buildable, scaleTo, isConvex, splitStrips } from "./geo.js";
 import { study } from "./optimizer.js";
 import { LANGS, getLang, setLang, t, applyStatic } from "./i18n.js";
 
@@ -7,7 +7,7 @@ const $ = s => document.querySelector(s);
 let lang = getLang();
 const tr = (k, v) => t(lang, k, v);
 const EMPTY = { type: "FeatureCollection", features: [] };
-const COLORS = { shops: "#B7862B", envelope: "#3A7CA5", street: "#B7862B" };
+const COLORS = { shops: "#B7862B", envelope: "#3A7CA5", street: "#B7862B", core: "#9AA5AA", s: "#8FD3C1", t2: "#3AA58B", t3: "#0E6B5C", t4: "#083F37" };
 
 // ---------------------------------------------------------------- state
 
@@ -152,7 +152,7 @@ function renderFacts(g) {
 
 const map = new maplibregl.Map({
   container: "map", style: "https://tiles.openfreemap.org/styles/liberty",
-  center: [-7.63444, 33.58833], zoom: 18.2, pitch: 60, bearing: -28, maxPitch: 75,
+  center: [-7.63444, 33.58833], zoom: 18.9, pitch: 58, bearing: -28, maxPitch: 78,
   antialias: true, canvasContextAttributes: { preserveDrawingBuffer: true }, preserveDrawingBuffer: true,
 });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "bottom-right");
@@ -189,32 +189,57 @@ function drawGeometry(g) {
   src("p-envelope", b.length >= 3 ? { type: "FeatureCollection", features: [poly(b, { h: state.rules.hmax })] } : EMPTY);
 }
 
-function flatColor(k, n) {  // green, lighter as the floors rise
-  const a = [14, 107, 92], b = [102, 184, 164], f = n > 1 ? (k - 1) / (n - 1) : 0;
-  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(",")})`;
+function unitPrice(k, u) {
+  const t = state.tech;
+  return u.area * u.price * (k === 0 ? 1 - t.rdcDiscount / 100 : 1 + t.premium / 100 * k);
 }
 
+// The optimal building, floor by floor, each floor split into its apartments (colored by type) around the stair core.
 function drawBuilding(g, best) {
   if (!mapReady) return;
   if (!best || g.bld.poly.length < 3) { src("p-building", EMPTY); return; }
-  const top = best.levels.length - 1;
+  const e = g.es[state.street], d = e ? e.dir : [1, 0], T = state.units, tech = state.tech;
+  const feats = [];
+  const add = (pts, props) => { if (pts.length >= 3) feats.push(poly(pts.map(g.pr.toLonLat), props)); };
   let base = 0;
-  const feats = best.levels.map(l => {
-    const plate = scaleTo(g.bld.poly, Math.min(l.gross, g.Bp)).map(g.pr.toLonLat);
-    const color = l.use === "shops" ? COLORS.shops : flatColor(Math.max(1, l.k), Math.max(1, top));
-    const f = poly(plate, { base, top: base + l.height - 0.2, color });
+  for (const l of best.levels) {
+    const plate = scaleTo(g.bld.poly, Math.min(l.gross, g.Bp));
+    const top = base + l.height - 0.3, lv = levelName(l.k);
+    if (l.use === "shops" || !l.counts.some(c => c)) {
+      add(plate, { base, top, color: COLORS.shops, info: `${lv} · ${tr("use.shops")} · ${num(l.net)} m² · ${money(l.net * state.market.commerce)}` });
+    } else {
+      const units = [];
+      l.counts.forEach((n, t) => { for (let i = 0; i < n; i++) units.push(t); });
+      units.sort((a, b) => T[b].area - T[a].area);  // largest flats at the ends, core in the middle
+      const left = [], right = [];
+      units.forEach((t, i) => (i % 2 ? right : left).push(t));
+      const seq = [...left, "core", ...right.reverse()];
+      const strips = splitStrips(plate, d, seq.map(x => (x === "core" ? tech.core : T[x].area / tech.eff)));
+      strips.forEach((sp, i) => {
+        if (sp.length < 3) return;
+        const x = seq[i], body = scaleTo(sp, Math.abs(area(sp)) * 0.9);  // small gap between flats
+        if (x === "core") add(body, { base, top, color: COLORS.core, info: `${lv} · ${tr("map.core")}` });
+        else add(body, { base, top, color: COLORS[T[x].id], info: `${lv} · ${tr("type." + T[x].id)} · ${num(T[x].area)} m² · ${money(unitPrice(l.k, T[x]))}` });
+      });
+    }
     base += l.height;
-    return f;
-  });
+  }
   src("p-building", { type: "FeatureCollection", features: feats });
 }
 
 function fit(g) {
   if (!mapReady) return;
   const c = g.pr.toLonLat([0, 0]);
-  map.easeTo({ center: c, zoom: 18.2, duration: 900 });
+  map.easeTo({ center: c, zoom: 18.9, duration: 900 });
 }
 
+function streetBearing() {  // look at the building from the street
+  if (!result || !result.g) return -28;
+  const e = result.g.es[state.street];
+  if (!e) return -28;
+  const n = [-e.dir[1], e.dir[0]];  // inward normal: from the street towards the parcel
+  return Math.atan2(n[0], n[1]) * 180 / Math.PI;
+}
 $(".view").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.view === "nb") {
@@ -223,8 +248,10 @@ $(".view").addEventListener("click", e => {
     if (map.getLayer("building-3d")) map.setLayoutProperty("building-3d", "visibility", on ? "visible" : "none");
     return;
   }
-  document.querySelectorAll(".view button[data-view='3d'], .view button[data-view='2d']").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-  map.easeTo(b.dataset.view === "3d" ? { pitch: 60, bearing: -28 } : { pitch: 0, bearing: 0 });
+  document.querySelectorAll(".view button:not([data-view='nb'])").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  const c = result && result.g ? result.g.pr.toLonLat([0, 0]) : map.getCenter();
+  const views = { "3d": { pitch: 58, bearing: -28, zoom: 18.9 }, street: { pitch: 76, bearing: streetBearing(), zoom: 19.3 }, "2d": { pitch: 0, bearing: 0, zoom: 19.2 } };
+  map.easeTo({ center: c, duration: 900, ...views[b.dataset.view] });
 });
 
 // drawing a parcel
@@ -254,7 +281,15 @@ function finishDraw() {
   state = { ...state, sample: null, name: tr("parcel.custom"), place: "", ring, street: es.reduce((a, e) => (e.len > es[a].len ? e.i : a), 0) };
   renderSamples(); map.easeTo({ pitch: 60, bearing: -28 }); schedule();
 }
-map.on("click", e => { if (drawing) { drawing.push([e.lngLat.lng, e.lngLat.lat]); updateDraw(); } });
+map.on("click", e => {
+  if (drawing) { drawing.push([e.lngLat.lng, e.lngLat.lat]); updateDraw(); return; }
+  const f = map.getLayer("p-building") && map.queryRenderedFeatures(e.point, { layers: ["p-building"] })[0];
+  if (f) new maplibregl.Popup({ closeButton: false, offset: 8 }).setLngLat(e.lngLat).setText(f.properties.info).addTo(map);
+});
+map.on("mousemove", e => {
+  if (drawing || !map.getLayer("p-building")) return;
+  map.getCanvas().style.cursor = map.queryRenderedFeatures(e.point, { layers: ["p-building"] }).length ? "pointer" : "";
+});
 map.on("dblclick", e => { if (drawing) { e.preventDefault(); finishDraw(); } });
 $("#draw").addEventListener("click", startDraw);
 $("#finish").addEventListener("click", finishDraw);
