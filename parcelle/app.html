@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Parcelle+ · Application</title>
+<meta name="description" content="Règles d'urbanisme, programme immobilier optimal, bilan promoteur et maquette 3D pour une parcelle au Maroc.">
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./">
+    <img class="brand-mark" src="assets/favicon.svg" alt="">
+    <span class="brand-name">Parcelle<b>+</b></span>
+    <span class="brand-tag" data-i18n="brand.tag"></span>
+  </a>
+  <nav aria-label="Menu">
+    <a class="opt" href="./" data-i18n="nav.home"></a>
+    <a href="app.html" aria-current="page" data-i18n="nav.app"></a>
+    <a class="opt" href="methode.html" data-i18n="nav.method"></a>
+    <div class="langs" role="group" aria-label="Langue"><button data-lang="fr">FR</button><button data-lang="en">EN</button><button data-lang="ar">ع</button></div>
+  </nav>
+</header>
+
+<main class="app">
+  <aside class="panel">
+    <div class="steps" role="tablist">
+      <button role="tab" data-tab="parcel"><span>1</span><i data-i18n="step.parcel"></i></button>
+      <button role="tab" data-tab="rules"><span>2</span><i data-i18n="step.rules"></i></button>
+      <button role="tab" data-tab="market"><span>3</span><i data-i18n="step.market"></i></button>
+      <button role="tab" data-tab="result"><span>4</span><i data-i18n="step.result"></i></button>
+    </div>
+    <div class="tabs">
+      <section class="tab" id="tab-parcel" role="tabpanel">
+        <h2 data-i18n="parcel.title"></h2>
+        <h3 style="margin-top:0" data-i18n="parcel.samples"></h3>
+        <div class="samples" id="samples"></div>
+        <div class="row">
+          <button class="btn ghost" id="draw" type="button" data-i18n="parcel.draw"></button>
+        </div>
+        <p class="hint" data-i18n="parcel.drawHelp"></p>
+        <dl class="facts" id="facts"></dl>
+        <div class="field" style="margin-top:.8rem;border:0"><label for="street" data-i18n="parcel.street"></label></div>
+        <select class="full" id="street"></select>
+        <p class="note warn" id="convex" hidden data-i18n="parcel.nonConvex"></p>
+      </section>
+      <section class="tab" id="tab-rules" role="tabpanel" hidden>
+        <h2 data-i18n="rules.title"></h2>
+        <div class="field"><label for="zone" data-i18n="rules.zone"></label><select id="zone"></select></div>
+        <div class="fields" id="rules"></div>
+        <p class="note" data-i18n="rules.note"></p>
+      </section>
+      <section class="tab" id="tab-market" role="tabpanel" hidden>
+        <h2 data-i18n="market.title"></h2>
+        <h3 style="margin-top:0" data-i18n="market.types"></h3>
+        <table class="types" id="types"></table>
+        <h3 data-i18n="market.prices"></h3>
+        <div class="fields" id="prices"></div>
+        <h3 data-i18n="market.costs"></h3>
+        <div class="fields" id="costs"></div>
+      </section>
+      <section class="tab" id="tab-result" role="tabpanel" hidden>
+        <h2 data-i18n="result.title"></h2>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <div id="results"></div>
+      </section>
+    </div>
+  </aside>
+
+  <div class="mapwrap">
+    <div id="map" role="region" aria-label="Carte 3D de la parcelle"></div>
+    <div class="overlay summary" id="summary" hidden></div>
+    <div class="overlay view" role="group"><button data-view="3d" aria-pressed="true" data-i18n="map.3d"></button><button data-view="2d" aria-pressed="false" data-i18n="map.2d"></button><button data-view="nb" aria-pressed="false" data-i18n="map.neighbors"></button></div>
+    <div class="overlay drawbar" id="drawbar">
+      <span data-i18n="parcel.drawHelp"></span>
+      <button class="btn green" id="finish" type="button" data-i18n="parcel.finish"></button>
+      <button class="btn ghost" id="cancel" type="button" data-i18n="parcel.cancel"></button>
+    </div>
+    <div class="overlay legend">
+      <div><span class="swatch" style="background:rgba(58,124,165,.35);border:1px solid #3A7CA5"></span><i data-i18n="map.envelope"></i></div>
+      <div><span class="swatch" style="background:#B7862B"></span><i data-i18n="map.shops"></i></div>
+      <div><span class="swatch" style="background:#0E6B5C"></span><i data-i18n="map.flats"></i></div>
+    </div>
+    <div class="busy" id="busy"><span data-i18n="result.computing"></span></div>
+  </div>
+</main>
+
+<div id="report"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>

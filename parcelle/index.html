@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Parcelle+ · De la parcelle au meilleur projet</title>
+<meta name="description" content="Règles d'urbanisme, programme immobilier optimal, bilan promoteur et maquette 3D pour une parcelle au Maroc (Loi 12-90).">
+<meta property="og:title" content="Parcelle+ · De la parcelle au meilleur projet">
+<meta property="og:description" content="Règles d'urbanisme, programme optimal, bilan promoteur et maquette 3D en quelques secondes.">
+<meta property="og:image" content="https://slimanechanchoul.com/parcelle/assets/shot.jpg">
+<link rel="icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./">
+    <img class="brand-mark" src="assets/favicon.svg" alt="">
+    <span class="brand-name">Parcelle<b>+</b></span>
+    <span class="brand-tag" data-i18n="brand.tag"></span>
+  </a>
+  <nav aria-label="Menu">
+    <a class="opt" href="./" aria-current="page" data-i18n="nav.home"></a>
+    <a href="app.html" data-i18n="nav.app"></a>
+    <a class="opt" href="methode.html" data-i18n="nav.method"></a>
+    <div class="langs" role="group" aria-label="Langue"><button data-lang="fr">FR</button><button data-lang="en">EN</button><button data-lang="ar">ع</button></div>
+  </nav>
+</header>
+
+<main class="page">
+  <section class="hero">
+    <div>
+      <p class="eyebrow" data-i18n="home.eyebrow"></p>
+      <h1 data-i18n="home.title"></h1>
+      <p class="lede" data-i18n="home.lede"></p>
+      <div class="row">
+        <a class="btn green" href="app.html" data-i18n="home.cta" style="text-decoration:none"></a>
+        <a class="btn ghost" href="app.html?sample=zerktouni" data-i18n="home.example" style="text-decoration:none"></a>
+      </div>
+    </div>
+    <img class="shot" src="assets/shot.jpg" alt="Parcelle+ : programme optimal en 3D sur une parcelle du boulevard Zerktouni, avec le bilan promoteur" width="1440" height="900">
+  </section>
+
+  <section class="section">
+    <p class="proof" id="proof"></p>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="home.steps"></h2>
+    <ol class="steps3">
+      <li><b data-i18n="home.s1t"></b><p data-i18n="home.s1"></p></li>
+      <li><b data-i18n="home.s2t"></b><p data-i18n="home.s2"></p></li>
+      <li><b data-i18n="home.s3t"></b><p data-i18n="home.s3"></p></li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="home.samples"></h2>
+    <div class="tiles">
+      <a class="tile" href="app.html?sample=zerktouni"><b>Bd Zerktouni</b><span>Casablanca · A1 · AUC · 520 m²</span></a>
+      <a class="tile" href="app.html?sample=gauthier"><b>Gauthier</b><span>Casablanca · B5 · AUC · 600 m²</span></a>
+      <a class="tile" href="app.html?sample=maarif"><b>Maârif</b><span>Casablanca · B5-M · AUC · 400 m²</span></a>
+      <a class="tile" href="app.html?sample=gueliz"><b>Guéliz</b><span>Marrakech · SA-G · AUM · 450 m²</span></a>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="home.for"></h2>
+    <div class="who">
+      <div><b data-i18n="home.f1t"></b><p data-i18n="home.f1"></p></div>
+      <div><b data-i18n="home.f2t"></b><p data-i18n="home.f2"></p></div>
+      <div><b data-i18n="home.f3t"></b><p data-i18n="home.f3"></p></div>
+    </div>
+    <p style="margin-top:2rem"><a href="methode.html" data-i18n="home.method"></a></p>
+  </section>
+
+  <footer class="foot"><span data-i18n="footer.disclaimer"></span></footer>
+</main>
+
+<script type="module">
+import { getLang, setLang, applyStatic, t } from "./assets/i18n.js";
+const RANGE = { fr: "0,5 à 2,5 M DH", en: "MAD 0.5–2.5M", ar: "0,5 إلى 2,5 مليون درهم" };
+function paint(lang) {
+  applyStatic(lang);
+  document.getElementById("proof").innerHTML = t(lang, "home.proof", { range: `<b>${RANGE[lang]}</b>` });
+}
+let lang = getLang();
+paint(lang);
+document.querySelectorAll("[data-lang]").forEach(b => b.addEventListener("click", () => { lang = b.dataset.lang; setLang(lang); paint(lang); }));
+</script>
+</body>
+</html>
