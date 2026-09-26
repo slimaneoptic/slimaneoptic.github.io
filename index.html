@@ -192,11 +192,11 @@ footer { background: var(--ink); color: #8C9AA8; font-size: 0.88rem; padding: 0 
 
   <section id="work">
     <div class="wrap">
-      <h2>Pipeline operations scheduler, OCP Group</h2>
-      <p class="intro">Operators planned an industrial phosphate pipeline network by hand, 72 hours ahead: which feeders run, where the flow goes, when the pipeline pumps or stops, with every storage tank kept within safe limits and clients served around the clock.</p>
+      <h2>Pipeline operations scheduler</h2>
+      <p class="intro">Operators planned an industrial pipeline network by hand, 72 hours ahead: which feeders run, where the flow goes, when the pipeline pumps or stops, with every storage tank kept within safe limits and clients served around the clock.</p>
       <div class="case">
         <figure>
-          <img class="shot" src="img/ocp.webp" width="1400" height="1050" loading="lazy" alt="Diagram of the scheduler: feeders, head-station tanks, the pipeline, storage terminals and clients, all decided hourly by one constraint-programming optimizer.">
+          <img class="shot" src="img/pipeline.webp" width="1400" height="1050" loading="lazy" alt="Diagram of the scheduler: feeders, head-station tanks, the pipeline, storage terminals and clients, all decided hourly by one constraint-programming optimizer.">
         </figure>
         <div>
           <p>I built a constraint-programming model of the whole network, about 10,000 decisions and 15,000 operating rules, with the pipeline's transit delay built in. Every schedule is checked by independent mass-balance validators and stress-tested by a simulator, and the planning systems request new schedules through an API.</p>
@@ -259,6 +259,15 @@ footer { background: var(--ink); color: #8C9AA8; font-size: 0.88rem; padding: 0 
             <p>Upload your sales history: it tests four forecasting models on every product and keeps the most accurate, then says what to order this week, in whole cases, and what to buy first when the budget is tight.</p>
             <p class="stack">Holt-Winters, gradient boosting, OR-Tools budget optimizer, Excel export</p>
             <a class="demo-link" href="/planner/" rel="noopener">Open the planner</a>
+          </div>
+        </article>
+        <article class="demo" id="vision">
+          <img class="shot" src="img/vision.webp" width="1280" height="720" loading="lazy" alt="Dashcam frame: tracked cars and a pedestrian with IDs, the drivable road in green and lane lines in yellow, with FPS shown in the corner.">
+          <div class="demo-text">
+            <h3>Real-time road perception</h3>
+            <p>Road video in: every vehicle and pedestrian detected and tracked, plus the drivable road and lane lines, at 29 frames per second on a laptop GPU. Built to move to edge hardware later.</p>
+            <p class="stack">YOLO11n, ByteTrack, YOLOP, ONNX Runtime, OpenCV</p>
+            <a class="demo-link" href="/vision/">Watch the demo</a>
           </div>
         </article>
       </div>

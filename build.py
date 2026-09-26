@@ -28,4 +28,9 @@ for slug, (title, blurb, app) in DEMOS.items():
     page = demo.replace("__TITLE__", title).replace("__BLURB__", blurb).replace("__APP__", app).replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-print("built index.html +", ", ".join(DEMOS))
+# Pages with their own content instead of an embedded app (the vision demo needs a GPU, so it is a video)
+for slug in ("vision",):
+    page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
+    (root / slug).mkdir(exist_ok=True)
+    (root / slug / "index.html").write_text(page)
+print("built index.html +", ", ".join([*DEMOS, "vision"]))

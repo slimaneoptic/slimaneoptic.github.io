@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real-time road perception · Slimane Chanchoul</title>
+<meta name="description" content="Vehicle and pedestrian detection, multi-object tracking, drivable area and lane lines on road video at 29 FPS, built for later edge deployment.">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 960px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.2rem 0 0.6rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.5rem; max-width: 46rem; }
+video { display: block; width: 100%; height: auto; border-radius: 10px; background: #000; }
+.credit { color: var(--slate); font-size: 0.85rem; margin: 0.4rem 0 0; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.3rem 0; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 30rem; font-size: 0.95rem; }
+th, td { text-align: left; padding: 0.5rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; color: var(--slate); }
+td.num { font-variant-numeric: tabular-nums; }
+.stack { color: var(--slate); font-size: 0.95rem; margin-top: 2rem; }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Real-time road perception</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Real-time road perception</h1>
+  <p class="lead">Road video in, and at 29 frames per second: every vehicle and pedestrian detected and tracked, plus the drivable road and the lane lines. Built to move to edge hardware later.</p>
+
+  <video src="demo.mp4" poster="poster.webp" width="960" height="540" autoplay muted loop playsinline controls preload="metadata"
+         aria-label="Dashcam video of city driving with tracked cars and pedestrians, a green drivable area and yellow lane lines"></video>
+  <p class="credit">Test video: city driving in Montreal by German Korb, Pexels.</p>
+
+  <h2>What it does</h2>
+  <ul>
+    <li>Detects cars, trucks, buses, bikes and pedestrians, and tracks each one with an ID and a trail.</li>
+    <li>Finds the drivable area and the lane lines in every frame.</li>
+    <li>Shows FPS and the time of each stage live, and saves a speed report after each run.</li>
+    <li>Modular Python: detection, road, drawing and metrics are separate, so a model can be swapped in one file.</li>
+  </ul>
+
+  <h2>Measured speed (1280×720 video)</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Hardware</th><th scope="col">Lane model input</th><th scope="col">Time per frame</th><th scope="col">FPS</th></tr></thead>
+      <tbody>
+        <tr><td>Laptop GPU (RTX 4000 Ada)</td><td>640</td><td class="num">34 ms</td><td class="num"><b>29</b></td></tr>
+        <tr><td>Laptop GPU (RTX 4000 Ada)</td><td>320</td><td class="num">26 ms</td><td class="num"><b>39</b></td></tr>
+        <tr><td>CPU only (Core i7-13850HX)</td><td>640</td><td class="num">127 ms</td><td class="num">8</td></tr>
+        <tr><td>CPU only (Core i7-13850HX)</td><td>320</td><td class="num">68 ms</td><td class="num">15</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Path to edge hardware</h2>
+  <ul>
+    <li>Jetson Orin: both models exported to TensorRT (FP16, then INT8), video decoded on the GPU.</li>
+    <li>Raspberry Pi 5: too slow for both models alone, so it needs a Hailo accelerator.</li>
+    <li>Lanes change slowly, so they can run every second frame to free time for detection.</li>
+  </ul>
+
+  <p class="stack">YOLO11n, ByteTrack, YOLOP, ONNX Runtime, OpenCV, PyTorch</p>
+</main>
+</body>
+</html>
