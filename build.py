@@ -10,6 +10,7 @@ DEMOS = {
     "routes": ("Route optimizer", "Cheapest delivery routes on real roads, with capacity, time windows and shift length.", "https://slimaneoptic-routes.streamlit.app/"),
     "scheduler": ("AI shift scheduler", "A weekly staff roster built by an optimizer, changed in plain words.", "https://slimaneoptic-scheduler.streamlit.app/"),
     "chatbot": ("Website chatbot and data extraction", "Answers from a website or PDFs with sources; extracts fields into tables.", "https://slimaneoptic-chatbot.streamlit.app/"),
+    "planner": ("Demand forecast and reorder planner", "Forecasts every product, tests 4 models, and says what to order this week within your budget.", "https://slimaneoptic-planner.streamlit.app/"),
     "rooms": ("Room layout optimizer", "The best few, genuinely different furniture layouts under design rules.", "https://slimaneoptic-rooms.streamlit.app/"),
     "schoolbus": ("School bus routing analysis", "Walk zones, stop consolidation and bus routes on a real street network.", "https://slimaneoptic-schoolbus.streamlit.app/"),
     "railway-crew": ("Onboard crew deployment", "End-to-end crews vs. relays at manpower hubs, under working-hour rules.", "https://slimaneoptic-railway.streamlit.app/"),
