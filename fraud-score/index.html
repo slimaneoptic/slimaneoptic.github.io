@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fraud risk score demo · Slimane Chanchoul</title>
+<meta name="description" content="A 0-100 fraud risk score for mobile-money transfers, tested on later weeks, with plain-language reasons for every score.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Fraud risk score demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Fraud risk score for mobile-money transfers (0–100)</h1>
+  <p class="lead">Every transfer gets a score from 0 to 100 and the three reasons behind it, in plain words. Trained on 5 weeks of transactions, calibrated on the 6th, and tested on the last 2 weeks, which it had never seen: 22,063 transfers, 256 of them fraud.</p>
+  <div class="kpi"><div>Fraud caught at score 60+<b>89.1%</b></div><div>Of those blocked, really fraud<b>97.4%</b></div>
+  <div>Simple rule "SIM swap in last 24 h"<b>80.5% / 79.2%</b></div><div>PR-AUC (1.0 = perfect)<b>0.936</b></div></div>
+  <p>Compared with the rule most teams start with, the model catches more fraud and raises far fewer false alarms: 234 blocked transfers, of which 97.4% were fraud, against 260 flags at 79.2% for the rule.</p>
+  <h2>What each score band means</h2>
+  <div class="scroll"><table class="t"><thead><tr><th>Band</th><th>Transfers</th><th>Fraud</th><th>Share of all fraud</th><th>Fraud rate in band</th></tr></thead><tbody><tr><td>Block (60-100)</td><td class='n'>234</td><td class='n'>228</td><td class='n'>89.1%</td><td class='n'>97.4%</td></tr><tr><td>Review (20-60)</td><td class='n'>5</td><td class='n'>3</td><td class='n'>1.2%</td><td class='n'>60.0%</td></tr><tr><td>Allow (0-20)</td><td class='n'>21,824</td><td class='n'>25</td><td class='n'>9.8%</td><td class='n'>0.1%</td></tr></tbody></table></div>
+  <h2>Three real examples from the test weeks</h2>
+  <div class="cards"><div class='card'><div class='sc'>100</div><b>Blocked, and it was fraud</b><p>Amount 146.03 · actually fraud</p><ul><li>SIM swapped 7 h ago</li><li>recipient account 5 days old</li><li>1 other transfer in the last hour</li></ul></div><div class='card'><div class='sc'>0</div><b>Real SIM swap, correctly allowed</b><p>Amount 26.68 · actually legitimate</p><ul><li>amount close to the usual (0.7×)</li><li>SIM swap was 23 h ago, past the first hours when takeovers happen</li><li>device changed 23 h ago, not just before the transfer</li></ul></div><div class='card'><div class='sc'>48</div><b>Sent to review</b><p>Amount 61.82 · actually legitimate</p><ul><li>recipient account 0 days old</li><li>amount 2.6× the usual</li><li>first transfer to this recipient</li></ul></div></div>
+  <h2>What moves the score most</h2><ol><li>First transfer to this recipient</li><li>How new the recipient's account is</li><li>Amount compared with the sender's usual</li><li>Time since the last SIM swap</li><li>Amount</li><li>How long the sender has been active</li></ol>
+  <h2>What it misses, honestly</h2>
+  <p>25 fraudulent transfers scored under 20. 18 of them are scams where the victims sent the money themselves, so there was no SIM swap or new device to see. The next signals to add for those: a recipient suddenly receiving money from many new senders (a typical mule pattern), a call in progress during the transfer, and confirmed fraud reports fed back into training.</p>
+  <h2>How it works, for non-technical readers</h2>
+  <ul>
+    <li><b>It only uses what is known at the moment of the transfer:</b> the sender's own history up to that second, never the future.</li>
+    <li><b>It learns patterns from past confirmed cases:</b> for example, a SIM swap followed within hours by a new device and a large transfer to a brand-new account.</li>
+    <li><b>The score is calibrated:</b> it tracks the real chance of fraud. In testing, 97.4% of transfers scored 60 or more were fraud, against 0.1% of those under 20.</li>
+    <li><b>Every score comes with its reasons,</b> so an analyst can see why, and customers can be given a clear explanation.</li>
+    <li><b>It is tested on later weeks it never saw,</b> the same way it would face next month's transactions.</li>
+  </ul>
+  <p class="small">Synthetic data generated for this demo: 60 days, 4,000 users, about 88,000 transfers, with account takeovers, scams and legitimate look-alikes (real SIM swaps, new phones, rent-sized payments). Real data will change the numbers. Python, pandas, XGBoost, isotonic calibration, SHAP.</p>
+</main>
+<style>.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1rem 0} .kpi div{background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.7rem;font-size:.88rem;color:#5B6B7A} .kpi b{display:block;font-size:1.35rem;color:#14202B}
+table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.92rem} .t td,.t th{padding:.45rem .6rem;border-bottom:1px solid #D5DBE1;text-align:left} .t th{color:#5B6B7A} td.n{text-align:right}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem} .card{background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.8rem} .card p{color:#5B6B7A;font-size:.88rem;margin:.2rem 0} .card ul{padding-left:1.1rem;font-size:.9rem}
+.sc{font-size:2rem;font-weight:800;float:right} @media(max-width:760px){.kpi,.cards{grid-template-columns:1fr 1fr}} @media(max-width:520px){.cards{grid-template-columns:1fr}}</style>
+</body></html>
