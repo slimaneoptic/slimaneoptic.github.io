@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catering proposal builder demo · Slimane Chanchoul</title>
+<meta name="description" content="Event brief to draft catering proposal: the AI reads the brief, prices come only from company files, every line traced to its cell.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Proposal builder demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Event brief → draft catering proposal</h1>
+  <p class="lead">The AI only reads the brief and fills a strict form. Venue, menus and every price come from the company's own Excel files through fixed rules, and each line shows the exact cell it came from. Nothing is guessed; missing facts become questions for the salesperson.</p>
+  <div class="actions"><a class="btn" href="wedding-proposal.pdf">Wedding proposal (PDF)</a><a class="btn alt" href="wedding-proposal.docx">Same, as Word</a><a class="btn alt" href="birthday-proposal.pdf">Birthday proposal (PDF)</a></div>
+  <h2>1. The brief</h2>
+  <p style="background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.8rem 1rem">“The client is planning a 150-person wedding at the Brazilian Room in September and would like a cocktail reception followed by a seated dinner.”</p>
+  <h2>2. What the AI extracted (tool calling, strict schema, no prices)</h2>
+  <div class="scroll"><table class="t"><tr><td>preferences</td><td>[]</td></tr><tr><td>month</td><td>9</td></tr><tr><td>venue</td><td>&quot;the Brazilian Room&quot;</td></tr><tr><td>client name</td><td>null</td></tr><tr><td>event type</td><td>&quot;wedding&quot;</td></tr><tr><td>exact date</td><td>null</td></tr><tr><td>service styles</td><td>[&quot;cocktail reception&quot;, &quot;seated dinner&quot;]</td></tr><tr><td>guest count</td><td>150</td></tr></table></div>
+  <p class="small" style="margin-top:.4rem">Client name and exact date were not in the brief, so they stay empty instead of being invented.</p>
+  <h2>3. Pricing, traced to the source cells</h2>
+  <div class="scroll"><table class="t"><thead><tr><th>Item</th><th>Basis</th><th>Amount</th><th>Source</th></tr></thead><tbody><tr><td>Autumn Harvest Cocktail Reception</td><td>150 guests × $38.00</td><td class='n'>$5,700.00</td><td><code>menus.xlsx!D2</code></td></tr><tr><td>Autumn Harvest Seated Dinner</td><td>150 guests × $96.00</td><td class='n'>$14,400.00</td><td><code>menus.xlsx!D3</code></td></tr><tr><td>Servers</td><td>13 × 6 h × $48.00 (1 per 12 guests)</td><td class='n'>$3,744.00</td><td><code>pricing.xlsx!B4, pricing.xlsx!B7</code></td></tr><tr><td>Bartenders</td><td>2 × 6 h × $55.00 (1 per 75 guests)</td><td class='n'>$660.00</td><td><code>pricing.xlsx!B6, pricing.xlsx!B7</code></td></tr><tr><td>Rentals (tables, linens, china, glassware)</td><td>150 × $18.50</td><td class='n'>$2,775.00</td><td><code>pricing.xlsx!B8</code></td></tr><tr><td>Service charge</td><td>20% of food and beverage $20,100.00</td><td class='n'>$4,020.00</td><td><code>pricing.xlsx!B9</code></td></tr><tr><td>Sales tax</td><td>10.25% of $31,299.00</td><td class='n'>$3,208.15</td><td><code>pricing.xlsx!B10</code></td></tr><tr><td><b>Estimated total</b></td><td></td><td class='n'><b>$34,507.15</b></td><td></td></tr></tbody></table></div>
+  <h2>4. Flags for the salesperson before approval</h2><ul><li>Peak season: the Saturday minimum of $18,000 is applied. Confirm the day of week; the off-peak minimum is $12,000 (venues.xlsx!E2).</li><li>Client name missing: the proposal says [Client name].</li></ul>
+  <div class="split" style="margin-top:1.5rem">
+    <a href="wedding-proposal.pdf"><img src="wedding-proposal.webp" alt="First page of the generated wedding proposal: menu, pricing table and venue notes."></a>
+    <div><h2 style="margin-top:0">Other briefs, same pipeline</h2>
+    <table class="t"><tr><td>Sarah Chen&#x27;s 40th birthday at Harbor Loft in December, about 130 guests, just a cocktail party, and she wants plenty of vegetarian options.</td><td>Draft ready, total $17,191.28. Flags: no flags</td></tr><tr><td>Wedding at Oak Grove Estate on 2026-10-17, 280 guests, seated dinner.</td><td>Draft ready, total $52,333.47. Flags: 280 guests is over the seated max of 250 at Oak Grove Estate (venues.xlsx!B4).; Client name missing: the proposal says [Client name].</td></tr><tr><td>Corporate dinner for Acme Corp at the Palace Hotel in November, 90 people, family style.</td><td><b>Stopped, asks the salesperson:</b> Unknown venue &#x27;Palace Hotel&#x27;: known venues are [&#x27;The Brazilian Room&#x27;, &#x27;Harbor Loft&#x27;, &#x27;Oak Grove Estate&#x27;]</td></tr></table></div>
+  </div>
+  <p class="small">Sample company data: 3 venues, 5 seasonal menus and a pricing sheet (invented numbers; the Brazilian Room name is taken from the brief). Python, OpenRouter (Gemini Flash) with tool calling, openpyxl, python-docx, LibreOffice for PDF.</p>
+</main>
+<style>table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.9rem} .t td,.t th{padding:.45rem .6rem;border-bottom:1px solid #D5DBE1;text-align:left;vertical-align:top} .t th{color:#5B6B7A} td.n{text-align:right;white-space:nowrap} code{font-size:.82rem;color:#5B6B7A}</style>
+</body></html>
