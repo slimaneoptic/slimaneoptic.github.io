@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DC street map sample sheet · Slimane Chanchoul</title>
+<meta name="description" content="A blank, true-scale street map of Washington, DC in 8 equal sheets for hand-labeling and watercolor, with an answer key.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">DC street map, sample sheet</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Washington, DC street map for hand-labeling and watercolor</h1>
+  <p class="lead">Sample sheet 4 of 8, made from real data at true scale. Open the PDF and zoom in: every block is there.</p>
+  <div class="actions">
+    <a class="btn" href="sheet4-blank.pdf">Blank sheet (PDF)</a>
+    <a class="btn alt" href="sheet4-answer-key.pdf">Answer key (PDF)</a>
+    <a class="btn alt" href="sheet4-blank.svg" download>Blank (SVG)</a>
+    <a class="btn alt" href="sheet4-answer-key.svg" download>Answer key (SVG)</a>
+  </div>
+  <a href="sheet4-blank.pdf"><img src="sheet4-blank.webp" width="1800" height="1200" alt="Sheet 4 of 8: blank street map of central Washington, DC with heavier avenues, empty parks, registration marks and a small overview map."></a>
+
+  <h2>At true print size</h2>
+  <div class="pair">
+    <figure><img src="closeup-blank.webp" width="1350" height="900" loading="lazy" alt="Close-up near Dupont Circle at print size, blank."><figcaption>Blank, for the students</figcaption></figure>
+    <figure><img src="closeup-key.webp" width="1350" height="900" loading="lazy" alt="The same close-up with street names."><figcaption>Answer key: same map, street names on</figcaption></figure>
+  </div>
+
+  <h2>How the city is split</h2>
+  <div class="split">
+    <img src="overview.webp" width="1650" height="1425" loading="lazy" alt="The whole District split into 8 numbered sheets on one grid.">
+    <ul>
+      <li>8 sheets of 36 × 24 in, all at one scale (1:10,433), so they hang together as one true map.</li>
+      <li>The main cut runs along the north edge of the Mall, not through downtown blocks.</li>
+      <li>DC is a diamond, so the corner sheets are partly outside the city. They carry the title, compass, scale bar and credits.</li>
+      <li>Every sheet: 1 in blank margin, registration marks, arrows to the neighboring sheets, "4 of 8" and a small overview map.</li>
+      <li>Heavier lines for the state avenues and main arteries, thin lines for neighborhood streets. Rivers, the Mall, parks and cemeteries are outlined and empty inside.</li>
+    </ul>
+  </div>
+
+  <p class="small">Streets: DC Open Data (DDOT street centerlines). Parks, water and landmark outlines: © OpenStreetMap contributors.</p>
+</main>
+</body>
+</html>

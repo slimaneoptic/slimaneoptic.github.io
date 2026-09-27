@@ -28,9 +28,10 @@ for slug, (title, blurb, app) in DEMOS.items():
     page = demo.replace("__TITLE__", title).replace("__BLURB__", blurb).replace("__APP__", app).replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-# Pages with their own content instead of an embedded app (the vision demo needs a GPU, so it is a video)
-for slug in ("vision",):
+# Pages with their own content instead of an embedded app: vision (needs a GPU, so a video) and
+# dc-map (print files for one job: noindex, not listed on the homepage)
+for slug in ("vision", "dc-map"):
     page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-print("built index.html +", ", ".join([*DEMOS, "vision"]))
+print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map"]))
