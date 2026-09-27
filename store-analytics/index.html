@@ -1,0 +1,302 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Store analytics sample report</title>
+<style>
+body{margin:0;background:#F6F8FA;color:#14202B;font-family:system-ui,sans-serif;line-height:1.5}
+main{max-width:980px;margin:0 auto;padding:1.5rem 1rem 3rem} h1{font-size:1.8rem;margin:.2rem 0}
+h2{font-size:1.15rem;margin:2rem 0 .5rem} .note{color:#5B6B7A;font-size:.92rem}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1rem 0}
+.kpi div{background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.7rem} .kpi b{display:block;font-size:1.3rem}
+.wrap{overflow-x:auto} table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.88rem}
+.t th,.t td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid #D5DBE1;white-space:nowrap} .t th{color:#5B6B7A}
+ol li{margin:.45rem 0} @media(max-width:700px){.kpi{grid-template-columns:1fr 1fr}}
+</style></head><body><main><p class="note" style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+<a href="/" style="color:#14202B;font-weight:700;text-decoration:none">Slimane Chanchoul</a>
+<a href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" style="color:#2A78D6">Hire me on Upwork</a></p>
+<p class="note">Sample data: 12 weeks of a convenience store's POS exports (generated, with the problems real exports have). Pipeline: Python + PostgreSQL; margins use the cost in force on each sale date.</p>
+<h1>Store analytics: sample report</h1>
+<div class="kpi">
+<div>Revenue<b>$57,164.71</b></div><div>Gross profit<b>$14,322.28</b></div>
+<div>Margin (items with a cost)<b>25.7%</b></div><div>Tobacco buydowns<b>$1,163.50</b></div></div>
+
+<h2>This week's actions, largest first</h2><ol><li><b>$24.37/week</b> · Raise Monster Energy 16oz from $3.29 to about $4.08: cost rose 24.2% on 2026-08-03 and retail never moved (margin 45.9% → 32.8%).</li><li><b>$18.30/week</b> · Raise Marlboro Red box from $10.49 to about $10.96: cost rose 4.5% on 2026-07-20 and retail never moved (margin 14.7% → 10.9%). Check the buydown program's price rules first.</li><li><b>$18.14/week</b> · End or rework the Bud Light 6pk promo: it needs +27% units to break even, it got -8%, so it loses about $18.14 of gross profit a week.</li><li><b>Price check</b> · Check Bud Light 12oz 30pk pricing: 19.4% margin vs 47.2% on singles (54.8% cheaper per unit).</li><li><b>Data fix</b> · Enter a cost for the deli sandwich: its sales have no margin at all today.</li><li><b>Data fix</b> · Decide which Snickers item is right: one UPC is set up twice at two prices.</li></ol>
+
+<h2>Why cost history matters</h2>
+<p>Margins here use the cost in force on the day of each sale. Using today's cost for the whole period, as a single POS
+export would, misstates 12-week gross profit by <b>$176.18</b>, and hides exactly the cost increases
+below.</p>
+
+<h2>Cost increases not passed to retail</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Description</th>
+      <th>Since</th>
+      <th>Old cost</th>
+      <th>New cost</th>
+      <th>Cost up %</th>
+      <th>Retail</th>
+      <th>Margin before</th>
+      <th>Margin now</th>
+      <th>Retail to keep margin</th>
+      <th>Profit lost per week</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Monster Energy 16oz</td>
+      <td>2026-08-03</td>
+      <td>1.78</td>
+      <td>2.21</td>
+      <td>24.20</td>
+      <td>3.29</td>
+      <td>45.90</td>
+      <td>32.80</td>
+      <td>4.08</td>
+      <td>24.37</td>
+    </tr>
+    <tr>
+      <td>Marlboro Red box</td>
+      <td>2026-07-20</td>
+      <td>8.95</td>
+      <td>9.35</td>
+      <td>4.50</td>
+      <td>10.49</td>
+      <td>14.70</td>
+      <td>10.90</td>
+      <td>10.96</td>
+      <td>18.30</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<h2>Single vs pack economics</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Pack</th>
+      <th>Units</th>
+      <th>Price per unit</th>
+      <th>Single price</th>
+      <th>Discount vs single %</th>
+      <th>Pack margin %</th>
+      <th>Single margin %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Bud Light 12oz 30pk</td>
+      <td>30</td>
+      <td>0.90</td>
+      <td>1.99</td>
+      <td>54.80</td>
+      <td>19.40</td>
+      <td>47.20</td>
+    </tr>
+    <tr>
+      <td>Bud Light 12oz 6pk</td>
+      <td>6</td>
+      <td>1.83</td>
+      <td>1.99</td>
+      <td>8.00</td>
+      <td>42.70</td>
+      <td>47.20</td>
+    </tr>
+    <tr>
+      <td>Coca-Cola 12oz 12pk</td>
+      <td>12</td>
+      <td>0.83</td>
+      <td>2.49</td>
+      <td>66.60</td>
+      <td>45.90</td>
+      <td>49.80</td>
+    </tr>
+    <tr>
+      <td>Marlboro Red carton</td>
+      <td>10</td>
+      <td>10.00</td>
+      <td>10.49</td>
+      <td>4.70</td>
+      <td>10.50</td>
+      <td>10.90</td>
+    </tr>
+    <tr>
+      <td>Pepsi 12oz 6pk</td>
+      <td>6</td>
+      <td>1.50</td>
+      <td>2.49</td>
+      <td>39.80</td>
+      <td>54.40</td>
+      <td>51.40</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<h2>Promotion break-even: Bud Light 6pk</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Period</th>
+      <th>Weeks</th>
+      <th>Units per week</th>
+      <th>Gross profit per week</th>
+      <th>Profit per pack</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Regular $10.99</td>
+      <td>6</td>
+      <td>13.80</td>
+      <td>64.88</td>
+      <td>4.69</td>
+    </tr>
+    <tr>
+      <td>Promo $9.99</td>
+      <td>6</td>
+      <td>12.70</td>
+      <td>46.74</td>
+      <td>3.69</td>
+    </tr>
+  </tbody>
+</table></div>
+<p class="note">At $9.99 the store keeps $3.69 per pack instead of $4.69, so it
+must sell 17.6 packs a week (+27%) just to earn the same gross profit.</p>
+
+<h2>Tobacco: margin with manufacturer buydowns</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Description</th>
+      <th>Revenue</th>
+      <th>Margin %</th>
+      <th>Buydown</th>
+      <th>Margin with buydown %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Marlboro Red carton</td>
+      <td>18,598.00</td>
+      <td>10.50</td>
+      <td>895.00</td>
+      <td>15.30</td>
+    </tr>
+    <tr>
+      <td>Newport 100 box</td>
+      <td>6,130.00</td>
+      <td>15.00</td>
+      <td>0.00</td>
+      <td>15.00</td>
+    </tr>
+    <tr>
+      <td>Marlboro Red box</td>
+      <td>5,759.00</td>
+      <td>11.80</td>
+      <td>268.50</td>
+      <td>16.50</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<h2>Departments</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Department</th>
+      <th>Revenue</th>
+      <th>Gross profit</th>
+      <th>Margin %</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Tobacco</td>
+      <td>30,488.00</td>
+      <td>3,548.00</td>
+      <td>11.60</td>
+    </tr>
+    <tr>
+      <td>Beverages</td>
+      <td>12,986.00</td>
+      <td>6,026.00</td>
+      <td>46.40</td>
+    </tr>
+    <tr>
+      <td>Beer</td>
+      <td>6,174.00</td>
+      <td>1,760.00</td>
+      <td>28.50</td>
+    </tr>
+    <tr>
+      <td>Snacks</td>
+      <td>3,050.00</td>
+      <td>1,382.00</td>
+      <td>45.30</td>
+    </tr>
+    <tr>
+      <td>Candy</td>
+      <td>2,878.00</td>
+      <td>1,506.00</td>
+      <td>52.30</td>
+    </tr>
+    <tr>
+      <td>Food service</td>
+      <td>1,402.00</td>
+      <td>–</td>
+      <td>–</td>
+    </tr>
+    <tr>
+      <td>HBA</td>
+      <td>188.00</td>
+      <td>100.00</td>
+      <td>53.20</td>
+    </tr>
+  </tbody>
+</table></div>
+<p class="note">Food service margin is blank: the deli sandwich has no cost on file ($1,401.66 of sales).</p>
+
+<h2>Data-quality issues found on load</h2><div class="wrap"><table class="dataframe t">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Check</th>
+      <th>Upc</th>
+      <th>Detail</th>
+      <th>Severity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>upc_format</td>
+      <td>012000001291</td>
+      <td>Pepsi 20oz: lost leading zeros (12000001291)</td>
+      <td>fixed on load</td>
+    </tr>
+    <tr>
+      <td>upc_format</td>
+      <td>012300000018</td>
+      <td>Newport 100 box: invalid check digit</td>
+      <td>check item file</td>
+    </tr>
+    <tr>
+      <td>upc_format</td>
+      <td>028400090865</td>
+      <td>Doritos Nacho 9.25oz: lost leading zeros (28400090865)</td>
+      <td>fixed on load</td>
+    </tr>
+    <tr>
+      <td>duplicate_upc</td>
+      <td>040000424314</td>
+      <td>Snickers bar at $1.89 / SNICKERS KING at $2.29</td>
+      <td>needs owner decision</td>
+    </tr>
+    <tr>
+      <td>missing_cost</td>
+      <td>041303001455</td>
+      <td>Deli sandwich: no cost on file, margin unknown</td>
+      <td>high</td>
+    </tr>
+    <tr>
+      <td>voids_refunds</td>
+      <td></td>
+      <td>40 negative lines, $264.90</td>
+      <td>kept, netted in sales</td>
+    </tr>
+  </tbody>
+</table></div>
+</main></body></html>
