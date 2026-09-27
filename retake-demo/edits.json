@@ -1,0 +1,135 @@
+{
+  "source": "data/raw.mp4",
+  "source_seconds": 43.26,
+  "output_seconds": 16.49,
+  "takes": [
+    {
+      "start": 0.0,
+      "end": 2.46,
+      "text": "I started my business in 2020.",
+      "decision": "remove",
+      "reason": "repeated later (similarity 93%)",
+      "replaced_by": 1,
+      "id": 0
+    },
+    {
+      "start": 4.68,
+      "end": 6.88,
+      "text": "I started my business in 2019.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 1
+    },
+    {
+      "start": 8.76,
+      "end": 10.84,
+      "text": "The most important thing I learned is, sorry.",
+      "decision": "remove",
+      "reason": "abandoned take (ends with an abort word)",
+      "replaced_by": null,
+      "id": 2
+    },
+    {
+      "start": 13.58,
+      "end": 17.82,
+      "text": "The most important thing I learned is to test every idea on real customers.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 3
+    },
+    {
+      "start": 19.76,
+      "end": 21.08,
+      "text": "Most people give up too early.",
+      "decision": "remove",
+      "reason": "repeated later (similarity 100%)",
+      "replaced_by": 5,
+      "id": 4
+    },
+    {
+      "start": 23.240000000000002,
+      "end": 24.84,
+      "text": "Most people give up too early.",
+      "decision": "remove",
+      "reason": "repeated later (similarity 100%)",
+      "replaced_by": 6,
+      "id": 5
+    },
+    {
+      "start": 26.92,
+      "end": 28.48,
+      "text": "Most people give up too early.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 6
+    },
+    {
+      "start": 33.76,
+      "end": 35.06,
+      "text": "So here's my advice.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 7
+    },
+    {
+      "start": 35.78,
+      "end": 38.18,
+      "text": "Start small, learn fast, and keep going.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 8
+    },
+    {
+      "start": 39.72,
+      "end": 41.32,
+      "text": "Follow me for more tips like this.",
+      "decision": "keep",
+      "reason": "",
+      "replaced_by": null,
+      "id": 9
+    }
+  ],
+  "kept_pieces": [
+    {
+      "source_start": 4.6,
+      "source_end": 6.98,
+      "text": "I started my business in 2019.",
+      "output_start": 0.0
+    },
+    {
+      "source_start": 13.5,
+      "source_end": 17.97,
+      "text": "The most important thing I learned is to test every idea on real customers.",
+      "output_start": 2.73
+    },
+    {
+      "source_start": 26.84,
+      "source_end": 28.56,
+      "text": "Most people give up too early.",
+      "output_start": 7.55
+    },
+    {
+      "source_start": 33.68,
+      "source_end": 35.17,
+      "text": "So here's my advice.",
+      "output_start": 9.62
+    },
+    {
+      "source_start": 35.69,
+      "source_end": 38.26,
+      "text": "Start small, learn fast, and keep going.",
+      "output_start": 11.46
+    },
+    {
+      "source_start": 39.64,
+      "source_end": 41.4,
+      "text": "Follow me for more tips like this.",
+      "output_start": 14.38
+    }
+  ]
+}

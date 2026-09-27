@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retake and silence cutter demo · Slimane Chanchoul</title>
+<meta name="description" content="Automatic retake detection and silence removal for raw creator recordings, with every cut traced to source timestamps.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Retake + silence cutter demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Retake detection + silence removal</h1>
+  <p class="lead">A raw recording with a corrected fact, an abandoned restart, one line said three times and 5 seconds of dead air, cut automatically into a clean rough cut: 43.3 s → 16.5 s. Every kept piece maps back to its source timestamps.</p>
+  <div class="pair">
+    <figure><video src="raw.mp4" controls preload="metadata" style="width:100%;border-radius:8px"></video><figcaption>Raw recording (43 s)</figcaption></figure>
+    <figure><video src="rough-cut.mp4" controls preload="metadata" style="width:100%;border-radius:8px"></video><figcaption>Automatic rough cut (16 s)</figcaption></figure>
+  </div>
+  <h2>What was cut, and why</h2>
+  <img src="timeline.webp" width="1820" height="468" alt="Waveform of the raw recording with kept takes in green, removed takes in red and cut silence in grey.">
+  <div style="overflow-x:auto;margin-top:1rem"><table style="border-collapse:collapse;width:100%;background:#fff;font-size:.92rem">
+  <thead><tr><th style="text-align:left;padding:.4rem">Source time (s)</th><th style="text-align:left">Take</th><th style="text-align:left">Decision</th><th style="text-align:left">Reason</th></tr></thead>
+  <tbody><tr><td>0.00–2.46</td><td>I started my business in 2020.</td><td class='remove'>removed</td><td>repeated later (similarity 93%)</td></tr><tr><td>4.68–6.88</td><td>I started my business in 2019.</td><td class='keep'>kept</td><td></td></tr><tr><td>8.76–10.84</td><td>The most important thing I learned is, sorry.</td><td class='remove'>removed</td><td>abandoned take (ends with an abort word)</td></tr><tr><td>13.58–17.82</td><td>The most important thing I learned is to test every idea on real customers.</td><td class='keep'>kept</td><td></td></tr><tr><td>19.76–21.08</td><td>Most people give up too early.</td><td class='remove'>removed</td><td>repeated later (similarity 100%)</td></tr><tr><td>23.24–24.84</td><td>Most people give up too early.</td><td class='remove'>removed</td><td>repeated later (similarity 100%)</td></tr><tr><td>26.92–28.48</td><td>Most people give up too early.</td><td class='keep'>kept</td><td></td></tr><tr><td>33.76–35.06</td><td>So here&#x27;s my advice.</td><td class='keep'>kept</td><td></td></tr><tr><td>35.78–38.18</td><td>Start small, learn fast, and keep going.</td><td class='keep'>kept</td><td></td></tr><tr><td>39.72–41.32</td><td>Follow me for more tips like this.</td><td class='keep'>kept</td><td></td></tr></tbody></table></div>
+  <h2>How it decides</h2>
+  <ul>
+    <li>Whisper word-level timestamps; a take ends at a pause over 0.7 s.</li>
+    <li>A take is dropped when a later take within the next three says the same thing (fuzzy match, so "2020" → "2019" counts as a correction), restarts with the same opening words, or ends with an abort word ("sorry", "wait"). The last version wins.</li>
+    <li>Pauses inside a kept take stay, to keep a human rhythm. Gaps between kept takes become a fixed 0.35 s pause, cut edges snap to the audio energy so no word is clipped, and short fades avoid clicks.</li>
+    <li>Check: the rough cut was transcribed again. The text matches the intended script exactly, in order.</li>
+    <li><a href="edits.json">edits.json</a>: every take, its decision and reason, and each kept piece's source and output timestamps.</li>
+  </ul>
+  <p class="small">Test clip generated with a neural text-to-speech voice, uneven pauses and room noise.</p>
+</main>
+<style>td{padding:.4rem;border-bottom:1px solid #D5DBE1;vertical-align:top} td.remove{color:#9c2b1f;font-weight:600} td.keep{color:#1d7a3a;font-weight:600}</style>
+</body></html>
