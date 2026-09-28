@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent workflow runner demo · Slimane Chanchoul</title>
+<meta name="description" content="One complete AI-assisted workflow: submit a task, background worker with retries and checkpoints, tool-calling agent, human review with requested changes, cancellation and cost tracking.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Agent workflow runner demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>One complete workflow: from submitting a task to reviewing its output</h1>
+  <p class="lead">A working runner for AI-assisted workflows: a dashboard to submit and review, a background worker with checkpointed steps, retries, cancellation and crash recovery, a tool-calling agent whose final answer must pass code checks, and a cost per run. Every screenshot below comes from a real run, including the failures, which were forced on purpose.</p>
+
+  <h2>What was tested, for real</h2>
+  <div class="scroll"><table class="t"><thead><tr><th>Situation</th><th>What happened</th></tr></thead><tbody>
+  <tr><td>Network error while the agent reads a page</td><td>Step failed, retried after 2 s with backoff, succeeded; both attempts are in the log.</td></tr>
+  <tr><td>Worker process killed mid-job</td><td>The job's heartbeat went stale; a new worker picked it up and <b>resumed from the last checkpoint</b>: the pages already read were reused, not fetched again.</td></tr>
+  <tr><td>Agent's final answer checked by code</td><td>Every run passed validation: each fact cited a page the agent had actually read. A fact citing an unread page, or a summary over the limit, is rejected and sent back to the agent to fix (built in; not triggered in these runs).</td></tr>
+  <tr><td>Reviewer requests changes</td><td>Version 2 ran with the reviewer's comment and the previous output as context; the summary shrank to under 50 words and gained the requested facts, then was approved.</td></tr>
+  <tr><td>User cancels a running job</td><td>The run stopped at the next safe point (after the in-flight model call) and <b>nothing was published</b>.</td></tr>
+  <tr><td>Cost visibility</td><td>Real API cost recorded per call and per run (about half a US cent per brief with Gemini Flash), with automatic fallback to a second model.</td></tr>
+  </tbody></table></div>
+
+  <h2>Dashboard</h2>
+  <img src="0_dashboard.webp" width="1200" height="820" alt="Dashboard with a submit form and a jobs table: v1 changes requested, v2 approved, one run cancelled, with cost per run.">
+  <h2>Retry, crash and resume, in one job's event log</h2>
+  <img src="1_retry_crash_resume.webp" width="1200" height="1900" alt="Job 1: brief output, review form, steps with attempts, and the event log showing a timeout, retry, worker crash, resume from checkpoint, model call with cost, and validation.">
+  <div class="pair" style="margin-top:1rem">
+    <figure><img src="2_changes_applied_approved.webp" width="1200" height="1500" loading="lazy" alt="Version 2 with the reviewer's feedback applied, approved."><figcaption>Version 2: reviewer feedback applied, then approved</figcaption></figure>
+    <figure><img src="3_cancelled.webp" width="1200" height="1000" loading="lazy" alt="A run cancelled by the user; nothing was published."><figcaption>Cancelled by the user: stopped at a safe point</figcaption></figure>
+  </div>
+
+  <h2>How it is built</h2>
+  <ul>
+    <li><b>Jobs, steps and events</b> in one database (SQLite in the demo; the same schema runs on PostgreSQL). Each step stores its output, so it is a checkpoint.</li>
+    <li><b>Workers</b> claim jobs atomically and send a heartbeat; a job whose heartbeat goes stale is picked up by another worker and resumed. Steps retry with exponential backoff; cancellation is checked between steps and between agent turns.</li>
+    <li><b>Agent</b>: tool calling over one provider layer with model fallback. Tools live in a registry (here: an allow-listed page reader) and every call is logged with its duration.</li>
+    <li><b>Human in the loop</b>: outputs wait for review; "request changes" creates the next version linked to the previous one, so the history is kept.</li>
+    <li>Python, FastAPI, SQLite, OpenRouter (Gemini Flash with fallback). Next.js, a durable queue and object storage are the natural next steps for a production dashboard.</li>
+  </ul>
+</main>
+<style>table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.92rem} .t td,.t th{padding:.5rem .6rem;border-bottom:1px solid #D5DBE1;text-align:left;vertical-align:top} .t th{color:#5B6B7A}</style>
+</body></html>
