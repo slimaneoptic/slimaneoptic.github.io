@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Predictive maintenance demo · Slimane Chanchoul</title>
+<meta name="description" content="Predict equipment failures before they happen: remaining-life model, maintenance alerts and a health index on NASA turbofan run-to-failure data.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Predictive maintenance demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Predict failures before they happen</h1>
+  <p class="lead">A remaining-life model, a maintenance alert and an early health index, built on NASA's turbofan run-to-failure dataset (C-MAPSS FD001: 100 engines, 21 sensors). Measured the way a maintenance manager would: how early the warning comes, how often it comes too early, and whether any failure is missed.</p>
+  <div class="kpi">
+    <div>Held-out engines warned in time<b>20 of 20</b></div>
+    <div>Median warning before failure<b>24 cycles</b></div>
+    <div>Too early / missed<b>0 / 0</b></div>
+    <div>Error on NASA's official test set<b>18.5 cycles</b></div>
+  </div>
+
+  <h2>Predictive versus a fixed schedule</h2>
+  <p>To be sure no engine fails on a fixed schedule, you must replace every engine at cycle 118 (the shortest life seen, minus a margin). On the held-out engines that throws away a median of <b>89 cycles</b> of useful life per engine. The predictive alert keeps a median margin of <b>24 cycles</b>, also with no failure: roughly <b>65 more cycles of use per engine</b> before maintenance.</p>
+
+  <img src="engines.png" width="1430" height="715" alt="Three held-out engines: predicted versus true remaining life with the alert marked, and the health index rising as each engine degrades.">
+  <p class="small" style="margin-top:.4rem">Top: predicted remaining life (blue) against the true value (grey, capped at 125 cycles: early life counts as healthy). The red line is the alert. Bottom: the health index, the distance of each engine's sensors from its own healthy first 30 cycles; no failure labels are needed for it.</p>
+
+  <h2>Choose the alert setting from your cost of downtime</h2>
+  <div class="scroll"><table class="t"><thead><tr><th>Alert when predicted life is</th><th>Warned in time (10-60 cycles)</th><th>Too early (&gt;60)</th><th>Missed or &lt;10 cycles</th><th>Median warning</th></tr></thead><tbody><tr><td>below 20 cycles</td><td class='n'>19</td><td class='n'>0</td><td class='n'>1</td><td class='n'>15</td></tr><tr><td>below 30 cycles</td><td class='n'>20</td><td class='n'>0</td><td class='n'>0</td><td class='n'>24</td></tr><tr><td>below 40 cycles</td><td class='n'>18</td><td class='n'>2</td><td class='n'>0</td><td class='n'>37</td></tr><tr><td>below 50 cycles</td><td class='n'>15</td><td class='n'>5</td><td class='n'>0</td><td class='n'>43</td></tr></tbody></table></div>
+  <p class="small" style="margin-top:.4rem">An earlier setting gives more time to plan but replaces parts sooner; a later one uses more life but risks a late warning. The right row depends on what an unplanned stop costs you. An alert fires only after 3 cycles in a row below the setting, to avoid one noisy reading triggering work.</p>
+
+  <h2>Early drift signal</h2>
+  <p>The health index flagged drift in 100 of 100 engines, a median of 92 cycles before failure, typically around the middle of the engine's life. It is a planning signal ("watch this one"), while the remaining-life alert is the "schedule maintenance now" signal.</p>
+
+  <h2>How this transfers to your equipment</h2>
+  <ul>
+    <li><b>Start from the data you have:</b> sensor history, and maintenance or failure records (work orders) to label what "failure" means for each machine.</li>
+    <li><b>No failure history yet?</b> The health index works without labels, from each machine's own normal behaviour, and gets sharper as failures are recorded.</li>
+    <li><b>Real data is messier than this benchmark:</b> sensor gaps, changing operating modes, repairs that reset a machine. Those are handled explicitly and checked before any model.</li>
+    <li><b>Tested the honest way:</b> on machines the model never saw, replayed cycle by cycle, like live operation.</li>
+  </ul>
+  <p class="small">NASA C-MAPSS FD001 (simulated turbofan degradation, one operating condition). Trained on 80 engines, alerts measured on 20 held-out engines, error measured on the 100 official test engines. Python, pandas, XGBoost.</p>
+</main>
+<style>.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1rem 0} .kpi div{background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.7rem;font-size:.88rem;color:#5B6B7A} .kpi b{display:block;font-size:1.35rem;color:#14202B}
+table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.92rem} .t td,.t th{padding:.45rem .6rem;border-bottom:1px solid #D5DBE1;text-align:left} .t th{color:#5B6B7A} td.n{text-align:right} @media(max-width:760px){.kpi{grid-template-columns:1fr 1fr}}</style>
+</body></html>
