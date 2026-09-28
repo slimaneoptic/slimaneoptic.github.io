@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US500 signal bot demo · Slimane Chanchoul</title>
+<meta name="description" content="A US500 signal engine: one rule function for backtest and live Telegram alerts, tested on 3 years of hourly data.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">US500 signal bot demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>US500 signals to Telegram: engine + backtest</h1>
+  <p class="lead">One signal function runs both the backtest and the live bot, so what you test is exactly what sends alerts. The rules here are an <b>example</b> (EMA 20/50 cross + RSI filter, stop 1.5 ATR, target 3 ATR) to show the machinery; your own rules replace them.</p>
+  <img src="chart.png" alt="US500 hourly chart with buy and sell markers, and the cumulative result of all trades.">
+  <h2>Backtest on 5,082 hourly bars (2023-10-27 to 2026-09-25)</h2>
+  <div class="scroll"><table class="t"><thead><tr><th></th><th>Trades</th><th>Winners</th><th>Average per trade</th><th>Total</th><th>Worst drawdown</th></tr></thead><tbody>
+  <tr><td>Whole period</td><td>73</td><td>41.1%</td><td>+0.23 R</td><td>+17.0 R</td><td>8.0 R</td></tr>
+  <tr><td>Last 6 months</td><td>10</td><td>70.0%</td><td>+1.10 R</td><td>+11.0 R</td><td>1.0 R</td></tr>
+  </tbody></table></div>
+  <p class="small" style="margin-top:.4rem">R = the amount risked on one trade (entry to stop). Winners are fewer than losers but earn 2R each, which is why the average is positive. 10 trades in 6 months is too few to judge a strategy; this is a demonstration of the engine, not trading advice.</p>
+  <h2>Honest backtest rules</h2>
+  <ul>
+    <li>Signals use only closed bars; the entry fills at the next bar's open.</li>
+    <li>If the stop and the target are both touched inside the same hour, the stop is counted first.</li>
+    <li>Every trade is saved with its signal time, entry, stop, target, exit and result, for review.</li>
+  </ul>
+  <h2>What the Telegram alerts look like</h2>
+  <div class="tgs"><div class='tg'>🔴 SELL US500 (1h)<br>Entry ≈ 7,680.86<br>Stop: 7,710.73<br>Target: 7,621.11<br>Signal bar closed: 2026-08-31 13:30 ET<br>Rule: EMA20/50 cross + RSI filter</div><div class='tg'>🟢 BUY US500 (1h)<br>Entry ≈ 7,742.62<br>Stop: 7,710.93<br>Target: 7,806.00<br>Signal bar closed: 2026-09-03 12:30 ET<br>Rule: EMA20/50 cross + RSI filter</div><div class='tg'>🔴 SELL US500 (1h)<br>Entry ≈ 7,654.42<br>Stop: 7,682.64<br>Target: 7,597.98<br>Signal bar closed: 2026-09-09 09:30 ET<br>Rule: EMA20/50 cross + RSI filter</div></div>
+  <h2>How the live bot is built</h2>
+  <ul>
+    <li><b>Feed:</b> real-time US500 bars from your broker or data provider, with reconnects and a check for missing bars.</li>
+    <li><b>Engine:</b> the same signal function as the backtest, run when each bar closes.</li>
+    <li><b>Telegram:</b> Bot API messages; each signal has an id saved to disk, so a restart never sends duplicates or skips one.</li>
+    <li><b>Operations:</b> runs 24/5 on a small cloud server, logs every decision, and alerts you if the feed or the bot stops.</li>
+  </ul>
+  <p class="small">Data: Yahoo Finance hourly S&amp;P 500 index (^GSPC), used for this demo only; a live bot needs a real-time source. Python, pandas.</p>
+</main>
+<style>table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.92rem} .t td,.t th{padding:.45rem .6rem;border-bottom:1px solid #D5DBE1;text-align:left} .t th{color:#5B6B7A}
+.tgs{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem} .tg{background:#e7f1fb;border-radius:12px 12px 12px 2px;padding:.7rem .9rem;font-size:.9rem;font-family:ui-monospace,monospace} @media(max-width:760px){.tgs{grid-template-columns:1fr}}</style>
+</body></html>
