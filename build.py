@@ -25,7 +25,10 @@ data = json.loads((root / "src/hero-routes.json").read_text())
 icon = re.search(r'<link rel="icon" href="([^"]+)"', home).group(1)
 demo = (root / "src/demo.html").read_text()
 for slug, (title, blurb, app) in DEMOS.items():
-    page = demo.replace("__TITLE__", title).replace("__BLURB__", blurb).replace("__APP__", app).replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
+    shot = root / "img" / f"{slug}.webp"  # a real screenshot shown while the sleeping app wakes up
+    preview = f'<img src="/img/{slug}.webp" alt="Screenshot of the {title}">' if shot.exists() else ""
+    page = (demo.replace("__TITLE__", title).replace("__BLURB__", blurb).replace("__APP__", app)
+            .replace("__UPWORK__", UPWORK).replace("__ICON__", icon).replace("__PREVIEW__", preview))
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
 # Pages with their own content instead of an embedded app: vision (needs a GPU, so a video) and
