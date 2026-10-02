@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fraud-Risk Score Explorer · Slimane Chanchoul</title>
+<meta name="description" content="Test a 0-100 fraud-risk score for mobile-money transactions: move the review and block lines and see fraud caught, precision and genuine transactions blocked on 42,347 held-out synthetic transactions.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one left-aligned column (max 1100px), result first; the threshold explorer is the one boxed tool. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #e9edf3;
+  --fg: #121821;
+  --fg-2: #46516a;
+  --fg-3: #657086;
+  --rule: #d5dbe4;
+  --rule-strong: #aeb8c7;
+  --accent: #1c55c6;
+  --allow: #17733f;
+  --allow-bg: #dff1e6;
+  --review: #8c5a00;
+  --review-bg: #f8ecd2;
+  --block: #b1253a;
+  --block-bg: #f8e0e3;
+  --guess: #5f45b0;
+  --guess-bg: #ebe6f8;
+  --s-normal: #2a78d6;
+  --s-fraud: #eb6834;
+  --hl: rgba(18, 24, 33, 0.07);
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff;
+    --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c;
+    --guess: #b7a2f7; --guess-bg: #241d3b; --s-normal: #3987e5; --s-fraud: #d95926; --hl: rgba(230, 235, 242, 0.08);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff;
+  --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c;
+  --guess: #b7a2f7; --guess-bg: #241d3b; --s-normal: #3987e5; --s-fraud: #d95926; --hl: rgba(230, 235, 242, 0.08);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; margin: 0; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 40px; }
+@media (min-width: 760px) { .wrap { padding-inline: 32px; } }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.65rem, 1.2rem + 1.6vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.4rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding-left: 1.2em; }
+a { color: var(--accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+code, .mono, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--fg-3); }
+.small { font-size: 0.88rem; }
+.prose { max-width: 70ch; color: var(--fg-2); }
+.prose strong { color: var(--fg); }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 600 0.78rem/1 var(--font-body); padding: 4px 8px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.allow { color: var(--allow); background: var(--allow-bg); }
+.pill.review { color: var(--review); background: var(--review-bg); }
+.pill.block { color: var(--block); background: var(--block-bg); }
+
+/* masthead */
+.mast { display: flex; flex-direction: column; gap: 10px; padding-bottom: 26px; }
+.eyebrow { font: 600 0.74rem/1.3 var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+.mast-meta { color: var(--fg-2); max-width: 72ch; }
+.headline { max-width: 72ch; color: var(--fg); font-size: 1.05rem; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-top: 8px; font-size: 0.92rem; }
+.toc a { color: var(--fg-2); text-decoration: none; }
+.toc a:hover { color: var(--accent); text-decoration: underline; }
+.toc .n { font-family: var(--font-data); color: var(--fg-3); margin-right: 4px; }
+
+/* sections */
+section { padding-block: 40px 14px; border-top: 1px solid var(--rule); scroll-margin-top: 12px; }
+.sec-head { display: flex; gap: 12px; align-items: baseline; margin-bottom: 18px; }
+.sec-no { font: 500 0.9rem/1 var(--font-data); color: var(--fg-3); min-width: 1.4em; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+th { font: 600 0.72rem/1.4 var(--font-data); letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); border-bottom-color: var(--rule-strong); }
+td.n, th.n { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+caption { text-align: left; font-size: 0.85rem; color: var(--fg-3); padding-bottom: 6px; }
+
+/* 1. explorer */
+.explorer { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 22px; }
+@media (max-width: 480px) { .explorer { padding: 14px; } }
+.ex-top { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 24px 32px; }
+@media (max-width: 820px) { .ex-top { grid-template-columns: minmax(0, 1fr); } }
+.controls { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.slider { display: flex; flex-direction: column; gap: 2px; }
+.slider .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.slider label { font-weight: 600; font-size: 0.95rem; }
+.slider output { font: 600 1.1rem/1 var(--font-data); }
+.slider .hint { font-size: 0.8rem; color: var(--fg-3); }
+input[type="range"] { width: 100%; height: 30px; margin: 0; cursor: pointer; }
+#rv { accent-color: var(--review); }
+#bk { accent-color: var(--block); }
+.bandkey { list-style: none; padding: 0; display: flex; flex-direction: column; }
+.bandkey li { display: grid; grid-template-columns: 5.4rem 4.2rem minmax(0, 1fr); gap: 8px; align-items: center; padding-block: 7px; border-top: 1px solid var(--rule); font-size: 0.86rem; color: var(--fg-2); }
+.bandkey li:last-child { border-bottom: 1px solid var(--rule); }
+.bandkey .rng { font: 500 0.84rem/1.3 var(--font-data); color: var(--fg); font-variant-numeric: tabular-nums; }
+button.reset { align-self: flex-start; font: 600 0.86rem/1 var(--font-body); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--rule-strong); background: transparent; color: var(--fg); cursor: pointer; }
+button.reset:hover { background: var(--surface-2); }
+.results { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 14px 16px 15px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+@media (max-width: 480px) { .kpi { padding: 12px 12px 13px; } }
+.kpi .k-label { font-size: 0.86rem; color: var(--fg-2); }
+.kpi .k-val { font: 600 clamp(1.5rem, 1.2rem + 1vw, 1.95rem)/1.1 var(--font-data); font-variant-numeric: tabular-nums; }
+.kpi .k-sub { font: 400 0.8rem/1.4 var(--font-data); color: var(--fg-3); font-variant-numeric: tabular-nums; }
+.rule-line { font-size: 0.88rem; color: var(--fg-2); }
+.rule-line strong { color: var(--fg); }
+.chart-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; align-items: baseline; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.86rem; color: var(--fg-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.sw.n { background: var(--s-normal); }
+.sw.f { background: var(--s-fraud); }
+.chart { position: relative; min-width: 0; touch-action: pan-y; }
+.chart svg { display: block; }
+.chart text { font-family: var(--font-data); font-size: 11px; fill: var(--fg-3); }
+.chart .t-lab { fill: var(--fg-2); font-family: var(--font-body); font-size: 12px; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.chart .t-cut { font-size: 11.5px; font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .base { stroke: var(--rule-strong); stroke-width: 1; }
+.chart .bar-n { fill: var(--s-normal); }
+.chart .bar-f { fill: var(--s-fraud); }
+.chart .cut-r { stroke: var(--review); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.chart .cut-b { stroke: var(--block); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.chart .t-r { fill: var(--review); }
+.chart .t-b { fill: var(--block); }
+.chart .rib-a { fill: var(--allow-bg); }
+.chart .rib-r { fill: var(--review-bg); }
+.chart .rib-b { fill: var(--block-bg); }
+.chart .rt-a { fill: var(--allow); font-family: var(--font-body); font-weight: 600; font-size: 11.5px; }
+.chart .rt-r { fill: var(--review); font-family: var(--font-body); font-weight: 600; font-size: 11.5px; }
+.chart .rt-b { fill: var(--block); font-family: var(--font-body); font-weight: 600; font-size: 11.5px; }
+.chart .hl { fill: var(--hl); }
+.chart .x-title { fill: var(--fg-2); font-family: var(--font-body); font-size: 12px; }
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font: 500 12px/1.45 var(--font-data); padding: 6px 9px; border-radius: 6px; white-space: nowrap; z-index: 2; }
+details.tv summary { cursor: pointer; font-size: 0.9rem; color: var(--fg-2); }
+details.tv[open] summary { margin-bottom: 10px; }
+details.tv .tbl-wrap + .tbl-wrap { margin-top: 18px; }
+details.tv .tbl-wrap.scores { max-height: 320px; overflow: auto; }
+.source { font-size: 0.86rem; color: var(--fg-3); max-width: 90ch; }
+
+/* 2. examples */
+.ex-list { display: flex; flex-direction: column; }
+.ex { display: grid; grid-template-columns: 84px minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px 32px; padding-block: 26px; border-top: 1px solid var(--rule); }
+@media (max-width: 820px) {
+  .ex { grid-template-columns: 74px minmax(0, 1fr); }
+  .ex-facts { grid-column: 2; }
+}
+@media (max-width: 480px) { .ex-facts { grid-column: 1 / -1; } }
+.ex-score { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ex-score .num { font: 600 2rem/1 var(--font-data); }
+.ex-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.ex-out { font-weight: 700; }
+.ex-out.ok { color: var(--allow); }
+.ex-out.mid { color: var(--review); }
+.ex-meta { font: 400 0.8rem/1.5 var(--font-data); color: var(--fg-3); }
+.ex-reasons .lab { font-size: 0.8rem; color: var(--fg-3); }
+.ex-reasons ol { padding-left: 1.3em; font-size: 0.95rem; }
+.ex-note { font-size: 0.93rem; color: var(--fg-2); }
+.ex-facts { display: grid; grid-template-columns: 7.4rem minmax(0, 1fr); align-content: start; font-size: 0.88rem; min-width: 0; }
+.ex-facts dt { font: 600 0.7rem/1.5 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); padding: 8px 10px 6px 0; border-top: 1px solid var(--rule); }
+.ex-facts dd { padding-block: 6px; border-top: 1px solid var(--rule); color: var(--fg); }
+@media (min-width: 821px) { .ex-facts dt:first-of-type, .ex-facts dt:first-of-type + dd { border-top: 0; } }
+
+/* 3. how it works */
+.steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 36px; list-style: none; padding: 0; counter-reset: st; }
+@media (max-width: 760px) { .steps { grid-template-columns: minmax(0, 1fr); } }
+.steps li { counter-increment: st; display: grid; align-content: start; grid-template-columns: 2rem minmax(0, 1fr); gap: 4px 6px; padding-block: 12px; border-top: 1px solid var(--rule); color: var(--fg-2); }
+.steps li::before { content: counter(st); font: 600 0.9rem/1.6 var(--font-data); color: var(--fg-3); grid-row: span 2; }
+.steps li strong { color: var(--fg); }
+
+/* 4. about the numbers */
+.newbox { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 12px; max-width: 80ch; }
+.newbox p { color: var(--fg-2); font-size: 0.96rem; }
+.newbox strong { color: var(--fg); }
+
+.foot { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 0.86rem; color: var(--fg-3); display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.foot strong { color: var(--fg-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Interactive demo · synthetic data</p>
+  <h1>A mobile-money fraud-risk score you can test yourself</h1>
+  <p class="mast-meta">Built around your four signals: SIM-swap events, device changes, transaction amounts and recipient history. Every transaction gets a score from 0 to 100, a band (allow, review or block) and its top three reasons in plain words.</p>
+  <p class="headline">On 15 days of transactions the model never saw, it blocked <strong>88.9% of fraud</strong>, and <strong>97.3%</strong> of what it blocked was fraud.</p>
+  <nav class="toc" aria-label="Sections">
+    <a href="#explorer"><span class="n">1</span>Test the score</a>
+    <a href="#examples"><span class="n">2</span>Three test transactions</a>
+    <a href="#how"><span class="n">3</span>How the score is made</a>
+    <a href="#numbers"><span class="n">4</span>About these numbers</a>
+  </nav>
+</header>
+
+<!-- 1 -->
+<section id="explorer">
+  <div class="sec-head"><span class="sec-no">1</span><h2>Test the score yourself</h2></div>
+  <p class="prose" style="margin-bottom:18px">All 42,347 test transactions are here, each with the score the model gave it; 561 are fraud. Move the two lines to see the trade-off: a lower block line stops more fraud, but also more genuine customers.</p>
+  <div class="explorer" id="explorer-box">
+    <div class="ex-top">
+      <div class="controls">
+        <div class="slider">
+          <div class="row"><label for="rv">Review from score</label><output id="rv-out" for="rv">20</output></div>
+          <input type="range" id="rv" min="1" max="100" step="1" value="20" aria-describedby="rv-hint">
+          <span class="hint" id="rv-hint">Default: 20</span>
+        </div>
+        <div class="slider">
+          <div class="row"><label for="bk">Block from score</label><output id="bk-out" for="bk">60</output></div>
+          <input type="range" id="bk" min="1" max="100" step="1" value="60" aria-describedby="bk-hint">
+          <span class="hint" id="bk-hint">Default: 60</span>
+        </div>
+        <ul class="bandkey" aria-label="What each band does">
+          <li><span class="pill allow">Allow</span><span class="rng" id="rng-a">0-19</span><span>goes through</span></li>
+          <li><span class="pill review">Review</span><span class="rng" id="rng-r">20-59</span><span>held for a person to check</span></li>
+          <li><span class="pill block">Block</span><span class="rng" id="rng-b">60-100</span><span>stopped</span></li>
+        </ul>
+        <button type="button" class="reset" id="reset">Reset to defaults</button>
+      </div>
+      <div class="results">
+        <div class="kpis" aria-live="polite">
+          <div class="kpi"><span class="k-label">Fraud caught (blocked)</span><span class="k-val" id="k-caught">88.9%</span><span class="k-sub" id="k-caught-s">499 of 561 fraud transactions</span></div>
+          <div class="kpi"><span class="k-label">Blocked that were fraud</span><span class="k-val" id="k-prec">97.3%</span><span class="k-sub" id="k-prec-s">499 of 513 blocked</span></div>
+          <div class="kpi"><span class="k-label">Genuine blocked per 1,000 transactions</span><span class="k-val" id="k-gb">0.33</span><span class="k-sub" id="k-gb-s">14 blocked; 6 more held for review</span></div>
+          <div class="kpi"><span class="k-label">Sent to review per 1,000 transactions</span><span class="k-val" id="k-rev">0.21</span><span class="k-sub" id="k-rev-s">9 transactions, 3 of them fraud</span></div>
+        </div>
+        <p class="rule-line">For comparison, the usual rule “block any transaction within 24 hours of a SIM swap” stops 558 transactions and catches <strong>78.8%</strong> of fraud, but 116 of the 558 are genuine transactions. That is <strong>2.7</strong> genuine blocked per 1,000 transactions, against <span id="k-cmp">0.33</span> for the model blocking from score <span id="k-cmp-b">60</span>.</p>
+      </div>
+    </div>
+
+    <div class="stack" style="gap:10px">
+      <div class="chart-head">
+        <h3>How the scores spread</h3>
+        <div class="legend"><span><i class="sw n"></i>Genuine (bars up)</span><span><i class="sw f"></i>Fraud (bars down)</span></div>
+      </div>
+      <p class="small muted">One bar per score. Each grid line is 10 times the one below, so a single transaction still shows. Hover or tap a bar for its counts.</p>
+      <div class="chart" id="chart" role="img" aria-label="Number of genuine and fraud test transactions at each risk score, with the review and block lines."><noscript><p class="small muted">Turn on JavaScript to see the chart and move the lines.</p></noscript></div>
+      <details class="tv">
+        <summary>Show the counts as tables</summary>
+        <div class="tbl-wrap">
+          <table id="band-table">
+            <caption id="band-cap">Bands for review 20, block 60 · 42,347 transactions</caption>
+            <thead><tr><th>Band</th><th class="n">Scores</th><th class="n">Transactions</th><th class="n">Genuine</th><th class="n">Fraud</th><th class="n">Fraud in band</th><th class="n">Share of all fraud</th></tr></thead>
+            <tbody>
+              <tr><td><span class="pill block">Block</span></td><td class="n">60-100</td><td class="n">513</td><td class="n">14</td><td class="n">499</td><td class="n">97.3%</td><td class="n">88.9%</td></tr>
+              <tr><td><span class="pill review">Review</span></td><td class="n">20-59</td><td class="n">9</td><td class="n">6</td><td class="n">3</td><td class="n">33.3%</td><td class="n">0.5%</td></tr>
+              <tr><td><span class="pill allow">Allow</span></td><td class="n">0-19</td><td class="n">41,825</td><td class="n">41,766</td><td class="n">59</td><td class="n">0.1%</td><td class="n">10.5%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tbl-wrap scores"><table id="score-table"><caption>Transactions at each score</caption><thead><tr><th class="n">Score</th><th class="n">Genuine</th><th class="n">Fraud</th><th>Band</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </div>
+  </div>
+  <p class="source" style="margin-top:12px">Data: the 42,347 transactions of the last 15 days (561 fraud). The model learned from the earlier weeks and never saw these days.</p>
+</section>
+
+<!-- 2 -->
+<section id="examples">
+  <div class="sec-head"><span class="sec-no">2</span><h2>Three test transactions, scored by the model</h2></div>
+  <p class="prose" style="margin-bottom:14px">Taken from the same 15 test days, with the reasons exactly as the score gives them. Amounts are synthetic and have no currency.</p>
+  <div class="ex-list">
+    <article class="ex" id="ex-block">
+      <div class="ex-score"><span class="num">100</span><span class="pill block">Block</span></div>
+      <div class="ex-body">
+        <p class="ex-out ok">Fraud stopped</p>
+        <p class="ex-meta">15 Aug 2026, 00:34 · amount 491.10 · actually fraud</p>
+        <div class="ex-reasons"><span class="lab">Reasons the score gives: what raised the risk</span><ol><li>SIM swapped less than 1 h ago</li><li>amount 5.2x the usual</li><li>amount 491</li></ol></div>
+        <p class="ex-note">The account-takeover pattern: a new SIM, then 21 minutes later 5.2 times the usual amount to a new recipient.</p>
+      </div>
+      <dl class="ex-facts">
+        <dt>SIM swap</dt><dd>21 minutes before</dd>
+        <dt>New device</dt><dd>none in 30 days</dd>
+        <dt>Amount</dt><dd>5.2 times this sender’s usual</dd>
+        <dt>Recipient</dt><dd>first transfer to them; account 559 days old</dd>
+        <dt>History</dt><dd>7 past transactions; 1 other in the last 24 h</dd>
+      </dl>
+    </article>
+    <article class="ex" id="ex-review">
+      <div class="ex-score"><span class="num">35</span><span class="pill review">Review</span></div>
+      <div class="ex-body">
+        <p class="ex-out mid">Fraud held for a check</p>
+        <p class="ex-meta">26 Aug 2026, 21:49 · amount 464.89 · actually fraud</p>
+        <div class="ex-reasons"><span class="lab">Reasons the score gives: what raised the risk</span><ol><li>recipient account 0 days old</li><li>amount 465</li><li>first transfer to this recipient</li></ol></div>
+        <p class="ex-note">A scam with no SIM swap, so the SIM-swap rule would let it through. The score held it because the money was going to an account less than a day old.</p>
+      </div>
+      <dl class="ex-facts">
+        <dt>SIM swap</dt><dd>none in 30 days</dd>
+        <dt>New device</dt><dd>none in 30 days</dd>
+        <dt>Amount</dt><dd>1.9 times this sender’s usual</dd>
+        <dt>Recipient</dt><dd>first transfer to them; account less than a day old</dd>
+        <dt>History</dt><dd>1 past transaction; 1 other in the last 24 h</dd>
+      </dl>
+    </article>
+    <article class="ex" id="ex-allow">
+      <div class="ex-score"><span class="num">0</span><span class="pill allow">Allow</span></div>
+      <div class="ex-body">
+        <p class="ex-out ok">Genuine payment allowed</p>
+        <p class="ex-meta">15 Aug 2026, 00:01 · amount 43.69 · actually genuine</p>
+        <div class="ex-reasons"><span class="lab">Reasons the score gives: what kept the risk low</span><ol><li>no recent SIM swap</li><li>amount 44</li><li>amount 1.3x the usual</li></ol></div>
+        <p class="ex-note">An everyday payment. The sender had only one past transaction and sent just after midnight, yet the score stayed at 0. For a low score, the reasons show what kept the risk low.</p>
+      </div>
+      <dl class="ex-facts">
+        <dt>SIM swap</dt><dd>none in 30 days</dd>
+        <dt>New device</dt><dd>none in 30 days</dd>
+        <dt>Amount</dt><dd>1.3 times this sender’s usual</dd>
+        <dt>Recipient</dt><dd>first transfer to them; account 987 days old</dd>
+        <dt>History</dt><dd>1 past transaction; 1 other in the last 24 h</dd>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="how">
+  <div class="sec-head"><span class="sec-no">3</span><h2>How the score is made</h2></div>
+  <ol class="steps">
+    <li><strong>Collect the events</strong><span>Each transaction, the sender’s SIM swaps and device changes, and the recipient’s account. Only events from before the transaction are used.</span></li>
+    <li><strong>Turn them into 11 signals</strong><span>Time since the last SIM swap and device change, the amount itself and against this sender’s usual, whether the recipient is new and how old their account is, recent activity, the sender’s history, and how usual the time of day is.</span></li>
+    <li><strong>Score from 0 to 100</strong><span>A model (XGBoost) learns fraud patterns from the earlier weeks of labelled transactions. The next week, which it did not learn from, is used to translate its raw output into the 0-100 score.</span></li>
+    <li><strong>Decide and explain</strong><span>The score sets the band: allow 0-19, review 20-59, block 60-100. The three signals that moved the score most become its reasons, in plain words.</span></li>
+  </ol>
+</section>
+
+<!-- 4 -->
+<section id="numbers">
+  <div class="sec-head"><span class="sec-no">4</span><h2>About these numbers</h2></div>
+  <div class="newbox">
+    <p><strong>Synthetic data.</strong> 8,000 users over 60 days: 148,485 transactions, 1.13% of them fraud. It contains account takeovers after a SIM swap, scams with no SIM swap, genuine look-alikes such as real SIM swaps and new phones, plus new accounts and people who normally send at night. These numbers show that the method works; your own data sets the real ones.</p>
+    <p><strong>One dataset of seven.</strong> Seven synthetic datasets were tested, this one included, with about 296,000 test transactions in all. Across the seven, the model blocked 86% to 91% of fraud, and 94% to 98% of what it blocked was fraud. The 24-hour SIM-swap rule caught 77% to 81% (80.5% in the first, smaller demo). Retraining on the same data moves the model by about one point, so read each number as a range, not an exact value.</p>
+    <p><strong>On your data,</strong> the same pipeline recomputes these results at every retrain and prints them in its report.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <span><strong>Slimane Chanchoul</strong> · AI and automation engineer</span>
+  <a href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Upwork profile</a>
+</footer>
+
+</div>
+
+<script type="application/json" id="score-data">{"what":"All held-out test transactions of one run (15 test days of synthetic data), counted by risk score: [score, genuine, fraud].","test_days":"last 15 days of the synthetic data, never used in training","transactions":42347,"fraud":561,"defaults":{"review_from":20,"block_from":60},"scores":[[0,41050,4],[1,455,9],[4,164,12],[6,28,4],[14,64,21],[16,0,2],[17,5,7],[24,1,0],[25,2,0],[26,0,1],[35,0,1],[37,1,0],[48,0,1],[50,1,0],[54,1,0],[62,0,2],[77,10,49],[78,0,1],[79,0,1],[81,0,2],[82,0,2],[83,0,1],[84,0,1],[88,0,2],[90,1,0],[92,0,2],[97,3,128],[100,0,308]]}</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("score-data").textContent);
+  var DEF = { r: D.defaults.review_from, b: D.defaults.block_from };
+  var st = { r: DEF.r, b: DEF.b };
+  var c = { n: new Array(101).fill(0), f: new Array(101).fill(0) };
+  D.scores.forEach(function (row) { c.n[row[0]] = row[1]; c.f[row[0]] = row[2]; });
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return n.toLocaleString("en-US"); };
+  var pct = function (a, b) { return b > 0 ? (100 * a / b).toFixed(1) + "%" : "n/a"; };
+  var per1000 = function (a, tot) {
+    if (!tot) return "n/a";
+    var v = a / tot * 1000;
+    if (v === 0) return "0";
+    if (v < 1) return v.toFixed(2);
+    if (v < 10) return v.toFixed(1);
+    return fmt(Math.round(v));
+  };
+  function sum(arr, lo, hi) { var s = 0; for (var i = lo; i <= hi; i++) s += arr[i]; return s; }
+  function band(s) { return s >= st.b ? "Block" : (s >= st.r ? "Review" : "Allow"); }
+  function rng(lo, hi) { return lo > hi ? "none" : (lo === hi ? String(lo) : lo + "-" + hi); }
+
+  function stats() {
+    var R = st.r, B = st.b, o = {};
+    o.fTot = sum(c.f, 0, 100); o.nTot = sum(c.n, 0, 100); o.tot = o.fTot + o.nTot;
+    o.fBlk = sum(c.f, B, 100); o.nBlk = sum(c.n, B, 100);
+    o.fRev = R < B ? sum(c.f, R, B - 1) : 0; o.nRev = R < B ? sum(c.n, R, B - 1) : 0;
+    o.fAll = R > 0 ? sum(c.f, 0, R - 1) : 0; o.nAll = R > 0 ? sum(c.n, 0, R - 1) : 0;
+    return o;
+  }
+
+  function renderNumbers(o) {
+    $("k-caught").textContent = pct(o.fBlk, o.fTot);
+    $("k-caught-s").textContent = fmt(o.fBlk) + " of " + fmt(o.fTot) + " fraud transactions";
+    var blk = o.fBlk + o.nBlk;
+    $("k-prec").textContent = blk ? pct(o.fBlk, blk) : "n/a";
+    $("k-prec-s").textContent = blk ? fmt(o.fBlk) + " of " + fmt(blk) + " blocked" : "nothing blocked";
+    // genuine blocked moves with the block line only; genuine held for review is in the sub-line and in the review tile
+    $("k-gb").textContent = per1000(o.nBlk, o.tot);
+    $("k-gb-s").textContent = fmt(o.nBlk) + " blocked; " + fmt(o.nRev) + " more held for review";
+    $("k-cmp").textContent = per1000(o.nBlk, o.tot);
+    $("k-cmp-b").textContent = st.b;
+    var rev = o.fRev + o.nRev;
+    $("k-rev").textContent = per1000(rev, o.tot);
+    $("k-rev-s").textContent = fmt(rev) + " transaction" + (rev === 1 ? "" : "s") + ", " + fmt(o.fRev) + " of them fraud";
+
+    $("rng-a").textContent = rng(0, st.r - 1);
+    $("rng-r").textContent = rng(st.r, st.b - 1);
+    $("rng-b").textContent = rng(st.b, 100);
+
+    $("band-cap").textContent = "Bands for review " + st.r + ", block " + st.b + " · " + fmt(o.tot) + " transactions";
+    var bandRow = function (cls, name, lo, hi, n, f) {
+      var t = n + f;
+      return "<tr><td><span class=\"pill " + cls + "\">" + name + "</span></td><td class=\"n\">" + rng(lo, hi) + "</td><td class=\"n\">" + fmt(t) +
+        "</td><td class=\"n\">" + fmt(n) + "</td><td class=\"n\">" + fmt(f) + "</td><td class=\"n\">" + (t ? pct(f, t) : "n/a") +
+        "</td><td class=\"n\">" + pct(f, o.fTot) + "</td></tr>";
+    };
+    $("band-table").tBodies[0].innerHTML = bandRow("block", "Block", st.b, 100, o.nBlk, o.fBlk) +
+      bandRow("review", "Review", st.r, st.b - 1, o.nRev, o.fRev) +
+      bandRow("allow", "Allow", 0, st.r - 1, o.nAll, o.fAll);
+  }
+
+  function renderScoreTable() {
+    var h = "";
+    for (var s = 0; s <= 100; s++) {
+      if (c.n[s] + c.f[s] === 0) continue;
+      h += "<tr><td class=\"n\">" + s + "</td><td class=\"n\">" + fmt(c.n[s]) + "</td><td class=\"n\">" + fmt(c.f[s]) + "</td><td>" + band(s) + "</td></tr>";
+    }
+    $("score-table").tBodies[0].innerHTML = h;
+  }
+
+  /* chart: genuine bars up, fraud bars down, log scale so a single transaction still shows */
+  var box = $("chart");
+  var geo = null;
+  var tip = document.createElement("div");
+  tip.className = "tip"; tip.hidden = true;
+
+  function drawChart() {
+    var W = Math.max(280, Math.floor(box.clientWidth));
+    var narrow = W < 520;
+    var ml = narrow ? 44 : 54, mr = 10, mt = 30;
+    var DEC = narrow ? 21 : 25;
+    var LO = 0.5;
+    var hU = function (v) { return Math.log(v / LO) / Math.LN10 * DEC; };
+    var hTop = hU(1e5), hBot = hU(1e3);
+    var y0 = mt + hTop, yF = y0 + 3, yEnd = yF + hBot;
+    var yTick = yEnd + 16, yRib = yEnd + 24, ribH = 22, yTitle = yRib + ribH + 18;
+    var H = yTitle + 6;
+    var pw = W - ml - mr, unit = pw / 101;
+    var xs = function (s) { return ml + (s + 0.5) * unit; };
+    var xb = function (s) { return ml + s * unit; };
+    var bw = Math.max(2, Math.min(9, unit * 0.78));
+    geo = { ml: ml, pw: pw, unit: unit, mt: mt, yEnd: yEnd, W: W };
+
+    var o = [];
+    o.push("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"" + W + "\" height=\"" + H + "\" viewBox=\"0 0 " + W + " " + H + "\">");
+    [1, 10, 100, 1000, 10000].forEach(function (v) {
+      var y = y0 - hU(v);
+      o.push("<line class=\"grid\" x1=\"" + ml + "\" x2=\"" + (W - mr) + "\" y1=\"" + y.toFixed(1) + "\" y2=\"" + y.toFixed(1) + "\"/>");
+      o.push("<text x=\"" + (ml - 6) + "\" y=\"" + (y + 3.5).toFixed(1) + "\" text-anchor=\"end\">" + fmt(v) + "</text>");
+    });
+    [1, 10, 100].forEach(function (v) {
+      var y = yF + hU(v);
+      o.push("<line class=\"grid\" x1=\"" + ml + "\" x2=\"" + (W - mr) + "\" y1=\"" + y.toFixed(1) + "\" y2=\"" + y.toFixed(1) + "\"/>");
+      o.push("<text x=\"" + (ml - 6) + "\" y=\"" + (y + 3.5).toFixed(1) + "\" text-anchor=\"end\">" + fmt(v) + "</text>");
+    });
+    o.push("<rect class=\"hl\" id=\"hl\" x=\"0\" y=\"" + mt + "\" width=\"0\" height=\"" + (yEnd - mt).toFixed(1) + "\"/>");
+    for (var s = 0; s <= 100; s++) {
+      if (c.n[s] > 0) { var h1 = hU(c.n[s]); o.push("<rect class=\"bar-n\" x=\"" + (xs(s) - bw / 2).toFixed(1) + "\" y=\"" + (y0 - h1).toFixed(1) + "\" width=\"" + bw.toFixed(1) + "\" height=\"" + h1.toFixed(1) + "\"/>"); }
+      if (c.f[s] > 0) { var h2 = hU(c.f[s]); o.push("<rect class=\"bar-f\" x=\"" + (xs(s) - bw / 2).toFixed(1) + "\" y=\"" + yF.toFixed(1) + "\" width=\"" + bw.toFixed(1) + "\" height=\"" + h2.toFixed(1) + "\"/>"); }
+    }
+    o.push("<line class=\"base\" x1=\"" + ml + "\" x2=\"" + (W - mr) + "\" y1=\"" + (y0 + 1.5) + "\" y2=\"" + (y0 + 1.5) + "\"/>");
+    var xr = xb(st.r), xk = xb(st.b);
+    // panel labels: in the review band when it has room, else in the widest band, so they never sit on a cut line
+    var labW = narrow ? 56 : 124, lx;
+    if (st.r < st.b && xk - xr >= labW + 16) lx = (xr + xk) / 2;
+    else {
+      var gaps = [[xb(0), xr], [xr, xk], [xk, xb(101)]].sort(function (a, b) { return (b[1] - b[0]) - (a[1] - a[0]); });
+      lx = (gaps[0][0] + gaps[0][1]) / 2;
+    }
+    o.push("<text class=\"t-lab\" x=\"" + lx.toFixed(1) + "\" y=\"" + (mt + 30) + "\" text-anchor=\"middle\">" + (narrow ? "Genuine" : "Genuine transactions") + "</text>");
+    o.push("<text class=\"t-lab\" x=\"" + lx.toFixed(1) + "\" y=\"" + (yEnd - 8).toFixed(1) + "\" text-anchor=\"middle\">" + (narrow ? "Fraud" : "Fraud transactions") + "</text>");
+    if (st.r < st.b) {
+      o.push("<line class=\"cut-r\" x1=\"" + xr.toFixed(1) + "\" x2=\"" + xr.toFixed(1) + "\" y1=\"" + (mt - 8) + "\" y2=\"" + yEnd.toFixed(1) + "\"/>");
+    }
+    o.push("<line class=\"cut-b\" x1=\"" + xk.toFixed(1) + "\" x2=\"" + xk.toFixed(1) + "\" y1=\"" + (mt - 8) + "\" y2=\"" + yEnd.toFixed(1) + "\"/>");
+    var lr = "review " + st.r, lb = "block " + st.b;
+    var cw = 7.2;
+    if (st.r < st.b) {
+      var rEnd = xr - 5, rStart = rEnd - lr.length * cw;
+      var rAnchor = rStart < 2 ? "start" : "end", rX = rStart < 2 ? xr + 5 : rEnd;
+      o.push("<text class=\"t-cut t-r\" x=\"" + rX.toFixed(1) + "\" y=\"" + (mt - 12) + "\" text-anchor=\"" + rAnchor + "\">" + lr + "</text>");
+    }
+    var bStart = xk + 5, bEnd = bStart + lb.length * cw;
+    var bAnchor = bEnd > W - 2 ? "end" : "start", bX = bEnd > W - 2 ? xk - 5 : bStart;
+    var bY = (st.r < st.b && bAnchor === "end") ? mt - 1 : mt - 12;
+    o.push("<text class=\"t-cut t-b\" x=\"" + bX.toFixed(1) + "\" y=\"" + bY + "\" text-anchor=\"" + bAnchor + "\">" + lb + "</text>");
+    [0, 20, 40, 60, 80, 100].forEach(function (v) {
+      o.push("<text x=\"" + xs(v).toFixed(1) + "\" y=\"" + yTick.toFixed(1) + "\" text-anchor=\"middle\">" + v + "</text>");
+    });
+    var ribs = [["a", "Allow", xb(0), xr], ["r", "Review", xr, xk], ["b", "Block", xk, xb(101)]];
+    ribs.forEach(function (r) {
+      var w = r[3] - r[2];
+      if (w <= 0) return;
+      o.push("<rect class=\"rib-" + r[0] + "\" x=\"" + r[2].toFixed(1) + "\" y=\"" + yRib.toFixed(1) + "\" width=\"" + w.toFixed(1) + "\" height=\"" + ribH + "\"/>");
+      if (w > 46) o.push("<text class=\"rt-" + r[0] + "\" x=\"" + (r[2] + w / 2).toFixed(1) + "\" y=\"" + (yRib + 15).toFixed(1) + "\" text-anchor=\"middle\">" + r[1] + "</text>");
+    });
+    o.push("<text class=\"x-title\" x=\"" + (ml + pw / 2).toFixed(1) + "\" y=\"" + yTitle.toFixed(1) + "\" text-anchor=\"middle\">Risk score (0-100)</text>");
+    o.push("</svg>");
+    box.innerHTML = o.join("");
+    box.appendChild(tip);
+  }
+
+  function nearest(px) {
+    if (!geo) return -1;
+    var s0 = (px - geo.ml) / geo.unit - 0.5;
+    var tol = Math.max(1.5, 8 / geo.unit);
+    var best = -1, bd = 1e9;
+    for (var s = 0; s <= 100; s++) {
+      if (c.n[s] + c.f[s] === 0) continue;
+      var d = Math.abs(s - s0);
+      if (d <= tol && d < bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  function onMove(e) {
+    var svg = box.querySelector("svg");
+    if (!svg) return;
+    var rect = svg.getBoundingClientRect();
+    var px = e.clientX - rect.left, py = e.clientY - rect.top;
+    var s = (py < geo.mt - 14 || py > geo.yEnd + 4) ? -1 : nearest(px);
+    var hl = svg.querySelector("#hl");
+    if (s < 0) { tip.hidden = true; if (hl) hl.setAttribute("width", "0"); return; }
+    var x = geo.ml + s * geo.unit;
+    hl.setAttribute("x", x.toFixed(1));
+    hl.setAttribute("width", Math.max(geo.unit, 3).toFixed(1));
+    tip.innerHTML = "Score " + s + " · " + band(s) + "<br>" + fmt(c.n[s]) + " genuine · " + fmt(c.f[s]) + " fraud";
+    tip.hidden = false;
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = px + 12; if (left + tw > rect.width - 2) left = px - tw - 12; if (left < 0) left = 0;
+    var top = py - th - 10; if (top < 0) top = py + 14;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  box.addEventListener("pointermove", onMove);
+  box.addEventListener("pointerdown", onMove);
+  box.addEventListener("pointerleave", function () { tip.hidden = true; var hl = box.querySelector("#hl"); if (hl) hl.setAttribute("width", "0"); });
+
+  function update() {
+    $("rv-out").textContent = st.r; $("bk-out").textContent = st.b;
+    renderNumbers(stats());
+    renderScoreTable(); // the Band column depends on the lines
+    drawChart();
+  }
+
+  var rv = $("rv"), bk = $("bk");
+  rv.addEventListener("input", function () {
+    st.r = +rv.value;
+    if (st.r > st.b) { st.b = st.r; bk.value = st.b; }
+    update();
+  });
+  bk.addEventListener("input", function () {
+    st.b = +bk.value;
+    if (st.b < st.r) { st.r = st.b; rv.value = st.r; }
+    update();
+  });
+  $("reset").addEventListener("click", function () {
+    st = { r: DEF.r, b: DEF.b };
+    rv.value = DEF.r; bk.value = DEF.b;
+    update();
+  });
+  if (window.ResizeObserver) {
+    var lastW = 0;
+    new ResizeObserver(function () {
+      var w = Math.floor(box.clientWidth);
+      if (w !== lastW) { lastW = w; drawChart(); }
+    }).observe(box);
+  }
+  // pick up slider positions the browser may have restored
+  st.r = +rv.value; st.b = +bk.value;
+  if (st.r > st.b) { st.b = st.r; bk.value = st.b; }
+  update();
+})();
+</script>
+</body>
+</html>
