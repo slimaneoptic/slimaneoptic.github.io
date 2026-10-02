@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Sheets weekly report demo · Slimane Chanchoul</title>
+<meta name="description" content="One click in Google Sheets: raw orders cleaned, bad rows listed with the reason, amounts converted to USD at live rates, a weekly summary with a chart, and an email to the owner. Apps Script.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --up: #1B7F4B; --down: #B3261E; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+video { display: block; width: 100%; height: auto; border-radius: 10px; background: #14202B; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+ul, ol { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.kpi div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
+.status { background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.scroll { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; background: #fff; font-size: .92rem; }
+.t td, .t th { padding: .45rem .6rem; border-bottom: 1px solid var(--rule); text-align: left; white-space: nowrap; }
+.t th { color: var(--slate); font-weight: 600; }
+.t td.n, .t th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .down { color: var(--down); }
+.gets { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
+.gets div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; }
+.gets b { display: block; margin-bottom: .15rem; }
+.gets p { margin: 0; color: var(--slate); font-size: .93rem; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+.split > * { min-width: 0; }
+.cta { margin-top: 2.2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+code { font-size: .9em; background: #EEF2F6; padding: .05rem .3rem; border-radius: 4px; }
+@media (max-width: 760px) { .kpi, .gets { grid-template-columns: 1fr 1fr; } .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } .t td, .t th { padding: .4rem .45rem; } }
+@media (max-width: 420px) { .gets { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Google Sheets weekly report demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>One-click weekly sales report in Google Sheets</h1>
+  <p class="lead">Click <b>Reports &gt; Run weekly report</b>. The raw Orders sheet is cleaned, every bad row is listed with its reason, all amounts are converted to USD at live rates, and a summary with a chart lands in the sheet and in your inbox. A Monday trigger can run it for you.</p>
+  <div class="kpi"><div>Rows read<b>500</b></div><div>Clean orders used<b>464</b></div>
+  <div>Bad rows left out, each with the reason<b>34</b></div><div>Tests passing<b>31 of 31</b></div></div>
+  <p class="status"><b>Status:</b> tested with a local harness against the live FX API; the Google Sheet screenshots come next. The same Apps Script files run in Node with stand-ins for the Google services, so the numbers below are from a real run on 500 synthetic orders.</p>
+
+  <figure><video src="demo.mp4" poster="poster.webp" width="1280" height="720" controls muted playsinline preload="metadata"
+    aria-label="Captioned replay of the local test run: dirty input rows, the issues found, the conversion to USD, the summary and the email"></video>
+  <figcaption>Replay of the local test run, with captions and no voice: dirty rows in, issues listed, USD conversion, summary, email.</figcaption></figure>
+
+  <h2>What you get with one click</h2>
+  <div class="gets">
+    <div><b>Clean data</b><p>Every valid order with its date, week, USD amount and the rate used. Your Orders tab is never changed.</p></div>
+    <div><b>Issues list</b><p>Each row left out, with the reason and the original values, so it can be fixed and re-run. 34 in the test run.</p></div>
+    <div><b>Summary with a chart</b><p>Totals by week, region and product, the top 5 products and the change vs the previous week.</p></div>
+    <div><b>Email to the owner</b><p>The summary as an HTML email with inline styles, plus a run log and an error email if a run fails.</p></div>
+  </div>
+
+  <h2>The real summary from the test run: 21–27 Sep 2026</h2>
+  <div class="kpi"><div>Revenue (USD)<b>$12,986</b></div><div>vs previous week ($9,649)<b class="up">+34.6%</b></div>
+  <div>Orders<b>66</b></div><div>Average order<b>$197</b></div></div>
+  <div class="split">
+    <div><h3>By region</h3><div class="scroll"><table class="t"><thead><tr><th>Region</th><th class="n">Orders</th><th class="n">Revenue</th><th class="n">Previous week</th><th class="n">Change</th></tr></thead><tbody><tr><td>Europe</td><td class="n">23</td><td class="n">$5,995</td><td class="n">$5,819</td><td class="n up">+3.0%</td></tr><tr><td>North America</td><td class="n">23</td><td class="n">$3,319</td><td class="n">$2,105</td><td class="n up">+57.7%</td></tr><tr><td>United Kingdom</td><td class="n">11</td><td class="n">$2,232</td><td class="n">$979</td><td class="n up">+127.9%</td></tr><tr><td>Morocco</td><td class="n">9</td><td class="n">$1,440</td><td class="n">$746</td><td class="n up">+93.0%</td></tr></tbody></table></div>
+    <h3>Top 5 products</h3><div class="scroll"><table class="t"><thead><tr><th>#</th><th>Product</th><th class="n">Orders</th><th class="n">Revenue</th><th class="n">Share</th></tr></thead><tbody><tr><td>1</td><td>Standing Desk</td><td class="n">8</td><td class="n">$4,363</td><td class="n">33.6%</td></tr><tr><td>2</td><td>Office Chair</td><td class="n">10</td><td class="n">$2,681</td><td class="n">20.6%</td></tr><tr><td>3</td><td>Headset</td><td class="n">9</td><td class="n">$1,989</td><td class="n">15.3%</td></tr><tr><td>4</td><td>USB-C Dock</td><td class="n">10</td><td class="n">$1,457</td><td class="n">11.2%</td></tr><tr><td>5</td><td>Wireless Keyboard</td><td class="n">9</td><td class="n">$927</td><td class="n">7.1%</td></tr></tbody></table></div></div>
+    <div><h3>Revenue by week (the chart's data)</h3><div class="scroll"><table class="t"><thead><tr><th>Week (Mon to Sun)</th><th class="n">Orders</th><th class="n">Revenue</th><th class="n">Change</th></tr></thead><tbody><tr><td>3–9 Aug</td><td class="n">55</td><td class="n">$10,992</td><td class="n "></td></tr><tr><td>10–16 Aug</td><td class="n">55</td><td class="n">$12,873</td><td class="n up">+17.1%</td></tr><tr><td>17–23 Aug</td><td class="n">52</td><td class="n">$11,233</td><td class="n down">-12.7%</td></tr><tr><td>24–30 Aug</td><td class="n">58</td><td class="n">$10,966</td><td class="n down">-2.4%</td></tr><tr><td>31 Aug–6 Sep</td><td class="n">58</td><td class="n">$12,195</td><td class="n up">+11.2%</td></tr><tr><td>7–13 Sep</td><td class="n">62</td><td class="n">$9,876</td><td class="n down">-19.0%</td></tr><tr><td>14–20 Sep</td><td class="n">58</td><td class="n">$9,649</td><td class="n down">-2.3%</td></tr><tr><td>21–27 Sep</td><td class="n">66</td><td class="n">$12,986</td><td class="n up">+34.6%</td></tr></tbody></table></div></div>
+  </div>
+
+  <h2>The real email from the test run</h2>
+  <div class="split">
+    <figure><a href="email.html"><img src="email.webp" width="720" height="1402" loading="lazy" alt="The weekly report email: revenue, orders and average order, a table by region, the top 5 products, bars for the last 8 weeks and the data checks"></a>
+    <figcaption>Captured in the local run, not sent. <a href="email.html">Open it as HTML</a>.</figcaption></figure>
+    <div>
+      <h3>Cleaning rules</h3>
+      <ul>
+        <li><b>Spaces and case:</b> "&nbsp;europe&nbsp;" and "EUROPE" become "Europe" (the most used spelling wins).</li>
+        <li><b>Duplicates:</b> exact copies are removed (10 in the test). An order ID reused with other values is flagged and the first one kept (2).</li>
+        <li><b>Dates:</b> text like 2026-09-21 and 21/09/2026 (or 09/21/2026, set in Settings) is read. Cells Sheets already turned into dates are used as they are. Blank, unreadable or future dates are flagged.</li>
+        <li><b>Amounts:</b> 1,250.00 and 1.250,50 and $1,250.00 are read correctly. Text, zero or negative amounts are flagged.</li>
+        <li><b>Currencies:</b> €, £, $, Dh and lowercase codes are recognized. Blank or unknown codes are flagged.</li>
+        <li><b>Missing fields:</b> no order ID, region or product, or a bad quantity: flagged.</li>
+      </ul>
+      <h3>Exchange rates</h3>
+      <p>Live from the free Frankfurter API, cached for 6 hours. In the test run: 1 USD = 0.88352 EUR, 1 USD = 0.75461 GBP, 1 USD = 9.7254 MAD (2026-10-02). If the API is down, the last good rates (up to 7 days old) are used and the email says so. With no usable rates the run stops before changing any sheet and emails the error; a simulated outage test checks exactly that.</p>
+    </div>
+  </div>
+
+  <h2>Install it in your Google Sheet</h2>
+  <ol>
+    <li>Put your orders in a tab named <b>Orders</b>: Order ID, Order Date, Customer, Region, Product, Qty, Amount, Currency. Importing a CSV? Untick "Convert text to numbers, dates, and formulas", so Sheets cannot swap day and month.</li>
+    <li><b>Extensions &gt; Apps Script</b>: paste the 8 script files and the manifest, then save.</li>
+    <li><b>Reports &gt; Run weekly report</b> and allow the permissions. It asks for 5 narrow ones: this spreadsheet only, the menu, the rate API, sending email, and the trigger.</li>
+    <li>Type your email in the <b>Settings</b> tab the first run creates.</li>
+    <li><b>Reports &gt; Install weekly trigger</b>: every Monday between 7 and 8 am, in the sheet's time zone.</li>
+  </ol>
+  <div class="cta"><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Need this for your sheet? Hire me on Upwork</a></div>
+
+  <p class="small">Synthetic data: 500 rows of orders from 3 Aug 2026 to 27 Sep 2026 in USD, EUR, GBP and MAD, with 34 deliberately bad rows and 2 blank lines, loaded as text as the install steps say. Google Apps Script (V8), tested in Node with stand-ins for SpreadsheetApp, MailApp, UrlFetchApp, CacheService and the other services; the exchange-rate requests were real.</p>
+</main>
+</body></html>

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excel MCP server demo · Slimane Chanchoul</title>
+<meta name="description" content="An MCP server that lets Claude read and analyse Excel and CSV files in one folder, read-only and sandboxed. Real Claude Code session, transcript and report.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --red: #B4410C; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; margin: 0 0 1.5rem; }
+.actions .note { color: var(--slate); font-size: 0.95rem; }
+video { display: block; width: 100%; height: auto; border-radius: 10px; background: #fff; border: 1px solid var(--rule); }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+ul, ol { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.86em; background: #fff; border: 1px solid var(--rule); border-radius: 4px; padding: 0 0.3em; overflow-wrap: anywhere; }
+pre { background: var(--ink); color: #E8EEF3; border-radius: 8px; padding: 0.8rem 1rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.5; margin: 0.4rem 0 1rem; }
+pre code { background: none; border: 0; padding: 0; color: inherit; font-size: inherit; overflow-wrap: normal; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0 1.4rem; }
+.kpi div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
+blockquote { margin: 0; background: var(--ink); color: #fff; border-radius: 10px; padding: 0.9rem 1.1rem 0.7rem; font-size: 1.05rem; max-width: 46rem; }
+.answer { background: #fff; border: 1px solid var(--rule); border-radius: 10px; padding: 0.9rem 1.2rem 0.4rem; }
+.answer p, .answer ul { margin: 0 0 0.8rem; }
+.scroll { overflow-x: auto; }
+table.t { border-collapse: collapse; background: #fff; font-size: .92rem; margin: 0 0 0.8rem; }
+.t td, .t th { padding: .35rem 1.2rem .3rem 0; border-bottom: 1px solid var(--rule); text-align: left; }
+.t th { color: var(--slate); }
+.calls li { margin: 0.55rem 0; overflow-wrap: anywhere; }
+.answer, figcaption, .lead { overflow-wrap: anywhere; }
+.calls .args { color: var(--slate); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 0.78rem; }
+.err { color: var(--red); }
+.slip { text-decoration: underline wavy var(--red); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.checknote { background: #FFF4EC; border-left: 4px solid var(--red); border-radius: 6px; padding: 0.6rem 0.9rem 0.5rem; margin: 0.8rem 0 0; }
+.checknote b { color: var(--red); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } .two { grid-template-columns: 1fr; gap: 0; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">Excel MCP server demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>Claude answers questions from your Excel files, and cannot change them</h1>
+  <p class="lead">I asked Claude a business question about a 2,000-row sales workbook. Using only the tools of this MCP server, it answered in 30.5 seconds with 8 tool calls and saved an Excel report. A separate check of 26 claims in its answer found 25 right and one wording slip: it calls a 42% share "most".</p>
+  <div class="actions"><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a><span class="note">Code available on request.</span></div>
+  <video src="demo.mp4" poster="poster.webp" width="1280" height="720" muted controls playsinline preload="metadata"
+         aria-label="Silent replay of the Claude Code session: the question, each tool call and result, the final answer, and the Excel report it saved"></video>
+  <div class="kpi"><div>Answer time (real session)<b>30.5 s</b></div><div>Tool calls by Claude<b>8</b></div>
+  <div>Claims in the answer that check out<b>25 / 26</b></div><div>Automated tests passing<b>81</b></div></div>
+
+  <h2>The question</h2>
+  <blockquote>Using the Excel tools: which region lost the most margin to discounts last quarter (Q3 2026), and how does that compare with Q2? Name the products behind it. Then save a short Excel summary report. Keep your answer short.</blockquote>
+
+  <h2>Claude's answer (unedited)</h2>
+  <div class="answer"><p><strong>West</strong> lost the most margin to discounts in Q3 2026.</p>
+<ul>
+<li><strong>Q3 vs Q2:</strong> West's discounts cost <strong>$24,836</strong> in Q3, up from <strong>$11,869</strong> in Q2 (+109%). Gross sales stayed about the same (~$271K), so discounts went from <strong>4.4% to 9.2%</strong> of gross sales.</li>
+<li><strong>Products behind it</strong> (these four are ~70% of West's Q3 discount cost):</li>
+</ul>
+<div class="scroll"><table class="t">
+<thead>
+<tr>
+<th>Product</th>
+<th>Q2</th>
+<th>Q3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>USB-C dock</td>
+<td>$1,486</td>
+<td>$4,760</td>
+</tr>
+<tr>
+<td>Office chair</td>
+<td>$1,850</td>
+<td>$4,469</td>
+</tr>
+<tr>
+<td>Keyboard</td>
+<td>$2,599</td>
+<td>$4,149</td>
+</tr>
+<tr>
+<td>34-inch ultrawide</td>
+<td>$2,049</td>
+<td>$4,069</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>Runner-up:</strong> South had <strong>$15,746</strong> in Q3, up from $8,767. <span class="slip">Most of it</span> is Office chair at $6,592, the largest single region-and-product figure in Q3.</li>
+</ul>
+<p>I calculated discount cost as units × unit_price × discount, which assumes <code>unit_price</code> is the price before the discount.</p>
+<p>The report is saved at <code>reports/Discount_Margin_Loss_Q3_vs_Q2_2026.xlsx</code>. It has a Summary sheet, a region-by-quarter table and a West product-by-quarter table.</p></div>
+  <p class="checknote"><b>Check:</b> 25 of 26 claims hold (numbers, names, method and report file). <b>Underlined, one wording slip:</b> Office chair is $6,592 of South&#x27;s $15,746, which is 42%: the largest part, but not &quot;most of it&quot;. The report's last key point repeats it.</p>
+
+  <h2>What Claude did</h2>
+  <ol class="calls"><li><code>list_files</code> <span class="args">List the files in the data folder</span><br>→ 2 files: returns_2026.csv, sales_2026.xlsx</li><li><code>list_sheets</code> <span class="args">file: sales_2026.xlsx</span><br>→ Orders (2,000 rows), Products (8 rows), Regions (5 rows)</li><li><code>describe_sheet</code> <span class="args">file: sales_2026.xlsx · sheet: Orders</span><br>→ Orders: 2,000 rows; columns order_id (text), date (date), region (text), product (text), units (integer), unit_price (number), discount (number)</li><li><code>describe_sheet</code> <span class="args">file: sales_2026.xlsx · sheet: Products</span><br>→ Products: 8 rows; columns sku (text), product (text), category (text), list_price (integer), unit_cost (number)</li><li><code>query</code> <span class="args">gross = units × unit_price · discount_cost = gross × discount · date between 2026-04-01 and 2026-09-30 · group by region, date:quarter · sum of discount_cost · sum of gross · sort region, date</span><br>→ <span class="err">Error: Unknown sort column &#x27;date&#x27;. Available columns: region, date:quarter, discount_cost, gross_sales.</span></li><li><code>query</code> <span class="args">gross = units × unit_price · discount_cost = gross × discount · date between 2026-04-01 and 2026-09-30 · group by region, date:quarter · sum of discount_cost · sum of gross · sort region, date:quarter</span><br>→ 1,363 orders matched → 10 result rows</li><li><code>query</code> <span class="args">gross = units × unit_price · discount_cost = gross × discount · date between 2026-04-01 and 2026-09-30 · group by region, product, date:quarter · sum of discount_cost · sort -discount_cost</span><br>→ 1,363 orders matched → 80 result rows</li><li><code>write_report</code> <span class="args">name: Discount_Margin_Loss_Q3_vs_Q2_2026 · 2 tables, computed by the server from a query · 4 key points</span><br>→ Saved reports/Discount_Margin_Loss_Q3_vs_Q2_2026.xlsx with sheets Summary, Region by Quarter, West Products by Quarter</li></ol>
+  <p>One call failed on a wrong sort column. The error message listed the valid columns, and Claude fixed it on the next call.</p>
+
+  <h2>The report it saved</h2>
+  <figure><img src="report.webp" width="1202" height="574" alt="Summary sheet of the Excel report Claude saved: title, four key points, and a table of contents for two data sheets">
+  <figcaption>Discount_Margin_Loss_Q3_vs_Q2_2026.xlsx, written by the server during the session. The two data sheets were computed by the server from the source file, so no number was retyped by the model. The key points were written by Claude; the last one has the same "most of that" slip.</figcaption></figure>
+
+  <div class="two">
+  <div>
+  <h2>The 6 tools</h2>
+  <ul>
+    <li><code>list_files</code>: the Excel and CSV files in the folder</li>
+    <li><code>list_sheets</code>: sheets with row and column counts</li>
+    <li><code>describe_sheet</code>: columns, types, empty cells, 5 sample rows</li>
+    <li><code>read_rows</code>: raw rows, paged</li>
+    <li><code>query</code>: filters, groups by month or quarter, sums and averages, simple computed columns</li>
+    <li><code>write_report</code>: saves a new formatted .xlsx with a summary sheet</li>
+  </ul>
+  </div>
+  <div>
+  <h2>Safety</h2>
+  <ul>
+    <li>Reads one folder only. <code>../</code>, absolute paths, hidden files and links that lead outside are refused.</li>
+    <li>Source files are never changed. Tests check their hashes before and after.</li>
+    <li>Reports are always new files. Nothing is overwritten.</li>
+    <li>No code runs: fixed lists of filters and calculations, no eval, no formulas.</li>
+    <li>Limits on file size, rows loaded and rows returned per call.</li>
+    <li>Clear error messages, so Claude can fix its own mistakes.</li>
+  </ul>
+  </div>
+  </div>
+
+  <h2>Built for Claude Desktop and Claude Code</h2>
+  <p>It is a standard MCP server (stdio). The session above was recorded in Claude Code. Claude Desktop starts it with the same command from its config file.</p>
+  <pre><code>claude mcp add excel -- /path/to/.venv/bin/mcp-excel --root /path/to/excel-folder --out /path/to/reports</code></pre>
+
+  <p class="small">Synthetic data generated for this demo: 2,000 orders from January 1 to September 30, 2026, 8 products, 5 regions. All names and numbers are invented. Session: Claude Code 2.1.287, Claude Opus 5.5. Built with Python, the official MCP Python SDK (tests pass on versions 1.30.0 and 2.2.0), pandas and openpyxl. 3 sessions saved: run-1 failed on my setup (the server did not connect), run-3 found the same main figures but wrongly said the data has no cost column; this page shows run-2. Video: a replay built only from the saved session files (59 s, no sound). Code available on request.</p>
+</main>
+</body></html>

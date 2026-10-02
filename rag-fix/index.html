@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG chatbot fix demo · Slimane Chanchoul</title>
+<meta name="description" content="A RAG support chatbot went from 20/30 to 29/30 correct answers on the same documents, questions and LLM, after fixing chunking, retrieval, dates and the prompt.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem;
+        --bad: #B42318; --badbg: #FEF3F2; --ok: #067647; --okbg: #ECFDF3; --warn: #B54708; --warnbg: #FFFAEB; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: #22364a; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.offer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem 1.2rem; background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue);
+         border-radius: 8px; padding: 0.8rem 1rem; margin: 1.2rem 0; }
+.offer p { margin: 0; font-weight: 600; font-size: 1.05rem; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.kpi div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
+.kpi .up b { color: var(--ok); }
+video { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+ul.fix { padding-left: 1.2rem; margin: 0; }
+ul.fix li { margin: 0.6rem 0; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.ex { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .9rem 1rem; margin: 0 0 1rem; }
+.ex .q { font-weight: 700; font-size: 1.08rem; margin: 0 0 .6rem; }
+.ex .q span { display: block; color: var(--slate); font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.side { border: 1px solid var(--rule); border-radius: 8px; padding: .6rem .8rem; font-size: .93rem; background: var(--paper); }
+.side p { margin: .4rem 0 0; }
+.tag { display: inline-block; font-size: .82rem; border-radius: 6px; padding: .1rem .5rem 0; }
+.tag.correct { color: var(--ok); background: var(--okbg); border: 1px solid var(--ok); }
+.tag.wrong { color: var(--bad); background: var(--badbg); border: 1px solid var(--bad); }
+.tag.partial, .tag.abstained { color: var(--warn); background: var(--warnbg); border: 1px solid var(--warn); }
+.why { color: var(--slate); font-size: .92rem; margin: .6rem 0 0; }
+.scroll { overflow-x: auto; }
+table.t { border-collapse: collapse; width: 100%; background: #fff; font-size: .92rem; }
+.t td, .t th { padding: .45rem .6rem; border-bottom: 1px solid var(--rule); text-align: left; }
+.t th { color: var(--slate); }
+.t td.n, .t th.n { text-align: right; white-space: nowrap; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+.note { color: var(--slate); font-size: .92rem; }
+.t tr.fixed td { font-weight: 700; }
+.t tr.old td, .t tr.fixed td { background: var(--paper); }
+.net { margin: 0 0 .6rem; font-weight: 600; }
+@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } .pair { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+@media (max-width: 700px) { table.t { min-width: 640px; font-size: .86rem; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">Slimane Chanchoul</a><span class="demo">RAG chatbot fix demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
+</header>
+<main>
+  <h1>RAG chatbot fix: 20/30 correct answers before, 29/30 after</h1>
+  <p class="lead">A support chatbot over 12 company documents, tested on 30 questions with known answers. Same documents, same questions, same LLM. Only the pipeline changed. Each version was run twice, and both runs gave the same scores: 10 wrong answers became right, and 1 right answer became a miss.</p>
+  <div class="kpi">
+    <div>Correct answers, before<b>20/30</b></div>
+    <div class="up">Correct answers, after<b>29/30</b></div>
+    <div>Outdated or wrong facts given as valid<b>3 &rarr; 0</b></div>
+    <div>Answers citing a source<b>0 &rarr; 29</b></div>
+  </div>
+  <div class="offer"><p>Your RAG bot gives wrong answers? Send me 10 questions it gets wrong.</p><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Message me on Upwork</a></div>
+
+  <figure><video src="demo.mp4" poster="poster.webp" controls muted playsinline preload="metadata" width="1280" height="720"></video>
+  <figcaption>56-second silent replay of 3 real test questions (answers as saved from run 1), then the score table.</figcaption></figure>
+
+  <h2>What was wrong, and the fix</h2>
+  <p class="note">The cause of each miss was found by reading the chunks the old bot got. All fixes went in together; the next section measures each one.</p>
+  <ul class="fix">
+<li><b>Tables and sections cut in the middle</b> (4 questions missed before, in both runs).<br>Fix: heading- and table-aware chunking: one chunk per section, tables never split, each chunk tagged with its document and section title. After the full fix: 4 of 4 right, in both runs.</li>
+<li><b>Outdated policy retrieved next to the current one, with no dates</b> (3 questions missed before, in both runs).<br>Fix: document metadata (effective date, current or superseded): outdated documents rank below current ones and are labelled in the prompt. After the full fix: 3 of 3 right, in both runs.<br><span class='note'>Where the dates come from: each of the 12 test documents has its effective date and status (current or replaced) in its header, written when the documents were made. On real documents this comes from file dates, version names, or a one-time review that I do in the first step.</span></li>
+<li><b>The right document was not in the top 2 results</b> (3 questions missed before, in both runs).<br>Fix: hybrid search (keywords + embeddings), a reranker, and 6 chunks instead of 2. After the full fix: 3 of 3 right, in both runs.</li>
+<li><b>No sources and no “I don't know” rule in the prompt.</b><br>Fix: every fact must cite its document, and the bot must say “The documents don't say.” when the answer is missing. After: 29 of 30 answers cite a source (before: 0). To be fair, the old bot already declined all 5 questions the documents don't answer, so that score did not move.</li>
+  </ul>
+
+  <h2>Which fix mattered (measured)</h2>
+  <p>A fair question: did the fixes matter, or did the bot just get more text? To check, I changed one thing at a time and ran each version twice on the same 30 questions.</p>
+  <div class="scroll"><table class="t"><thead><tr><th>Version</th><th class="n">Correct of 30<br>(run 1 / run 2)</th><th class="n">Outdated or wrong<br>facts given as valid</th><th class="n">Answers citing<br>a source</th></tr></thead>
+  <tbody><tr class='old'><td>Old bot</td><td class='n'>20 / 20</td><td class='n'>3 / 3</td><td class='n'>0 / 0</td></tr><tr class=''><td>Old bot, 6 chunks instead of 2</td><td class='n'>25 / 25</td><td class='n'>2 / 2</td><td class='n'>0 / 0</td></tr><tr class='fixed'><td>Fixed bot</td><td class='n'>29 / 29</td><td class='n'>0 / 0</td><td class='n'>29 / 29</td></tr><tr class=''><td>Fixed bot, but the old 500-character chunks</td><td class='n'>27 / 27</td><td class='n'>0 / 0</td><td class='n'>28 / 28</td></tr><tr class=''><td>Fixed bot, but no dates or status</td><td class='n'>29 / 27</td><td class='n'>0 / 2</td><td class='n'>29 / 28</td></tr><tr class=''><td>Fixed bot, but no reranker</td><td class='n'>28 / 28</td><td class='n'>0 / 0</td><td class='n'>29 / 30</td></tr><tr class=''><td>Fixed bot, but the old prompt</td><td class='n'>30 / 30</td><td class='n'>0 / 0</td><td class='n'>0 / 0</td></tr></tbody></table></div>
+  <ul class="fix">
+    <li><b>More text helps a lot.</b> With 6 chunks instead of 2, the old bot went from 20 to 25. But it still gave the outdated refund rule as valid (2 answers per run).</li>
+    <li><b>Whole tables matter for math.</b> With the old chunks, the fixed bot fell to 27: the price row it needed was not in its chunks.</li>
+    <li><b>Dates and status keep the old policy out.</b> Without them, the fixed bot scored 29 and 27, and in run 2 it gave the outdated refund rule as valid 2 times.</li>
+    <li><b>The reranker</b> added 1 question: 28 without it.</li>
+    <li><b>The strict prompt did not add accuracy here.</b> With the old prompt on the same chunks, the fixed bot scored 30/30, but cited no source. The strict prompt puts a source on every answer, so a person can check it. It also cost one question (below).</li>
+  </ul>
+  <p class="note">I did not change the fixed bot after these runs. Picking the best version from the test answers would be tuning on the test.</p>
+
+  <h2>Three real questions, before and after</h2>
+<div class="ex"><p class="q"><span>Table lookup</span>What is the price per user of the Team plan when billed annually?</p>
+<div class="pair"><div class="side bad"><b class="tag abstained">Before: Said “not in the documents” (it was)</b><p>Based on the provided context, the pricing details for the Team plan are missing/cut off from the table, so the exact price cannot be determined from the text.</p></div>
+<div class="side good"><b class="tag correct">After: Correct</b><p>The Team plan costs $20 per user per month when billed annually [pricing-plans]. Annual billing is charged once a year for the whole term [pricing-plans]. Calculation: $20 × 12 months = $240 per user per year [pricing-plans].</p></div></div>
+<p class="why"><b>Why it changed:</b> The 500-character split cut the pricing table inside its first row (Starter), so the Team row never reached the model. Keeping tables whole put the full table in the context. Measured: the old bot with 6 chunks instead of 2 also got this one right, in both runs, so more chunks alone fix it too.</p></div>
+<div class="ex"><p class="q"><span>Current vs outdated policy</span>Is there a fee when a refund is paid back for a bank transfer payment?</p>
+<div class="pair"><div class="side bad"><b class="tag wrong">Before: Wrong</b><p>Based on the provided text, there are conflicting policies:<br>• One section states: <b>There is no fee for refunds</b>, including refunds of payments made by bank transfer.<br>• Another section states: Refunds of payments made by bank transfer carry a <b>$25 processing fee</b>.</p></div>
+<div class="side good"><b class="tag correct">After: Correct</b><p>No, there is no fee for refunds, including refunds of payments made by bank transfer [refund-policy]. Approved refunds are sent to the original payment method within 5 business days [refund-policy].</p></div></div>
+<p class="why"><b>Why it changed:</b> The old 2024 refund policy and the current one were both retrieved, with no dates, so the bot offered both rules. With document dates and status, the outdated policy ranks below the current one and is labelled as superseded. Measured: without the dates and status, the fixed bot gave the old $25 fee as a second valid rule in 1 of 2 runs.</p></div>
+<div class="ex"><p class="q"><span>Multi-hop (two documents)</span>A Business customer with 10 users on monthly billing had 98.5% uptime last month. How much is the service credit in dollars?</p>
+<div class="pair"><div class="side bad"><b class="tag partial">Before: Partly answered</b><p>Based on the provided context, the exact monthly price for the <b>Business</b> plan is missing (the plan comparison table cuts off after the Starter plan). Therefore, the exact dollar amount of the service credit cannot be determined.<br>However, based on the uptime table, an uptime of 98.5% qualifies for a <b>25% service credit</b> (since it is below 99.0% but at least 95.0%) applied to that month&#x27;s subscription fee.</p></div>
+<div class="side good"><b class="tag correct">After: Correct</b><p>The Business plan on monthly billing costs $39 per user per month [pricing-plans], making the monthly fee $390 for 10 users ($39 × 10 = $390). Because the Business uptime commitment is 99.9% [sla] and the monthly uptime of 98.5% is below 99.0% but at least 95.0%, the customer is eligible for a 25% service credit [sla]. <br>Calculation: $390 × 0.25 = $97.50.<br>The service credit is $97.50, which is added to the account balance [sla].</p></div></div>
+<p class="why"><b>Why it changed:</b> The answer needs two documents: the price table and the SLA credit table. Before, the price table was cut off; after, both whole tables were retrieved and the bot showed the calculation. Measured: with the old 500-character chunks, the fixed bot still missed it in both runs.</p></div>
+
+  <h2>Scores by question type</h2>
+  <p class="net">10 questions fixed, 1 got worse (M2, below). Net: 20 &rarr; 29 in both runs.</p>
+  <div class="scroll"><table class="t"><thead><tr><th></th><th class="n">Before, run 1</th><th class="n">Before, run 2</th><th class="n">After, run 1</th><th class="n">After, run 2</th></tr></thead>
+  <tbody><tr><td><b>Correct answers</b></td><td class='n'><b>20/30</b></td><td class='n'><b>20/30</b></td><td class='n'><b>29/30</b></td><td class='n'><b>29/30</b></td></tr><tr><td>Numbers inside tables</td><td class='n'>5/7</td><td class='n'>5/7</td><td class='n'>7/7</td><td class='n'>7/7</td></tr><tr><td>Current vs outdated policy</td><td class='n'>3/6</td><td class='n'>3/6</td><td class='n'>6/6</td><td class='n'>6/6</td></tr><tr><td>Answers needing two documents</td><td class='n'>2/6</td><td class='n'>2/6</td><td class='n'>5/6</td><td class='n'>5/6</td></tr><tr><td>Exact numbers in text</td><td class='n'>5/6</td><td class='n'>5/6</td><td class='n'>6/6</td><td class='n'>6/6</td></tr><tr><td>Not in the documents (should decline)</td><td class='n'>5/5</td><td class='n'>5/5</td><td class='n'>5/5</td><td class='n'>5/5</td></tr><tr><td>Outdated or wrong facts given as valid</td><td class='n'>3</td><td class='n'>3</td><td class='n'>0</td><td class='n'>0</td></tr><tr><td>Said “not in the documents” when it was</td><td class='n'>4</td><td class='n'>5</td><td class='n'>1</td><td class='n'>0</td></tr><tr><td>Right document(s) found (25 answerable questions)</td><td class='n'>20/25</td><td class='n'>20/25</td><td class='n'>25/25</td><td class='n'>25/25</td></tr><tr><td>Answers citing a source</td><td class='n'>0/30</td><td class='n'>0/30</td><td class='n'>29/30</td><td class='n'>29/30</td></tr><tr><td>Median time per answer</td><td class='n'>2.0 s</td><td class='n'>2.0 s</td><td class='n'>2.1 s</td><td class='n'>2.0 s</td></tr><tr><td>LLM cost per answer (mean)</td><td class='n'>$0.0005</td><td class='n'>$0.0005</td><td class='n'>$0.0009</td><td class='n'>$0.0009</td></tr></tbody></table></div>
+
+  <h2>One question got worse</h2>
+  <p>&ldquo;Which plans have an uptime SLA, and what is the API rate limit per minute on the cheapest of them?&rdquo; The old bot got it right in both runs: Business, 1,000 requests per minute. The fixed bot missed it in both runs.</p>
+  <p>Both bots had the same two tables (uptime and API limits) and no prices. The fixed bot had no price table in its 6 chunks, and its rule is &ldquo;never guess&rdquo;, so it would not say which plan is cheaper. When the price table is in its chunks (question T7), it does answer. The old prompt guessed and happened to be right: with the old prompt on the same chunks, the fixed bot was also right in both runs.</p>
+  <p>No document says Business costs less than Enterprise (Enterprise is a custom quote), so the refusal is defensible. I still count it as a miss: 10 old misses fixed, 1 old pass lost, 20 &rarr; 29.</p>
+
+  <h2>How it was tested</h2>
+  <ul>
+    <li>30 questions with a known answer and source, written and saved in git before the first run: numbers inside tables, current vs outdated policy, answers needing two documents, exact numbers, and 5 questions the documents do not answer.</li>
+    <li>Grading: exact checks on key numbers and phrases first, then an LLM judge with a written rubric for the mixed cases. Then a second AI review, separate from the grader, checked 21 graded answers one by one against the documents: the grade (right or wrong) held for 21 of 21. For the one-change versions it checked 30 more: 30 of 30 held.</li>
+    <li>Before = a typical first build: fixed 500-character chunks, embedding search with the top 2 chunks, no dates, a plain prompt. After = section-based chunks with whole tables, keyword + embedding search, a reranker, document dates, and a prompt that must cite and may say &ldquo;The documents don't say.&rdquo;</li>
+    <li>Both use the same LLM (Gemini 3.8 Flash) and the same local embedding model. The whole demo, including the 4 main test runs, the 10 one-change runs and grading, cost $0.76 in LLM calls.</li>
+  </ul>
+
+  <div class="offer"><p>Your RAG bot gives wrong answers? Send me 10 questions it gets wrong.</p><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Message me on Upwork</a></div>
+  <p class="small">Synthetic data: the company (Orbitask) and its 12 documents are made up for this demo, with the usual traps (tables, an outdated policy, similar wording, facts split across documents). Real documents will change the numbers. Python, BM25, sentence-transformers (all-MiniLM-L6-v2 and an ms-marco cross-encoder reranker), OpenRouter.</p>
+</main>
+</body></html>
