@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demand planner: approach brief · Slimane Chanchoul</title>
+<meta name="description" content="How I would build a production demand planner for a multi-channel importer: censored demand, forecasting by behaviour class, container purchasing under constraints, multi-location and FBA states. Synthetic demo figures, a seven-day Milestone 0 plan and the proof protocol.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same system as the briefing pages: one left-aligned column (max 1100px), facts first, boxed figures. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #e9edf3; --fg: #121821; --fg-2: #46516a; --fg-3: #657086;
+  --rule: #d5dbe4; --rule-strong: #aeb8c7; --accent: #1c55c6; --on-accent: #ffffff;
+  --allow: #17733f; --allow-bg: #dff1e6; --review: #8c5a00; --review-bg: #f8ecd2; --block: #b1253a; --block-bg: #f8e0e3; --guess: #5f45b0; --guess-bg: #ebe6f8;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --on-accent: #0b1220;
+    --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c; --guess: #b7a2f7; --guess-bg: #241d3b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --on-accent: #0b1220;
+  --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c; --guess: #b7a2f7; --guess-bg: #241d3b;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { overflow-x: hidden; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; margin: 0; overflow-x: hidden; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 0 56px; }
+@media (min-width: 760px) { .wrap { padding-inline: 32px; } }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.65rem, 1.2rem + 1.6vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.4rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding-left: 1.2em; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+code, .mono, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+code { font-size: 0.88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.muted { color: var(--fg-3); }
+.small { font-size: 0.88rem; }
+.prose { max-width: 72ch; color: var(--fg-2); }
+.prose strong { color: var(--fg); }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+.bar .name { font-weight: 700; color: var(--fg); text-decoration: none; white-space: nowrap; }
+.bar .btn { background: var(--fg); color: var(--bg); padding: 7px 12px 6px; border-radius: 7px; font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; }
+
+/* tags and pills */
+.tag { display: inline-block; font: 600 0.68rem/1 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; padding: 4px 6px 3px; border-radius: 4px; vertical-align: 0.12em; white-space: nowrap; }
+.tag.syn { color: var(--guess); background: var(--guess-bg); }
+.tag.real { color: var(--allow); background: var(--allow-bg); }
+.tag.honest { color: var(--review); background: var(--review-bg); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 600 0.78rem/1.2 var(--font-body); padding: 4px 9px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.neutral { color: var(--fg-2); background: var(--surface-2); }
+
+/* masthead */
+.mast { display: flex; flex-direction: column; gap: 10px; padding-bottom: 26px; }
+.eyebrow { font: 600 0.74rem/1.3 var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+.mast-meta { color: var(--fg-2); max-width: 80ch; font-size: 1.05rem; }
+.mast-meta strong { color: var(--fg); }
+.state-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-top: 8px; font-size: 0.92rem; }
+.toc a { color: var(--fg-2); text-decoration: none; }
+.toc a:hover { color: var(--accent); text-decoration: underline; }
+.toc .n { font-family: var(--font-data); color: var(--fg-3); margin-right: 4px; }
+
+/* sections */
+section { padding-block: 40px 10px; border-top: 1px solid var(--rule); scroll-margin-top: 12px; }
+.sec-head { display: flex; gap: 12px; align-items: baseline; margin-bottom: 18px; }
+.sec-no { font: 500 0.9rem/1 var(--font-data); color: var(--fg-3); min-width: 1.4em; }
+.sub-head { font-size: 1rem; margin-block: 26px 10px; }
+.intro { margin-bottom: 18px; }
+
+/* 1. hard parts */
+.parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; list-style: none; padding: 0; counter-reset: pt; }
+@media (max-width: 760px) { .parts { grid-template-columns: minmax(0, 1fr); } }
+.parts > li { counter-increment: pt; display: flex; flex-direction: column; gap: 8px; padding-block: 14px 20px; border-top: 2px solid var(--fg); color: var(--fg-2); min-width: 0; }
+.parts .lab { font: 600 0.74rem/1.3 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); }
+.parts .lab::before { content: "Hard part " counter(pt) " · "; color: var(--fg); }
+.parts h3 { color: var(--fg); }
+.parts ul { display: flex; flex-direction: column; gap: 6px; font-size: 0.94rem; }
+.parts ul li strong { color: var(--fg); }
+.parts .rule { font-size: 0.9rem; color: var(--fg); background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
+
+/* 2. schema */
+.schema { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; }
+@media (max-width: 480px) { .schema { padding: 8px; } }
+.schema svg { display: block; width: 100%; height: auto; font-family: var(--font-body); }
+.schema .wide { display: block; } .schema .tall { display: none; }
+@media (max-width: 700px) { .schema .wide { display: none; } .schema .tall { display: block; } }
+.schema text { fill: var(--fg); font-size: 13px; }
+.schema .t { font-weight: 700; font-size: 14px; }
+.schema .s { fill: var(--fg-2); font-size: 11.5px; }
+.schema .k { fill: var(--fg-3); font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.schema .bx { fill: var(--bg); stroke: var(--rule-strong); stroke-width: 1.2; }
+.schema .bx.core { fill: var(--surface-2); stroke: var(--fg); stroke-width: 1.5; }
+.schema .bx.out { stroke: var(--accent); }
+.schema .step { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1; }
+.schema .ar { stroke: var(--fg-2); stroke-width: 1.6; fill: none; marker-end: url(#ah); }
+.schema .ar.dash { stroke: var(--review); stroke-dasharray: 5 4; marker-end: url(#ahr); }
+.schema .ar.back { stroke: var(--fg-3); stroke-dasharray: 2 3; marker-end: url(#ahg); }
+#ah path { fill: var(--fg-2); } #ahr path { fill: var(--review); } #ahg path { fill: var(--fg-3); }
+.schema .lbl { fill: var(--fg-3); font-size: 11px; }
+.schema .lbl.warn { fill: var(--review); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--fg-3); margin-top: 10px; }
+.legend span::before { content: ""; display: inline-block; width: 18px; border-top: 2px solid var(--fg-2); vertical-align: middle; margin-right: 6px; }
+.legend .d::before { border-top: 2px dashed var(--review); }
+.legend .b::before { border-top: 2px dotted var(--fg-3); }
+
+/* 3. demo */
+.fig { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px 24px; margin-top: 18px; }
+@media (max-width: 860px) { .fig { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .fig { padding: 12px; } }
+.fig img { display: block; width: 100%; height: auto; border-radius: 6px; background: #fff; border: 1px solid var(--rule); }
+.fig figcaption { color: var(--fg-2); font-size: 0.93rem; display: flex; flex-direction: column; gap: 10px; }
+.fig figcaption h3 { color: var(--fg); }
+.fig figcaption strong { color: var(--fg); }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.kpi { background: var(--surface); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpi .v { font: 600 1.35rem/1.15 var(--font-data); font-variant-numeric: tabular-nums; }
+.kpi .v small { font-size: 0.78rem; color: var(--fg-3); font-weight: 500; }
+.kpi .l { font-size: 0.8rem; color: var(--fg-3); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { padding: 7px 9px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+th { font: 600 0.72rem/1.4 var(--font-data); letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); border-bottom-color: var(--rule-strong); }
+td.n, th.n { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; white-space: nowrap; }
+caption { text-align: left; font-size: 0.85rem; color: var(--fg-3); padding-bottom: 6px; }
+.caveats { background: var(--review-bg); border-radius: 8px; padding: 14px 16px; margin-top: 18px; font-size: 0.92rem; color: var(--fg-2); }
+.caveats .lab { display: block; font: 600 0.68rem/1.4 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--review); margin-bottom: 6px; }
+.caveats ul { display: flex; flex-direction: column; gap: 4px; }
+
+/* 4. milestone 0 */
+.m0 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px 40px; align-items: start; }
+@media (max-width: 860px) { .m0 { grid-template-columns: minmax(0, 1fr); } }
+.days { list-style: none; padding: 0; }
+.days li { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 4px 14px; padding-block: 10px; border-top: 1px solid var(--rule); font-size: 0.94rem; color: var(--fg-2); }
+.days .d { font: 600 0.78rem/1.7 var(--font-data); letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); }
+.days strong { color: var(--fg); }
+.box { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.box h3 { font-size: 1rem; }
+.box ol, .box ul { display: flex; flex-direction: column; gap: 8px; color: var(--fg-2); font-size: 0.93rem; }
+.box .next { font-size: 0.93rem; color: var(--fg-2); border-top: 1px solid var(--rule); padding-top: 10px; }
+.box .next strong { color: var(--fg); }
+
+/* 5. proof, 6. push back */
+.rlist { list-style: none; padding: 0; display: flex; flex-direction: column; }
+.rlist li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; padding-block: 8px; border-top: 1px solid var(--rule); font-size: 0.93rem; color: var(--fg-2); }
+.rlist li strong { color: var(--fg); }
+.rlist svg { margin-top: 3px; }
+.ico-ok { color: var(--allow); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px 40px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.push { list-style: none; padding: 0; counter-reset: pb; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 40px; }
+@media (max-width: 760px) { .push { grid-template-columns: minmax(0, 1fr); } }
+.push li { counter-increment: pb; display: grid; align-content: start; grid-template-columns: 2rem minmax(0, 1fr); gap: 2px 8px; padding-block: 12px; border-top: 1px solid var(--rule); }
+.push li::before { content: counter(pb); font: 600 0.85rem/1.6 var(--font-data); color: var(--fg-3); grid-row: span 2; }
+.push .q { font-size: 1.02rem; font-weight: 700; }
+.push .why { font-size: 0.9rem; color: var(--fg-2); }
+
+/* 7. about */
+dl.facts { display: grid; grid-template-columns: 11rem minmax(0, 1fr); max-width: 80ch; }
+dl.facts dt, dl.facts dd { padding-block: 9px; border-top: 1px solid var(--rule); }
+dl.facts dt { font: 600 0.74rem/1.5 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); padding-top: 12px; padding-right: 12px; }
+dl.facts dd { color: var(--fg-2); }
+dl.facts dd strong { color: var(--fg); }
+@media (max-width: 560px) { dl.facts { grid-template-columns: minmax(0, 1fr); } dl.facts dd { border-top: 0; padding-top: 0; } }
+.foot { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--fg-3); display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" /></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" /></marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" /></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<div class="bar">
+  <a class="name" href="/">Slimane Chanchoul</a>
+  <a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Upwork profile</a>
+</div>
+
+<header class="mast">
+  <p class="eyebrow">Approach brief · forecasting and inventory optimization · October 2026</p>
+  <h1>Demand planner: approach brief</h1>
+  <p class="mast-meta">For a <strong>multi-channel importer</strong> with 3,000 to 5,000 private-label SKUs, two US distribution centers growing to 4 or 5 nodes, FBA at about 25% of orders, container sourcing with long lead times, and an Azure SQL warehouse being rebuilt by another contractor. Written from the public overview only; <strong>no company data was used</strong>. Every figure below comes from a synthetic demo built for this brief and is labelled as such.</p>
+  <div class="state-row" aria-label="Scope at a glance">
+    <span class="pill neutral">3,000–5,000 SKUs</span>
+    <span class="pill neutral">2 DCs → 4–5 nodes</span>
+    <span class="pill neutral">FBA ≈ 25%</span>
+    <span class="pill neutral">Batch, not streaming</span>
+    <span class="pill neutral">Milestone 0 = 7 days</span>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#parts"><span class="n">1</span>Four hard parts</a>
+    <a href="#schema"><span class="n">2</span>Architecture</a>
+    <a href="#demo"><span class="n">3</span>What the demo shows</a>
+    <a href="#m0"><span class="n">4</span>Milestone 0, seven days</a>
+    <a href="#proof"><span class="n">5</span>How we prove it</a>
+    <a href="#push"><span class="n">6</span>Where I'd push back</a>
+    <a href="#about"><span class="n">7</span>About me</a>
+  </nav>
+</header>
+
+<!-- 1 -->
+<section id="parts">
+  <div class="sec-head"><span class="sec-no">1</span><h2>The four hard parts and how I'd solve them</h2></div>
+  <p class="prose intro">Forecasting is the easy half. The planner earns its keep when it turns censored history into container decisions you can defend, across locations and Amazon states, and when every decision shows its inputs.</p>
+  <ol class="parts">
+    <li>
+      <span class="lab">Censored demand</span>
+      <h3>Estimate it with a confidence code; never "reconstruct it right"</h3>
+      <ul>
+        <li><strong>Availability first, from the cheap source.</strong> Rebuild on-hand per SKU, location and day from the ledgers (receipts, shipments, adjustments, FBA inbound and outbound), then reconcile with whatever snapshots exist.</li>
+        <li><strong>Flag unavailable periods</strong> from zero-sales runs against the SKU's expected rate, listing status and FBA states, not only from on-hand = 0.</li>
+        <li><strong>Fill flagged periods</strong> from the SKU's own uncensored periods, scaled by seasonality and family trend (a censored-regression estimate), with a reason code.</li>
+        <li><strong>Confidence codes A / B / C</strong> (snapshot-backed, ledger-only, thin history) travel with the estimate into safety stock, so an uncertain reconstruction buys more buffer, not a bolder forecast.</li>
+      </ul>
+      <p class="rule">Observed sales and normalized demand are both kept. Nothing missing silently becomes zero.</p>
+    </li>
+    <li>
+      <span class="lab">Forecasting</span>
+      <h3>By behaviour class, chosen by rolling backtests, output as quantiles</h3>
+      <ul>
+        <li><strong>Regular movers:</strong> seasonal ETS / Theta against a global gradient-boosting model with multi-year seasonality and price, promo and event features.</li>
+        <li><strong>Intermittent:</strong> Croston / TSB style rates with a bootstrapped lead-time demand distribution.</li>
+        <li><strong>Highly seasonal:</strong> family-level multi-year profiles reconciled down to SKUs; the short recent window only scales the level.</li>
+        <li><strong>New products:</strong> attribute and family analogs with a launch curve, re-weighted weekly from early sales.</li>
+        <li><strong>Champion-challenger per class</strong>, re-run at every origin; bias is tracked as a first-class metric, not a footnote.</li>
+      </ul>
+      <p class="rule">Every forecast is a distribution (P50, P90, P95). Safety stock needs the distribution, not the mean.</p>
+    </li>
+    <li>
+      <span class="lab">Purchasing</span>
+      <h3>Containers as one optimization, with profitability guardrails</h3>
+      <ul>
+        <li><strong>Forward supply</strong> projected per SKU and location: stock, open POs, lead times, demand quantiles. Reorder timing and quantity fall out of the projection.</li>
+        <li><strong>Container composition</strong> as a CP-SAT model: MOQ, case pack, supplier cadence, cube and weight. The objective is margin-weighted cover to a target horizon, not units. The model decides whether to order at all and how many containers are justified; the buyer does not pick the count first.</li>
+        <li><strong>Guardrails:</strong> contribution per SKU and channel in the objective; clearance, coupon and heavy-ads periods carried as demand states and excluded from the baseline; family economics checked before any child SKU is starved; strategic growth and hero stock as policy rows with their incremental capital visible.</li>
+      </ul>
+      <p class="rule">Velocity alone never triggers a buy. The recommendation shows the economics that justify it.</p>
+    </li>
+    <li>
+      <span class="lab">Network and FBA</span>
+      <h3>Any number of nodes; Amazon inventory is five numbers, not one</h3>
+      <ul>
+        <li><strong>Location-agnostic model.</strong> Nodes are rows in an effective-dated location table with eligibility and lead times; going from 2 DCs to 5 changes data, not code.</li>
+        <li><strong>Reserve local non-FBA demand first</strong>, then source FBA shipments from what remains, so a marketplace spike cannot empty the websites' stock.</li>
+        <li><strong>Amazon states</strong> (available, transfer, reserved/processing, inbound, unusable) each carry their own planning value and time-to-available.</li>
+        <li><strong>Economics where the data exists:</strong> FBA and AWD fees, storage, placement and freight enter the replenishment decision as costs, not as afterthoughts.</li>
+      </ul>
+      <p class="rule">Exception-based: thousands of item-location decisions run nightly; people see the few that are economically meaningful.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- 2 -->
+<section id="schema">
+  <div class="sec-head"><span class="sec-no">2</span><h2>Architecture: batch planner on your warehouse, thin app for actions</h2></div>
+  <p class="prose intro">Three parts, each in your repositories and your Azure subscription. The planner reads canonical data, writes a dated run snapshot, and the action queue works from that snapshot, so a late warehouse load never produces a half-empty plan.</p>
+  <div class="schema">
+    <!-- wide layout -->
+    <svg class="wide" viewBox="0 0 1040 470" role="img" aria-labelledby="sch-w-t">
+      <title id="sch-w-t">Architecture: Azure SQL warehouse feeds a nightly batch planner that writes dated run snapshots read by an action queue web app and Power BI; a fallback path serves the last good snapshot.</title>
+      <!-- warehouse -->
+      <rect class="bx" x="10" y="60" width="250" height="300" rx="10"/>
+      <text class="k" x="26" y="86">Owned by the warehouse team</text>
+      <text class="t" x="26" y="110">Azure SQL warehouse</text>
+      <text class="s" x="26" y="132">Canonical data, one grain each:</text>
+      <rect class="step" x="26" y="144" width="218" height="26" rx="5"/><text class="s" x="36" y="162">Orders by channel and listing</text>
+      <rect class="step" x="26" y="176" width="218" height="26" rx="5"/><text class="s" x="36" y="194">Inventory ledgers and snapshots</text>
+      <rect class="step" x="26" y="208" width="218" height="26" rx="5"/><text class="s" x="36" y="226">Open POs, suppliers, lead times</text>
+      <rect class="step" x="26" y="240" width="218" height="26" rx="5"/><text class="s" x="36" y="258">Catalog: aliases, bundles, kits</text>
+      <rect class="step" x="26" y="272" width="218" height="26" rx="5"/><text class="s" x="36" y="290">FBA states, fees, placements</text>
+      <rect class="step" x="26" y="304" width="218" height="26" rx="5"/><text class="s" x="36" y="322">Effective-dated policy tables</text>
+      <text class="lbl" x="26" y="350">service targets, MOQ, cadence, hero flags, as of a date</text>
+      <!-- arrow warehouse -> planner -->
+      <path class="ar" d="M260 200 L318 200"/>
+      <text class="lbl" x="262" y="188">freshness</text>
+      <text class="lbl" x="262" y="218">checks</text>
+      <!-- planner -->
+      <rect class="bx core" x="320" y="30" width="330" height="400" rx="10"/>
+      <text class="k" x="336" y="56">Nightly batch · Python · your repo</text>
+      <text class="t" x="336" y="80">Batch planner</text>
+      <text class="s" x="336" y="100">Data-health gates, then six steps in order:</text>
+      <rect class="step" x="336" y="112" width="298" height="30" rx="5"/><text x="348" y="132">1 · Clean demand <tspan class="s">(availability, reason and confidence codes)</tspan></text>
+      <rect class="step" x="336" y="150" width="298" height="30" rx="5"/><text x="348" y="170">2 · Forecasts <tspan class="s">(per class, quantiles, backtested)</tspan></text>
+      <rect class="step" x="336" y="188" width="298" height="30" rx="5"/><text x="348" y="208">3 · Safety stock <tspan class="s">(service target × error × lead time)</tspan></text>
+      <rect class="step" x="336" y="226" width="298" height="30" rx="5"/><text x="348" y="246">4 · Forward supply <tspan class="s">(stock, open POs, projection)</tspan></text>
+      <rect class="step" x="336" y="264" width="298" height="30" rx="5"/><text x="348" y="284">5 · Purchasing / container <tspan class="s">(CP-SAT, guardrails)</tspan></text>
+      <rect class="step" x="336" y="302" width="298" height="30" rx="5"/><text x="348" y="322">6 · Allocation / FBA <tspan class="s">(nodes, reserve local, states)</tspan></text>
+      <rect class="step" x="336" y="352" width="298" height="56" rx="5" style="stroke-dasharray:4 3"/>
+      <text class="t" x="348" y="373">Dated run snapshot</text>
+      <text class="s" x="348" y="392">inputs, parameters, outputs, explanations; immutable, replayable</text>
+      <!-- arrows planner -> outputs -->
+      <path class="ar" d="M650 150 L708 150"/>
+      <path class="ar" d="M650 330 L708 330"/>
+      <!-- action queue -->
+      <rect class="bx out" x="710" y="60" width="320" height="175" rx="10"/>
+      <text class="k" x="726" y="86">Writable workflow · the operator's tool</text>
+      <text class="t" x="726" y="110">Action queue web app</text>
+      <text class="s" x="726" y="132">Approve, override, escalate, with the reason</text>
+      <text class="s" x="726" y="150">Routine actions: admin executes</text>
+      <text class="s" x="726" y="168">High value or low confidence: escalates</text>
+      <text class="s" x="726" y="186">Every action and override is audited</text>
+      <text class="s" x="726" y="204">Explanation: inputs that drove each line</text>
+      <text class="lbl" x="726" y="224">thin: queue, audit, overrides; nothing else</text>
+      <!-- power bi -->
+      <rect class="bx out" x="710" y="265" width="320" height="110" rx="10"/>
+      <text class="k" x="726" y="291">Management reporting</text>
+      <text class="t" x="726" y="315">Power BI</text>
+      <text class="s" x="726" y="337">Bias, service, cover distribution, excess,</text>
+      <text class="s" x="726" y="355">working capital, accepted vs overridden</text>
+      <!-- decisions written back -->
+      <path class="ar back" d="M870 235 L870 262"/>
+      <path class="ar back" d="M730 235 C 700 330, 560 445, 150 445 L 135 445 L 135 362"/>
+      <text class="lbl" x="300" y="440">decisions and overrides written back → next run and the backtest see them</text>
+      <!-- fallback -->
+      <path class="ar dash" d="M560 408 C 600 455, 760 460, 880 400 L 880 378"/>
+      <text class="lbl warn" x="600" y="430">fallback: last good snapshot + rules</text>
+    </svg>
+
+    <!-- tall layout (phones) -->
+    <svg class="tall" viewBox="0 0 360 1150" role="img" aria-labelledby="sch-t-t">
+      <title id="sch-t-t">Architecture, stacked: Azure SQL warehouse, then the nightly batch planner with its six steps and a dated run snapshot, then the action queue web app and Power BI, with a fallback path.</title>
+      <rect class="bx" x="8" y="8" width="344" height="290" rx="10"/>
+      <text class="k" x="22" y="32">Owned by the warehouse team</text>
+      <text class="t" x="22" y="56">Azure SQL warehouse</text>
+      <text class="s" x="22" y="76">Canonical data, one grain each:</text>
+      <rect class="step" x="22" y="88" width="316" height="26" rx="5"/><text class="s" x="32" y="106">Orders by channel and listing</text>
+      <rect class="step" x="22" y="120" width="316" height="26" rx="5"/><text class="s" x="32" y="138">Inventory ledgers and snapshots</text>
+      <rect class="step" x="22" y="152" width="316" height="26" rx="5"/><text class="s" x="32" y="170">Open POs, suppliers, lead times</text>
+      <rect class="step" x="22" y="184" width="316" height="26" rx="5"/><text class="s" x="32" y="202">Catalog: aliases, bundles, kits</text>
+      <rect class="step" x="22" y="216" width="316" height="26" rx="5"/><text class="s" x="32" y="234">FBA states, fees, placements</text>
+      <rect class="step" x="22" y="248" width="316" height="26" rx="5"/><text class="s" x="32" y="266">Effective-dated policy tables</text>
+      <text class="lbl" x="22" y="288">service targets, MOQ, cadence, hero flags, as of a date</text>
+      <path class="ar" d="M180 298 L180 336"/><text class="lbl" x="190" y="322">freshness checks</text>
+      <rect class="bx core" x="8" y="338" width="344" height="420" rx="10"/>
+      <text class="k" x="22" y="362">Nightly batch · Python · your repo</text>
+      <text class="t" x="22" y="386">Batch planner</text>
+      <text class="s" x="22" y="406">Data-health gates, then six steps in order:</text>
+      <rect class="step" x="22" y="418" width="316" height="30" rx="5"/><text x="32" y="438">1 · Clean demand <tspan class="s">(availability, confidence)</tspan></text>
+      <rect class="step" x="22" y="456" width="316" height="30" rx="5"/><text x="32" y="476">2 · Forecasts <tspan class="s">(per class, quantiles)</tspan></text>
+      <rect class="step" x="22" y="494" width="316" height="30" rx="5"/><text x="32" y="514">3 · Safety stock <tspan class="s">(service × error × lead time)</tspan></text>
+      <rect class="step" x="22" y="532" width="316" height="30" rx="5"/><text x="32" y="552">4 · Forward supply <tspan class="s">(stock, POs, projection)</tspan></text>
+      <rect class="step" x="22" y="570" width="316" height="30" rx="5"/><text x="32" y="590">5 · Purchasing / container <tspan class="s">(CP-SAT)</tspan></text>
+      <rect class="step" x="22" y="608" width="316" height="30" rx="5"/><text x="32" y="628">6 · Allocation / FBA <tspan class="s">(nodes, states)</tspan></text>
+      <rect class="step" x="22" y="656" width="316" height="86" rx="5" style="stroke-dasharray:4 3"/>
+      <text class="t" x="32" y="678">Dated run snapshot</text>
+      <text class="s" x="32" y="698">inputs, parameters, outputs, explanations;</text>
+      <text class="s" x="32" y="716">immutable, replayable</text>
+      <text class="lbl warn" x="32" y="734">fallback: last good snapshot + rules</text>
+      <path class="ar" d="M180 758 L180 796"/>
+      <rect class="bx out" x="8" y="798" width="344" height="190" rx="10"/>
+      <text class="k" x="22" y="822">Writable workflow · the operator's tool</text>
+      <text class="t" x="22" y="846">Action queue web app</text>
+      <text class="s" x="22" y="868">Approve, override, escalate, with the reason</text>
+      <text class="s" x="22" y="886">Routine actions: admin executes</text>
+      <text class="s" x="22" y="904">High value or low confidence: escalates</text>
+      <text class="s" x="22" y="922">Every action and override is audited</text>
+      <text class="s" x="22" y="940">Explanation: inputs that drove each line</text>
+      <text class="lbl" x="22" y="962">thin: queue, audit, overrides; nothing else</text>
+      <path class="ar back" d="M180 988 L180 1026"/><text class="lbl" x="190" y="1012">decisions written back</text>
+      <rect class="bx out" x="8" y="1028" width="344" height="112" rx="10"/>
+      <text class="k" x="22" y="1052">Management reporting</text>
+      <text class="t" x="22" y="1076">Power BI</text>
+      <text class="s" x="22" y="1098">Bias, service, cover distribution, excess,</text>
+      <text class="s" x="22" y="1116">working capital, accepted vs overridden</text>
+    </svg>
+    <div class="legend"><span>data and snapshot flow</span><span class="b">decisions written back for the next run and the backtest</span><span class="d">fallback when the planner or the warehouse is late</span></div>
+  </div>
+  <ul class="rlist" style="margin-top:18px; max-width:80ch">
+    <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Data contract, defined in Milestone 0:</strong> table, grain, keys, freshness SLA and owner for each input; effective dating on product relationships, locations, suppliers and policy so a backtest replays the rules that existed on that date.</span></li>
+    <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Scale honestly:</strong> a few million order lines and a few thousand SKUs is a nightly batch on one modest VM or a scheduled Azure job. No streaming, no cluster.</span></li>
+    <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Resilience:</strong> source-freshness checks gate each run; a missing or stale input stops the step and raises an exception instead of becoming zero; the queue keeps serving the last good snapshot.</span></li>
+  </ul>
+</section>
+
+<!-- 3 -->
+<section id="demo">
+  <div class="sec-head"><span class="sec-no">3</span><h2>What the demo shows <span class="tag syn">Synthetic data</span></h2></div>
+  <p class="prose intro">To make the method concrete I built a small end-to-end demo on <strong>synthetic data</strong>: 30 SKUs, 730 days, three behaviour classes, random stockouts, seed 7, 0.7 s per run. The generator knows the true demand, so each step can be scored against it. These numbers show how the pieces fit; they are not a prediction for your data.</p>
+
+  <figure class="fig">
+    <img src="fig1-reconstruction.webp" width="1500" height="630" loading="lazy" alt="Weekly units for one synthetic seasonal SKU: observed sales drop to zero in shaded stockout periods; the reconstructed demand line follows the hidden true demand through them.">
+    <figcaption>
+      <h3>1 · Censored demand, reconstructed with confidence codes <span class="tag syn">synthetic</span></h3>
+      <p>One seasonal SKU; shaded = flagged unavailable (23% of its days). In the grey half there are no inventory snapshots: on-hand was back-flushed from the receipts and shipments ledger.</p>
+      <div class="kpis">
+        <div class="kpi"><span class="v">16.8% → 1.6%</span><span class="l">monthly error vs true demand, all 30 SKUs: sales-as-demand → reconstructed</span></div>
+        <div class="kpi"><span class="v">−14.9% → −0.1%</span><span class="l">bias: the chronic under-forecast disappears</span></div>
+        <div class="kpi"><span class="v">100% <small>recall</small></span><span class="l">of truly censored SKU-days flagged (precision 79.5%)</span></div>
+        <div class="kpi"><span class="v">90.5%</span><span class="l">of the hidden demand recovered</span></div>
+      </div>
+      <p>Confidence codes on flagged days: <strong>A</strong> snapshot-backed 40%, <strong>B</strong> ledger-only 53%, <strong>C</strong> thin history 7%. In the ledger-only period precision drops to 73.7% because unrecorded shrink creates false flags; that is exactly what the B and C codes are for.</p>
+    </figcaption>
+  </figure>
+
+  <figure class="fig">
+    <img src="fig2-forecast-fan.webp" width="1500" height="630" loading="lazy" alt="Four-week-ahead probabilistic forecast for one synthetic SKU: P50 line with P25-P75 and P5-P95 bands, actual demand dots inside the band, and a raw-sales smoothing stand-in far above.">
+    <figcaption>
+      <h3>2 · Forecast by class, rolling backtest, quantile output <span class="tag syn">synthetic</span></h3>
+      <p>6 monthly origins × 30 SKUs = 180 forecast pairs, 4-week totals, scored against the generator's true demand. Baseline = a stand-in for the described current approach: exponential smoothing on raw sales, 26-week window, × a raw seasonality index.</p>
+      <div class="kpis">
+        <div class="kpi"><span class="v">125 <small>vs 343</small></span><span class="l">MAE, units: ours vs raw-sales smoothing</span></div>
+        <div class="kpi"><span class="v">+1.8% <small>vs −15.0%</small></span><span class="l">bias: ours vs baseline</span></div>
+        <div class="kpi"><span class="v">86.7% <small>vs 50.6%</small></span><span class="l">realized service at a 95% target: forecast-error safety stock vs raw-sales-sd rule</span></div>
+        <div class="kpi"><span class="v">65 / 30 / 20</span><span class="l">pinball loss q50 / q90 / q95 (baseline q50: 171)</span></div>
+      </div>
+      <p><span class="tag honest">Stated honestly</span> The P95 band covered 86.7% of actuals, not 95%: the residual bootstrap ignores level-estimation error. In production the quantiles are re-calibrated from the backtest before they size safety stock.</p>
+    </figcaption>
+  </figure>
+
+  <div class="tbl-wrap" style="margin-top:14px">
+    <table>
+      <caption>Backtest by behaviour class, 4-week totals, synthetic data. Service = share of SKU-origin pairs where the safety stock covered actual demand at a 95% target.</caption>
+      <thead><tr><th>Class</th><th class="n">MAE ours</th><th class="n">MAE baseline</th><th class="n">Bias ours</th><th class="n">Bias baseline</th><th class="n">Service ours</th><th class="n">Service baseline</th></tr></thead>
+      <tbody>
+        <tr><td>Regular</td><td class="n">99.6</td><td class="n">688.2</td><td class="n">+1.1%</td><td class="n">−15.0%</td><td class="n">90.0%</td><td class="n">36.7%</td></tr>
+        <tr><td>Intermittent</td><td class="n">6.4</td><td class="n">13.0</td><td class="n">−3.8%</td><td class="n">−5.8%</td><td class="n">85.0%</td><td class="n">61.7%</td></tr>
+        <tr><td>Seasonal</td><td class="n">270.1</td><td class="n">327.3</td><td class="n">+3.4%</td><td class="n">−15.3%</td><td class="n">85.0%</td><td class="n">53.3%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted" style="margin-top:8px">Mean safety stock 189 units (ours) vs 98 (raw-sd rule): the baseline buys half the buffer and misses the target twice as often. Reconstruction error by class, sales-as-demand → reconstructed: regular 16.4% → 1.0%, intermittent 19.4% → 5.0%, seasonal 17.6% → 2.8%.</p>
+
+  <figure class="fig">
+    <img src="fig3-container.webp" width="1650" height="690" loading="lazy" alt="Two bar charts: cubic metres per SKU in one 40-foot container for the CP-SAT plan versus fill-by-velocity, and days of cover per SKU after the order, with a 60-day floor line.">
+    <figcaption>
+      <h3>3 · One container, composed by CP-SAT with guardrails <span class="tag syn">synthetic</span></h3>
+      <p>One 40-ft container (67 m³, 26 t), 30 SKUs with MOQ and case pack, target cover 120 days, total need = 1.6 containers. Objective: margin-weighted demand cover. OR-Tools CP-SAT 9.15, OPTIMAL in under 0.1 s.</p>
+      <div class="kpis">
+        <div class="kpi"><span class="v">$503k <small>vs $197k</small></span><span class="l">margin covered by the container: CP-SAT vs fill-by-velocity</span></div>
+        <div class="kpi"><span class="v">7 <small>vs 17</small></span><span class="l">SKUs left under 60 days of cover after the order</span></div>
+        <div class="kpi"><span class="v">23 <small>vs 14</small></span><span class="l">SKUs ordered; cube fill 95% vs 100%</span></div>
+        <div class="kpi"><span class="v">120 d <small>vs 50 d</small></span><span class="l">median cover after the order</span></div>
+      </div>
+      <p>Weight fill 48.4%: cube binds, not weight. CP-SAT leaves some thin-margin SKUs unordered (that is the objective's choice, and the queue shows it as an exception to review); fill-by-velocity spends the cube on fast, low-margin items and strands 17 SKUs.</p>
+    </figcaption>
+  </figure>
+
+  <div class="caveats">
+    <span class="lab">What these numbers do and do not say</span>
+    <ul>
+      <li>All data is synthetic; the generator is smooth and the reconstruction matches its structure, so 1.6% is a lower bound, not a forecast of your result.</li>
+      <li>Backtest actuals are the generator's true demand, which is unknown in reality; on real data the policy backtest in section 5 replaces this.</li>
+      <li>The baseline is a stand-in for the approach described in the overview, not your code.</li>
+      <li>Container figures are a yardstick against the planner's own demand estimate, not realized sales.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="m0">
+  <div class="sec-head"><span class="sec-no">4</span><h2>Milestone 0, seven days</h2></div>
+  <p class="prose intro">A paid assessment that ends with a plan you can hold me to: scope, acceptance criteria, risks and a fixed price for the build. Starts after NDA and data access (controlled exports or representative snapshots are fine if the warehouse is not ready).</p>
+  <div class="m0">
+    <ol class="days">
+      <li><span class="d">Day 1</span><span><strong>Kickoff and data inventory.</strong> Walk the current process with the BI administrator and catalog manager. List every source: sales by channel, inventory ledgers and snapshots, open POs, supplier terms, catalog relationships, Amazon reports. Access or exports agreed. Gap log opened.</span></li>
+      <li><span class="d">Day 2</span><span><strong>Data assessment.</strong> Availability-history completeness by source and period; where on-hand can be rebuilt from ledgers and where it cannot; censoring-risk map by SKU-month (how much of the history would carry an A, B or C code). Material gaps and reconstruction risks named.</span></li>
+      <li><span class="d">Day 3</span><span><strong>Forecasting and inventory methodology.</strong> Behaviour classes on your history; candidate methods per class; the backtest and champion-challenger protocol (origins, horizons, metrics). Definitions of inventory position, lead time, service level and safety stock, written down and agreed.</span></li>
+      <li><span class="d">Day 4</span><span><strong>Architecture and data contract.</strong> The schema above made specific: tables, grains, keys, effective dating, freshness SLAs, the run snapshot, the action-queue data model. Reviewed with the warehouse contractor so the two projects meet in the middle.</span></li>
+      <li><span class="d">Day 5</span><span><strong>Scope and backtest protocol.</strong> Exact first-production scope; what to defer or simplify and why; acceptance criteria per capability; the policy-replay backtest and shadow-mode plan with the metrics from section 8 of your overview. Where I disagree with the proposed approach, in writing, with reasons.</span></li>
+      <li><span class="d">Day 6</span><span><strong>Risks and estimate.</strong> Implementation milestones, timeline, assumptions, key risks with mitigations, and a revised fixed-price estimate for the remaining build.</span></li>
+      <li><span class="d">Day 7</span><span><strong>Review.</strong> Walk-through with the project manager, purchasing leadership and the admin who will run the queue; revisions the same day; final package delivered.</span></li>
+    </ol>
+    <div class="box">
+      <h3>Deliverables (your section 6)</h3>
+      <ol>
+        <li>Validation of the available historical sales and inventory data, with material gaps and reconstruction risks.</li>
+        <li>Recommended forecasting approaches by SKU behaviour and the backtesting / champion-challenger methodology.</li>
+        <li>Inventory-position, lead-time, service-level and safety-stock semantics.</li>
+        <li>Production architecture and the planner-to-warehouse data contract.</li>
+        <li>Exact first-production scope, with items to defer or simplify.</li>
+        <li>Where I disagree with the proposed approach, and why.</li>
+        <li>Implementation milestones, acceptance criteria, key risks, assumptions, timeline and a revised fixed-price estimate.</li>
+      </ol>
+      <p class="next"><strong>Working overlap:</strong> I work on GMT; 13:00 to 18:00 Eastern is my afternoon and evening, every working day. Written updates in the Upwork room; a short review call at the end of each milestone.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="proof">
+  <div class="sec-head"><span class="sec-no">5</span><h2>How we prove it before you rely on it</h2></div>
+  <div class="two">
+    <div class="stack">
+      <h3 class="sub-head" style="margin-top:0">Rolling-origin backtest of the whole policy</h3>
+      <p class="prose">Not just the forecast. Replay 12 to 24 months of your history: at each origin the planner forecasts, sizes safety stock, times replenishment and composes containers using only what was known on that date (effective-dated rules included). An inventory simulation then runs those decisions forward and compares them with what your current process actually decided, SKU by SKU.</p>
+      <h3 class="sub-head">Shadow mode, then live</h3>
+      <p class="prose">Champion-challenger on a set of SKU families for one or two purchasing cycles: the planner's recommendations sit next to the buyer's, nothing executes automatically, and the deltas are explained. Only after that do routine actions move to the queue, with high-value and low-confidence cases still escalating.</p>
+    </div>
+    <div>
+      <h3 class="sub-head" style="margin-top:0">Judged on the metrics in your section 8</h3>
+      <ul class="rlist">
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Forecast error and bias</strong> vs simple baselines and vs buyer overrides.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Stockout-adjusted demand capture</strong> and lost contribution, not gross lost sales.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Inventory investment, turns and forward-cover distribution</strong>, read with service level and profitable growth.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Excess prevented</strong> while action is still reversible: PO reduction, transfer, markdown, supplier action.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>FBA availability and total replenishment economics</strong>, including avoidable low-stock, storage, placement and freight costs.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Working-capital and supplier-commercial</strong> improvements.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Share of routine recommendations an administrator can execute</strong> vs cases escalated to skilled review.</span></li>
+        <li><svg width="16" height="16" class="ico-ok"><use href="#i-ok"/></svg><span><strong>Economic outcome of accepted vs overridden</strong> recommendations, not only model accuracy.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="push">
+  <div class="sec-head"><span class="sec-no">6</span><h2>Where I'd push back</h2></div>
+  <p class="prose intro">Your overview asks for disagreement in Milestone 0. Four positions I would argue for, open to being talked out of.</p>
+  <ol class="push">
+    <li><span class="q">Censored demand is an estimation problem with stated uncertainty, not a reconstruction to get "right".</span><span class="why">No method recovers the true demand of a month with no stock. Carry a confidence code and a low/high range per SKU-period into safety stock and show a buyer the sensitivity, instead of one confident number.</span></li>
+    <li><span class="q">Ledgers before snapshots.</span><span class="why">Daily on-hand rebuilt from receipts, shipments, adjustments and FBA movements covers more history, more cheaply, than hunting for snapshots that may not exist. Reconcile against the snapshots you do have; use them to grade the ledger, not to replace it.</span></li>
+    <li><span class="q">Seasonality belongs at the family level, with multi-year history.</span><span class="why">A per-SKU seasonality index from a short window is mostly noise plus last year's stockouts. Estimate the profile on the family across years, reconcile down, and let the recent window set only the level.</span></li>
+    <li><span class="q">Keep the planner app thin.</span><span class="why">The operational tool is a queue with approvals, overrides, escalation and audit, reading from the run snapshot. Reporting stays in Power BI; data stays in the warehouse. A second pipeline or a second BI layer is the fastest way to lose the single source of truth.</span></li>
+  </ol>
+</section>
+
+<!-- 7 -->
+<section id="about">
+  <div class="sec-head"><span class="sec-no">7</span><h2>About me</h2></div>
+  <dl class="facts">
+    <dt>Optimization in production</dt>
+    <dd><strong>A scheduling optimizer for an industrial pipeline network</strong>, built with OR-Tools: it produces the transport schedule that operations run on, under physical and protocol constraints.</dd>
+    <dt>Forecasting</dt>
+    <dd><strong>Multi-year port-traffic forecasts</strong> with Prophet and ARIMA.</dd>
+    <dt>Planner demo</dt>
+    <dd><strong>A forecast-and-reorder planner on synthetic data</strong>, open to try: <a href="https://slimanechanchoul.com/planner">slimanechanchoul.com/planner</a>. Tests four models per product and says what to order this week within a budget.</dd>
+    <dt>Tools</dt>
+    <dd>Python, SQL, OR-Tools, statistical and ML forecasting. Working in machine learning since 2021.</dd>
+    <dt>What transfers, what doesn't</dt>
+    <dd>The method transfers: constrained optimization that operations trust, forecasts chosen by backtest, and a run you can replay. I have not yet shipped an e-commerce replenishment planner, and I would rather say that than imply it; Milestone 0 is where you check the fit on your data before committing to the build.</dd>
+    <dt>How I work</dt>
+    <dd>Myself, for design and implementation, in your repositories and your Azure accounts. Written updates; short review calls at milestones; no subcontracting.</dd>
+  </dl>
+</section>
+
+<footer class="foot">
+  <p>Prepared for the Upwork posting "Demand Forecasting &amp; Inventory Optimization System", October 2026.</p>
+  <p>All figures and numbers on this page come from a synthetic demo built for this brief (30 SKUs, 730 days, seed 7, OR-Tools CP-SAT 9.15). No company data was used. Not indexed by search engines.</p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -10,7 +10,7 @@ DEMOS = {
     "routes": ("Route optimizer", "Cheapest delivery routes on real roads, with capacity, time windows and shift length.", "https://slimaneoptic-routes.streamlit.app/"),
     "scheduler": ("AI shift scheduler", "A weekly staff roster built by an optimizer, changed in plain words.", "https://slimaneoptic-scheduler.streamlit.app/"),
     "chatbot": ("Website chatbot and data extraction", "Answers from a website or PDFs with sources; extracts fields into tables.", "https://slimaneoptic-chatbot.streamlit.app/"),
-    "planner": ("Demand forecast and reorder planner", "Forecasts every product, tests 4 models, and says what to order this week within your budget.", "https://slimaneoptic-planner.streamlit.app/"),
+    "planner": ("Demand forecast and reorder planner", "Demo on synthetic sales data: forecasts every product, tests 4 models, and says what to order this week within your budget.", "https://slimaneoptic-planner.streamlit.app/"),
     "rooms": ("Room layout optimizer", "The best few, genuinely different furniture layouts under design rules.", "https://slimaneoptic-rooms.streamlit.app/"),
     "schoolbus": ("School bus routing analysis", "Walk zones, stop consolidation and bus routes on a real street network.", "https://slimaneoptic-schoolbus.streamlit.app/"),
     "railway-crew": ("Onboard crew deployment", "End-to-end crews vs. relays at manpower hubs, under working-hour rules.", "https://slimaneoptic-railway.streamlit.app/"),
@@ -32,9 +32,10 @@ for slug, (title, blurb, app) in DEMOS.items():
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
 # Pages with their own content instead of an embedded app: vision (needs a GPU, so a video) and
-# dc-map (print files for one job: noindex, not listed on the homepage)
-for slug in ("vision", "dc-map"):
+# dc-map (print files for one job: noindex, not listed on the homepage), demand-planner (approach brief for
+# one job, synthetic figures live in site/demand-planner/: noindex, not listed)
+for slug in ("vision", "dc-map", "demand-planner"):
     page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map"]))
+print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner"]))
