@@ -33,9 +33,10 @@ for slug, (title, blurb, app) in DEMOS.items():
     (root / slug / "index.html").write_text(page)
 # Pages with their own content instead of an embedded app: vision (needs a GPU, so a video) and
 # dc-map (print files for one job: noindex, not listed on the homepage), demand-planner (approach brief for
-# one job, synthetic figures live in site/demand-planner/: noindex, not listed)
-for slug in ("vision", "dc-map", "demand-planner"):
+# one job, synthetic figures live in site/demand-planner/: noindex, not listed), telegram-digest (brief of the
+# personal-assistant Stage 1 demo, real run of 2026-10-06: noindex, not listed, reusable in proposals)
+for slug in ("vision", "dc-map", "demand-planner", "telegram-digest"):
     page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner"]))
+print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner", "telegram-digest"]))

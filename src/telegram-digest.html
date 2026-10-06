@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telegram digest demo · Slimane Chanchoul</title>
+<meta name="description" content="Stage 1 of a personal AI assistant: 4 RSS feeds and 3 public Telegram channels collected into PostgreSQL + pgvector, a daily digest written by Claude with a link on every bullet, delivered to a Telegram bot that also answers /ask questions from the stored posts.">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Same system as the briefing pages: one left-aligned column (max 1100px), facts first, boxed figures. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #e9edf3; --fg: #121821; --fg-2: #46516a; --fg-3: #657086;
+  --rule: #d5dbe4; --rule-strong: #aeb8c7; --accent: #1c55c6; --on-accent: #ffffff;
+  --allow: #17733f; --allow-bg: #dff1e6; --review: #8c5a00; --review-bg: #f8ecd2; --block: #b1253a; --block-bg: #f8e0e3; --guess: #5f45b0; --guess-bg: #ebe6f8;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --on-accent: #0b1220;
+    --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c; --guess: #b7a2f7; --guess-bg: #241d3b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --on-accent: #0b1220;
+  --allow: #55c991; --allow-bg: #10291b; --review: #e6ad45; --review-bg: #2f2510; --block: #f47a86; --block-bg: #37161c; --guess: #b7a2f7; --guess-bg: #241d3b;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { overflow-x: hidden; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.55; margin: 0; overflow-x: hidden; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 0 56px; }
+@media (min-width: 760px) { .wrap { padding-inline: 32px; } }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.65rem, 1.2rem + 1.6vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.4rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding-left: 1.2em; }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+code, .mono, .num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+code { font-size: 0.88em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.muted { color: var(--fg-3); }
+.small { font-size: 0.88rem; }
+.prose { max-width: 72ch; color: var(--fg-2); }
+.prose strong { color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+/* top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+.bar .name { font-weight: 700; color: var(--fg); text-decoration: none; white-space: nowrap; }
+.bar .btn { background: var(--fg); color: var(--bg); padding: 7px 12px 6px; border-radius: 7px; font-weight: 600; font-size: 0.92rem; text-decoration: none; white-space: nowrap; }
+
+/* pills */
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 600 0.78rem/1.2 var(--font-body); padding: 4px 9px; border-radius: 99px; white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.neutral { color: var(--fg-2); background: var(--surface-2); }
+.pill.real { color: var(--allow); background: var(--allow-bg); }
+
+/* masthead */
+.mast { display: flex; flex-direction: column; gap: 10px; padding-bottom: 26px; }
+.eyebrow { font: 600 0.74rem/1.3 var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-3); }
+.mast-meta { color: var(--fg-2); max-width: 80ch; font-size: 1.05rem; }
+.mast-meta strong { color: var(--fg); }
+.state-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-top: 8px; font-size: 0.92rem; }
+.toc a { color: var(--fg-2); text-decoration: none; }
+.toc a:hover { color: var(--accent); text-decoration: underline; }
+.toc .n { font-family: var(--font-data); color: var(--fg-3); margin-right: 4px; }
+
+/* sections */
+section { padding-block: 40px 10px; border-top: 1px solid var(--rule); scroll-margin-top: 12px; }
+.sec-head { display: flex; gap: 12px; align-items: baseline; margin-bottom: 18px; }
+.sec-no { font: 500 0.9rem/1 var(--font-data); color: var(--fg-3); min-width: 1.4em; }
+.intro { margin-bottom: 18px; }
+
+/* 1. schema */
+.schema { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; }
+@media (max-width: 480px) { .schema { padding: 8px; } }
+.schema svg { display: block; width: 100%; height: auto; font-family: var(--font-body); }
+.schema .wide { display: block; } .schema .tall { display: none; }
+@media (max-width: 700px) { .schema .wide { display: none; } .schema .tall { display: block; } }
+.schema text { fill: var(--fg); font-size: 13px; }
+.schema .t { font-weight: 700; font-size: 14px; }
+.schema .s { fill: var(--fg-2); font-size: 11.5px; }
+.schema .k { fill: var(--fg-3); font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; }
+.schema .bx { fill: var(--bg); stroke: var(--rule-strong); stroke-width: 1.2; }
+.schema .bx.core { fill: var(--surface-2); stroke: var(--fg); stroke-width: 1.5; }
+.schema .bx.out { stroke: var(--accent); }
+.schema .step { fill: var(--surface); stroke: var(--rule-strong); stroke-width: 1; }
+.schema .ar { stroke: var(--fg-2); stroke-width: 1.6; fill: none; marker-end: url(#ah); }
+.schema .ar.back { stroke: var(--fg-3); stroke-dasharray: 2 3; marker-end: url(#ahg); }
+#ah path { fill: var(--fg-2); } #ahg path { fill: var(--fg-3); }
+.schema .lbl { fill: var(--fg-3); font-size: 11px; }
+.schema .lbl.mono { font-family: var(--font-data); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; color: var(--fg-3); margin-top: 10px; }
+.legend span::before { content: ""; display: inline-block; width: 18px; border-top: 2px solid var(--fg-2); vertical-align: middle; margin-right: 6px; }
+.legend .b::before { border-top: 2px dotted var(--fg-3); }
+
+/* 2. facts table */
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { padding: 9px 10px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; color: var(--fg-2); }
+td strong { color: var(--fg); }
+th { font: 600 0.72rem/1.4 var(--font-data); letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); border-bottom-color: var(--rule-strong); }
+caption { text-align: left; font-size: 0.85rem; color: var(--fg-3); padding-bottom: 6px; }
+th[scope="row"] { font: 600 0.74rem/1.6 var(--font-data); letter-spacing: 0.05em; text-transform: uppercase; color: var(--fg-3); white-space: nowrap; width: 11rem; border-bottom-color: var(--rule); }
+@media (max-width: 560px) { th[scope="row"] { white-space: normal; width: 7rem; } }
+
+/* 3. digest excerpt, rendered the way the bot shows it */
+.digest { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 18px 20px; max-width: 80ch; display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 480px) { .digest { padding: 14px; } }
+.digest .dg-head { font-weight: 700; }
+.digest .dg-src { font-weight: 700; margin-top: 6px; }
+.digest ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; color: var(--fg-2); font-size: 0.95rem; }
+.digest li { position: relative; padding-left: 1.1em; }
+.digest li::before { content: "•"; color: var(--fg-3); position: absolute; left: 0; }
+.digest .more { border-top: 1px solid var(--rule); padding-top: 10px; }
+
+/* 4. try it */
+.cmds { list-style: none; padding: 0; display: flex; flex-direction: column; max-width: 80ch; }
+.cmds li { display: grid; grid-template-columns: 10rem minmax(0, 1fr); gap: 4px 14px; padding-block: 9px; border-top: 1px solid var(--rule); font-size: 0.94rem; color: var(--fg-2); }
+.cmds li:last-child { border-bottom: 1px solid var(--rule); }
+.cmds code { font-size: 0.9rem; color: var(--fg); background: none; padding: 0; }
+@media (max-width: 560px) { .cmds li { grid-template-columns: minmax(0, 1fr); } }
+
+/* 5. limits */
+.caveats { background: var(--review-bg); border-radius: 8px; padding: 14px 16px; font-size: 0.93rem; color: var(--fg-2); max-width: 80ch; }
+.caveats .lab { display: block; font: 600 0.68rem/1.4 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; color: var(--review); margin-bottom: 6px; }
+.caveats ul { display: flex; flex-direction: column; gap: 6px; }
+.caveats strong { color: var(--fg); }
+.foot { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--fg-3); display: flex; flex-direction: column; gap: 6px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" /></marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" /></marker>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<div class="bar">
+  <a class="name" href="/">Slimane Chanchoul</a>
+  <a class="btn" href="__UPWORK__" rel="noopener">Upwork profile</a>
+</div>
+
+<header class="mast">
+  <p class="eyebrow">Demo · personal AI assistant, stage 1 · real run of 6 October 2026</p>
+  <h1>Your sources, read every evening, summarised into Telegram</h1>
+  <p class="mast-meta">Every evening the collectors read <strong>4 RSS feeds and 3 public Telegram channels</strong> into PostgreSQL + pgvector, and Claude writes one digest grouped by source with a link on every bullet, delivered to a Telegram bot. The same bot answers <code>/ask</code> questions from the stored posts, in the language of the question.</p>
+  <div class="state-row" aria-label="The run at a glance">
+    <span class="pill real">132 posts stored</span>
+    <span class="pill real">125 items in the digest</span>
+    <span class="pill neutral">PostgreSQL 16 + pgvector</span>
+    <span class="pill neutral">all-MiniLM-L6-v2, 384 dims</span>
+    <span class="pill neutral">Claude Haiku 4.5</span>
+    <span class="pill neutral">Daily at 21:00 Asia/Tbilisi</span>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#schema"><span class="n">1</span>How it works</a>
+    <a href="#facts"><span class="n">2</span>The run in numbers</a>
+    <a href="#excerpt"><span class="n">3</span>Digest excerpt</a>
+    <a href="#try"><span class="n">4</span>Try it</a>
+    <a href="#limits"><span class="n">5</span>Honest limits</a>
+  </nav>
+</header>
+
+<!-- 1 -->
+<section id="schema">
+  <div class="sec-head"><span class="sec-no">1</span><h2>How it works: two paths, one table</h2></div>
+  <p class="prose intro">The daily path runs from cron at 21:00 Asia/Tbilisi: collect, embed, digest, send. The <code>/ask</code> path runs when a question arrives: embed it, find the nearest stored posts, let Claude answer from those posts only.</p>
+  <div class="schema">
+    <!-- wide layout -->
+    <svg class="wide" viewBox="0 0 1040 400" role="img" aria-labelledby="sch-w-t">
+      <title id="sch-w-t">Daily path: sources (4 RSS feeds, 3 Telegram channels) to collectors, to PostgreSQL 16 with pgvector, to Claude Haiku 4.5, to the Telegram bot. Ask path: a question is embedded, the nearest posts are found in pgvector, Claude answers in the chat. Both paths use the same items table.</title>
+      <text class="lbl mono" x="20" y="22">Daily path · cron 21:00 Asia/Tbilisi · collect → embed → digest → send</text>
+      <!-- sources -->
+      <rect class="bx" x="20" y="40" width="205" height="180" rx="10"/>
+      <text class="k" x="34" y="62">4 RSS feeds, 3 channels</text>
+      <text class="t" x="34" y="84">Sources</text>
+      <rect class="step" x="34" y="98" width="177" height="24" rx="5"/><text class="s" x="42" y="115">Hacker News, TechCrunch</text>
+      <rect class="step" x="34" y="126" width="177" height="24" rx="5"/><text class="s" x="42" y="143">The Verge, Ars Technica</text>
+      <rect class="step" x="34" y="154" width="177" height="24" rx="5"/><text class="s" x="42" y="171">t.me/s: durov, telegram</text>
+      <rect class="step" x="34" y="182" width="177" height="24" rx="5"/><text class="s" x="42" y="199">t.me/s: meduzalive (RU)</text>
+      <!-- collectors -->
+      <rect class="bx" x="255" y="40" width="180" height="180" rx="10"/>
+      <text class="k" x="269" y="62">Python</text>
+      <text class="t" x="269" y="84">Collectors</text>
+      <rect class="step" x="269" y="98" width="152" height="24" rx="5"/><text class="s" x="277" y="115">collect.py: RSS, t.me/s</text>
+      <rect class="step" x="269" y="126" width="152" height="24" rx="5"/><text class="s" x="277" y="143">dedupe by sha256 hash</text>
+      <rect class="step" x="269" y="154" width="152" height="24" rx="5"/><text class="s" x="277" y="171">embed.py: MiniLM-L6-v2</text>
+      <rect class="step" x="269" y="182" width="152" height="24" rx="5"/><text class="s" x="277" y="199">384-dim vectors</text>
+      <!-- postgres -->
+      <rect class="bx core" x="465" y="40" width="175" height="180" rx="10"/>
+      <text class="k" x="479" y="62">Docker container</text>
+      <text class="t" x="479" y="84">PostgreSQL 16</text>
+      <text class="t" x="479" y="102">+ pgvector 0.8.7</text>
+      <rect class="step" x="479" y="116" width="147" height="24" rx="5"/><text class="s" x="487" y="133">items table: 132 posts</text>
+      <rect class="step" x="479" y="144" width="147" height="24" rx="5"/><text class="s" x="487" y="161">sha256 hash UNIQUE</text>
+      <rect class="step" x="479" y="172" width="147" height="24" rx="5"/><text class="s" x="487" y="189">embedding vector(384)</text>
+      <!-- claude -->
+      <rect class="bx" x="670" y="40" width="165" height="180" rx="10"/>
+      <text class="k" x="684" y="62">via OpenRouter</text>
+      <text class="t" x="684" y="84">Claude Haiku 4.5</text>
+      <text class="s" x="684" y="110">last 24 h of posts →</text>
+      <text class="s" x="684" y="128">a section per source,</text>
+      <text class="s" x="684" y="146">link on every bullet</text>
+      <text class="s" x="684" y="172">125 items in 61 s</text>
+      <text class="s" x="684" y="190">(digest of 6 Oct 2026)</text>
+      <!-- bot -->
+      <rect class="bx out" x="865" y="40" width="160" height="180" rx="10"/>
+      <text class="k" x="879" y="62">Long polling</text>
+      <text class="t" x="879" y="84">Telegram bot</text>
+      <text class="s" x="879" y="104">@Slimanedemobot</text>
+      <rect class="step" x="879" y="116" width="132" height="24" rx="5"/><text class="s" x="887" y="133">/digest</text>
+      <rect class="step" x="879" y="144" width="132" height="24" rx="5"/><text class="s" x="887" y="161">/ask &lt;question&gt;</text>
+      <rect class="step" x="879" y="172" width="132" height="24" rx="5"/><text class="s" x="887" y="189">/sources</text>
+      <!-- row 1 arrows -->
+      <path class="ar" d="M225 130 L255 130"/>
+      <path class="ar" d="M435 130 L465 130"/>
+      <path class="ar" d="M640 130 L670 130"/>
+      <path class="ar" d="M835 130 L865 130"/>
+      <!-- shared table -->
+      <path class="ar back" d="M552 220 L552 290"/>
+      <text class="lbl" x="562" y="262">same items table</text>
+
+      <text class="lbl mono" x="20" y="272">/ask path · when a question arrives in the chat</text>
+      <!-- question -->
+      <rect class="bx out" x="20" y="290" width="205" height="90" rx="10"/>
+      <text class="t" x="34" y="316">Question</text>
+      <text class="s" x="34" y="338">/ask what did Durov</text>
+      <text class="s" x="34" y="356">announce this week?</text>
+      <!-- embedding -->
+      <rect class="bx" x="255" y="290" width="180" height="90" rx="10"/>
+      <text class="t" x="269" y="316">Embedding</text>
+      <text class="s" x="269" y="338">all-MiniLM-L6-v2, 384 d,</text>
+      <text class="s" x="269" y="356">same model as the posts</text>
+      <!-- pgvector search -->
+      <rect class="bx core" x="465" y="290" width="175" height="90" rx="10"/>
+      <text class="t" x="479" y="316">pgvector search</text>
+      <text class="s" x="479" y="338">nearest posts by cosine</text>
+      <text class="s" x="479" y="356">distance (&lt;=&gt;)</text>
+      <!-- claude -->
+      <rect class="bx" x="670" y="290" width="165" height="90" rx="10"/>
+      <text class="t" x="684" y="316">Claude Haiku 4.5</text>
+      <text class="s" x="684" y="338">answers in the</text>
+      <text class="s" x="684" y="356">question's language</text>
+      <!-- answer -->
+      <rect class="bx out" x="865" y="290" width="160" height="90" rx="10"/>
+      <text class="t" x="879" y="316">Answer</text>
+      <text class="s" x="879" y="338">each fact with its link,</text>
+      <text class="s" x="879" y="356">tested in EN and RU</text>
+      <!-- row 2 arrows -->
+      <path class="ar" d="M225 335 L255 335"/>
+      <path class="ar" d="M435 335 L465 335"/>
+      <path class="ar" d="M640 335 L670 335"/>
+      <path class="ar" d="M835 335 L865 335"/>
+    </svg>
+
+    <!-- tall layout (phones) -->
+    <svg class="tall" viewBox="0 0 360 1080" role="img" aria-labelledby="sch-t-t">
+      <title id="sch-t-t">Stacked: daily path from sources to collectors, PostgreSQL with pgvector, Claude Haiku 4.5 and the Telegram bot; then the ask path from a question through embedding, pgvector search and Claude to the answer.</title>
+      <text class="lbl mono" x="8" y="18">Daily path · cron 21:00 Asia/Tbilisi</text>
+      <rect class="bx" x="8" y="30" width="344" height="118" rx="10"/>
+      <text class="t" x="22" y="54">Sources</text>
+      <text class="s" x="22" y="76">4 RSS feeds: Hacker News, TechCrunch,</text>
+      <text class="s" x="22" y="94">The Verge, Ars Technica</text>
+      <text class="s" x="22" y="116">3 Telegram channels (t.me/s preview): durov,</text>
+      <text class="s" x="22" y="134">telegram, meduzalive (Russian)</text>
+      <path class="ar" d="M180 148 L180 172"/>
+      <rect class="bx" x="8" y="172" width="344" height="92" rx="10"/>
+      <text class="t" x="22" y="196">Collectors (collect.py, embed.py)</text>
+      <text class="s" x="22" y="218">parse feeds and t.me/s pages, sha256 dedupe</text>
+      <text class="s" x="22" y="236">all-MiniLM-L6-v2 embeddings, 384 dimensions</text>
+      <path class="ar" d="M180 264 L180 288"/>
+      <rect class="bx core" x="8" y="288" width="344" height="92" rx="10"/>
+      <text class="t" x="22" y="312">PostgreSQL 16 + pgvector 0.8.7 (Docker)</text>
+      <text class="s" x="22" y="334">items table: 132 posts, hash UNIQUE,</text>
+      <text class="s" x="22" y="352">embedding vector(384)</text>
+      <path class="ar" d="M180 380 L180 404"/>
+      <rect class="bx" x="8" y="404" width="344" height="92" rx="10"/>
+      <text class="t" x="22" y="428">Claude Haiku 4.5 via OpenRouter</text>
+      <text class="s" x="22" y="450">last 24 h → one section per source,</text>
+      <text class="s" x="22" y="468">a link on every bullet (125 items, 61 s)</text>
+      <path class="ar" d="M180 496 L180 520"/>
+      <rect class="bx out" x="8" y="520" width="344" height="76" rx="10"/>
+      <text class="t" x="22" y="544">Telegram bot @Slimanedemobot</text>
+      <text class="s" x="22" y="566">/digest · /ask &lt;question&gt; · /sources</text>
+
+      <text class="lbl mono" x="8" y="640">/ask path · when a question arrives</text>
+      <rect class="bx out" x="8" y="652" width="344" height="62" rx="10"/>
+      <text class="t" x="22" y="676">Question in the chat</text>
+      <text class="s" x="22" y="698">/ask what did Durov announce this week?</text>
+      <path class="ar" d="M180 714 L180 738"/>
+      <rect class="bx" x="8" y="738" width="344" height="62" rx="10"/>
+      <text class="t" x="22" y="762">Embedding, same MiniLM model</text>
+      <text class="s" x="22" y="784">384-dim vector of the question</text>
+      <path class="ar" d="M180 800 L180 824"/>
+      <rect class="bx core" x="8" y="824" width="344" height="62" rx="10"/>
+      <text class="t" x="22" y="848">pgvector search, same items table</text>
+      <text class="s" x="22" y="870">nearest posts by cosine distance</text>
+      <path class="ar" d="M180 886 L180 910"/>
+      <rect class="bx" x="8" y="910" width="344" height="62" rx="10"/>
+      <text class="t" x="22" y="934">Claude Haiku 4.5</text>
+      <text class="s" x="22" y="956">answers in the question's language, with links</text>
+      <path class="ar" d="M180 972 L180 996"/>
+      <rect class="bx out" x="8" y="996" width="344" height="62" rx="10"/>
+      <text class="t" x="22" y="1020">Answer in the chat</text>
+      <text class="s" x="22" y="1042">tested in English and Russian</text>
+    </svg>
+  </div>
+  <div class="legend" aria-hidden="true"><span>data flow</span><span class="b">both paths read the same table</span></div>
+</section>
+
+<!-- 2 -->
+<section id="facts">
+  <div class="sec-head"><span class="sec-no">2</span><h2>The run in numbers</h2></div>
+  <div class="tbl-wrap">
+  <table>
+    <caption>Laptop run, 6 October 2026; timings from the scripts' own output.</caption>
+    <tbody>
+      <tr><th scope="row">Sources</th><td><strong>4 RSS feeds</strong> (Hacker News, TechCrunch, The Verge, Ars Technica) and <strong>3 public Telegram channels</strong> (t.me/durov, t.me/telegram, t.me/meduzalive in Russian), via the <code>t.me/s</code> preview.</td></tr>
+      <tr><th scope="row">Storage</th><td><strong>PostgreSQL 16 + pgvector 0.8.7</strong> in Docker. One <code>items</code> table with a <code>UNIQUE</code> sha256 hash (link + title for RSS, post id for Telegram), so re-runs insert only new posts.</td></tr>
+      <tr><th scope="row">Posts stored</th><td><strong>132</strong> after two collects: 110 items in 2.5 s, then 22 new when t.me/meduzalive was added.</td></tr>
+      <tr><th scope="row">Embeddings</th><td><strong>all-MiniLM-L6-v2</strong>, 384 dimensions, in a pgvector column: 110 items in 3.8 s, the 22 new ones in 3.2 s.</td></tr>
+      <tr><th scope="row">Digest</th><td>Last 24 h of posts (<strong>125 items, 7 sources</strong>) → <strong>Claude Haiku 4.5</strong> via OpenRouter → one section per source, one sentence per bullet with its link; 61 s for this seven-section version (an earlier shorter version took 19.8 s). Fallbacks in the code: Claude Sonnet 4.5, Gemini 3.8 Flash.</td></tr>
+      <tr><th scope="row">/ask</th><td>Question embedded with the same model → nearest posts by cosine distance (a named source is searched first) → Claude Haiku 4.5 answers <strong>in the language of the question</strong>, each fact with its post link. Tested in English and Russian.</td></tr>
+      <tr><th scope="row">Delivery</th><td>Telegram bot <strong>@Slimanedemobot</strong>, long polling. Sent as Telegram HTML in chunks of at most 3,800 characters, split on line boundaries so no link is cut.</td></tr>
+      <tr><th scope="row">Schedule</th><td>cron, <strong>21:00 Asia/Tbilisi</strong> daily: collect → embed → digest → send to the saved chat.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="excerpt">
+  <div class="sec-head"><span class="sec-no">3</span><h2>Digest excerpt</h2></div>
+  <p class="prose intro">Two of the seven sections, as delivered to the bot chat. The sentences are Claude's, unedited; each link goes to the original post. The Russian channel is summarised in English the same way.</p>
+  <div class="digest">
+    <p class="dg-head">Daily digest · 6 October 2026 · 125 items from 7 sources</p>
+    <p class="dg-src">Hacker News</p>
+    <ul>
+      <li>AI systems are now capable of developing their own inference hardware, as demonstrated by the openTPU project on GitHub. <a href="https://github.com/FeSens/openTPU" rel="noopener">github.com</a></li>
+      <li>Mistral Large 4, a new multimodal AI model from Mistral AI, aims to compete with both closed and open-source rivals. <a href="https://mistral.ai/news/mistral-large-4/" rel="noopener">mistral.ai</a></li>
+      <li>Polars 2.0 has been released with significant improvements to the data manipulation library. <a href="https://pola.rs/posts/release-polars-2/" rel="noopener">pola.rs</a></li>
+      <li>Gleam programming language no longer compiles to Erlang source code in its latest update. <a href="https://gleam.run/news/gleam-doesnt-compile-to-erlang-source-anymore/" rel="noopener">gleam.run</a></li>
+    </ul>
+    <p class="dg-src">t.me/durov</p>
+    <ul>
+      <li>Telegram is rolling out a native non-custodial Gram wallet to all users, enabling instant zero-fee crypto transactions for over a billion users. <a href="https://t.me/durov/533" rel="noopener">t.me/durov</a></li>
+      <li>Telegram now has a Rich Text Editor supporting tables, headings, inline media, lists, AI content, and formulas. <a href="https://t.me/durov/531" rel="noopener">t.me/durov</a></li>
+      <li>Telegram applied for the .gram domain zone, which would allow a billion users to get their own second-level domains like durov.gram. <a href="https://t.me/durov/543" rel="noopener">t.me/durov</a></li>
+      <li>Telegram became the sponsor of Codeforces, the largest competitive programming platform with 4 million contestants and over 100 contests yearly. <a href="https://t.me/durov/548" rel="noopener">t.me/durov</a></li>
+    </ul>
+    <p class="more small muted">Five more sections in the delivered digest: Ars Technica, TechCrunch, The Verge, t.me/meduzalive, t.me/telegram.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="try">
+  <div class="sec-head"><span class="sec-no">4</span><h2>Try it</h2></div>
+  <p class="prose intro">Open <a href="https://t.me/Slimanedemobot" rel="noopener">@Slimanedemobot</a> in Telegram and send one of these. The bot replies while the demo laptop is on.</p>
+  <ul class="cmds">
+    <li><code>/digest</code><span>The latest digest, grouped by source, with links.</span></li>
+    <li><code>/ask &lt;question&gt;</code><span>An answer from the stored posts only, with links, in your language. Example: <code>/ask what did Durov announce this week?</code></span></li>
+    <li><code>/sources</code><span>Posts stored per source and the latest timestamp.</span></li>
+  </ul>
+</section>
+
+<!-- 5 -->
+<section id="limits">
+  <div class="sec-head"><span class="sec-no">5</span><h2>Honest limits</h2></div>
+  <div class="caveats">
+    <span class="lab">What this demo is and is not</span>
+    <ul>
+      <li><strong>It runs on a laptop.</strong> The bot and the 21:00 refresh work only while the laptop is on; a client version runs on the client's own VPS and accounts.</li>
+      <li><strong>Public Telegram channels only</strong>, read through the <code>t.me/s</code> preview. Private groups and chats need a Telethon session on the owner's account; not run here.</li>
+      <li><strong>Only RSS and Telegram sources so far</strong>: no email, X, YouTube or newsletters yet.</li>
+      <li><strong>The digest shown is from 6 October 2026</strong>, written by Claude Haiku 4.5 via OpenRouter; the sentences are the model's and were not checked against the articles.</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="foot">
+  <p>All numbers and sentences on this page come from the real run of 6 October 2026 on my laptop. Not indexed by search engines.</p>
+</footer>
+
+</div>
+</body>
+</html>
