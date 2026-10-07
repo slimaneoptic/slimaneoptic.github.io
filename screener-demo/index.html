@@ -11,32 +11,35 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root { --ink:#14202B; --paper:#F6F8FA; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --blue-soft:#E3EEFB; --green:#1F7A4D; --red:#B5362C; --bar:3.25rem; }
+:root { --ink:#14202B; --paper:#F6F8FA; --card:#FFFFFF; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --blue-soft:#E3EEFB; --green:#1F7A4D; --red:#B5362C; --bar-dim:#C9D8EC; --bar:3.25rem; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink:#E8EDF2; --paper:#0F1620; --card:#18212C; --slate:#9AA8B6; --rule:#2B3744; --blue:#6FA8F0; --blue-soft:#1E2E42; --green:#5BC48A; --red:#F08A7E; --bar-dim:#33496A; color-scheme: dark; } }
+:root[data-theme="dark"] { --ink:#E8EDF2; --paper:#0F1620; --card:#18212C; --slate:#9AA8B6; --rule:#2B3744; --blue:#6FA8F0; --blue-soft:#1E2E42; --green:#5BC48A; --red:#F08A7E; --bar-dim:#33496A; color-scheme: dark; }
 html,body { margin:0; background:var(--paper); color:var(--ink); font-family:"Overpass",system-ui,sans-serif; line-height:1.5; }
 .bar { height:var(--bar); box-sizing:border-box; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); background:var(--paper); position:sticky; top:0; z-index:5; }
 .name { font-weight:800; color:var(--ink); text-decoration:none; white-space:nowrap; }
 .demo { color:var(--slate); padding-left:.75rem; border-left:1px solid var(--rule); }
 .links a { color:var(--ink); text-decoration:none; margin-left:1rem; }
-.btn { background:var(--ink); color:#fff !important; padding:.5rem .9rem .4rem; border-radius:7px; font-weight:600; text-decoration:none; display:inline-block; border:0; cursor:pointer; font:inherit; line-height:1.2; }
-.btn.alt { background:#fff; color:var(--ink) !important; border:1px solid var(--ink); }
-.btn.blue { background:var(--blue); }
+.theme { background:none; border:1px solid var(--rule); color:var(--ink); border-radius:999px; padding:.25rem .6rem .15rem; font:inherit; font-size:.85rem; cursor:pointer; margin-left:.75rem; }
+.btn { background:var(--ink); color:var(--paper) !important; padding:.5rem .9rem .4rem; border-radius:7px; font-weight:600; text-decoration:none; display:inline-block; border:0; cursor:pointer; font:inherit; line-height:1.2; }
+.btn.alt { background:var(--card); color:var(--ink) !important; border:1px solid var(--ink); }
+.btn.blue { background:var(--blue); color:#fff !important; }
 main { max-width:1120px; margin:0 auto; padding:1.5rem 1rem 3rem; }
 h1 { font-size:clamp(1.5rem,4vw,2.2rem); line-height:1.15; margin:0 0 .4rem; }
 h2 { font-size:1.15rem; margin:1.8rem 0 .6rem; }
 .lead { color:var(--slate); font-size:1.05rem; margin:0 0 1rem; max-width:56rem; }
 .tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.6rem; margin:1rem 0 1.2rem; }
-.tile { background:#fff; border:1px solid var(--rule); border-radius:10px; padding:.7rem .9rem .5rem; }
+.tile { background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:.7rem .9rem .5rem; }
 .tile b { display:block; font-size:1.45rem; font-weight:800; line-height:1.1; }
 .tile span { color:var(--slate); font-size:.85rem; }
-.card { background:#fff; border:1px solid var(--rule); border-radius:10px; padding:1rem; min-width:0; }
+.card { background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:1rem; min-width:0; }
 main { overflow-x:hidden; }
 .results > * { min-width:0; }
 .cond { display:grid; grid-template-columns:2.4fr 1fr 1fr auto; gap:.5rem; align-items:center; margin-bottom:.5rem; }
-select,input { font:inherit; padding:.45rem .55rem; border:1px solid var(--rule); border-radius:6px; background:#fff; color:var(--ink); width:100%; box-sizing:border-box; }
+select,input { font:inherit; padding:.45rem .55rem; border:1px solid var(--rule); border-radius:6px; background:var(--card); color:var(--ink); width:100%; box-sizing:border-box; }
 select:focus,input:focus { outline:2px solid var(--blue); outline-offset:1px; }
 .row { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; align-items:center; }
 .hint { color:var(--slate); font-size:.85rem; margin:.1rem 0 .6rem; }
-.pill { display:inline-block; border:1px solid var(--rule); border-radius:999px; padding:.2rem .7rem .1rem; font-size:.85rem; margin:.2rem .3rem 0 0; cursor:pointer; background:#fff; }
+.pill { display:inline-block; border:1px solid var(--rule); border-radius:999px; padding:.2rem .7rem .1rem; font-size:.85rem; margin:.2rem .3rem 0 0; cursor:pointer; background:var(--card); color:var(--ink); }
 .pill:hover { border-color:var(--blue); color:var(--blue); }
 .results { display:grid; grid-template-columns:1fr; gap:1rem; margin-top:1rem; }
 @media (min-width:860px) { .results { grid-template-columns:1fr 300px; } }
@@ -45,7 +48,7 @@ select:focus,input:focus { outline:2px solid var(--blue); outline-offset:1px; }
 .wrap { overflow-x:auto; }
 table { border-collapse:collapse; width:100%; font-size:.88rem; }
 th,td { text-align:left; padding:.38rem .45rem; border-bottom:1px solid var(--rule); white-space:nowrap; }
-th { color:var(--slate); font-weight:600; cursor:pointer; position:sticky; top:0; background:#fff; user-select:none; }
+th { color:var(--slate); font-weight:600; cursor:pointer; position:sticky; top:0; background:var(--card); user-select:none; }
 th:hover { color:var(--blue); }
 tr:hover td { background:var(--blue-soft); }
 td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
@@ -53,7 +56,7 @@ td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
 .sym { font-weight:800; }
 .sectors .r { display:grid; grid-template-columns:7.5rem 1fr 2.5rem; gap:.5rem; align-items:center; font-size:.85rem; margin:.3rem 0; }
 .sectors .b { height:.7rem; background:var(--blue); border-radius:4px; }
-.sectors .b.dim { background:#C9D8EC; }
+.sectors .b.dim { background:var(--bar-dim); }
 .empty { padding:1.5rem; color:var(--slate); }
 .small { color:var(--slate); font-size:.85rem; }
 ul { padding-left:1.2rem; margin:.4rem 0; } li { margin:.3rem 0; }
@@ -61,9 +64,10 @@ ul { padding-left:1.2rem; margin:.4rem 0; } li { margin:.3rem 0; }
 </style>
 </head>
 <body>
+<script>(function(){try{var q=new URLSearchParams(location.search).get('theme');var s=q||localStorage.getItem('theme');if(s==='dark'||s==='light')document.documentElement.dataset.theme=s;}catch(e){}})();</script>
 <div class="bar">
   <div><a class="name" href="/">Slimane Chanchoul</a> <span class="demo">Stock screener demo</span></div>
-  <div class="links"><a class="all" href="/">All work</a> <a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0">Hire me on Upwork</a></div>
+  <div class="links"><a class="all" href="/">All work</a> <a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0">Hire me on Upwork</a><button class="theme" id="theme" title="Light or dark">◐ Theme</button></div>
 </div>
 <main>
 <h1>Screen every US-listed stock by where its numbers are and how they moved</h1>
@@ -184,6 +188,7 @@ function render() {
   const top = Object.entries(bySec).sort((a, b) => b[1] - a[1]); const max = top.length ? top[0][1] : 1;
   document.getElementById('sectors').innerHTML = top.length ? top.map(([s, n], i) => `<div class="r"><span title="${s}">${s.length > 16 ? s.slice(0, 15) + '…' : s}</span><div class="b ${i ? 'dim' : ''}" style="width:${Math.max(3, n / max * 100)}%"></div><span class="num">${n}</span></div>`).join('') : '<div class="small">Nothing to show yet.</div>';
 }
+document.getElementById('theme').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const next = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; try { localStorage.setItem('theme', next); } catch (e) {} };
 document.getElementById('add').onclick = () => addCond();
 document.getElementById('run').onclick = run;
 document.getElementById('csv').onclick = () => {
