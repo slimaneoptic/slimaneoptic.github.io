@@ -58,6 +58,11 @@ td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
 .sectors .b { height:.7rem; background:var(--blue); border-radius:4px; }
 .sectors .b.dim { background:var(--bar-dim); }
 .empty { padding:1.5rem; color:var(--slate); }
+.mg { margin:.6rem 0 .2rem; font-weight:800; font-size:.95rem; }
+.mg span { color:var(--slate); font-weight:400; font-size:.85rem; }
+.mm { display:inline-block; border:1px solid var(--rule); border-radius:6px; padding:.2rem .55rem .1rem; margin:.2rem .3rem .1rem 0; font-size:.85rem; cursor:pointer; background:var(--card); }
+.mm:hover { border-color:var(--blue); color:var(--blue); }
+.mm b { font-weight:400; color:var(--slate); }
 .small { color:var(--slate); font-size:.85rem; }
 ul { padding-left:1.2rem; margin:.4rem 0; } li { margin:.3rem 0; }
 @media (max-width:640px) { .cond { grid-template-columns:1fr 1fr auto; } .cond > select:first-child { grid-column:1 / -1; } .demo,.links .all { display:none; } .tiles { grid-template-columns:1fr 1fr; } .tile b { font-size:1.25rem; } }
@@ -100,6 +105,11 @@ ul { padding-left:1.2rem; margin:.4rem 0; } li { margin:.3rem 0; }
     <span class="pill" data-preset="tech">Technology, above $10B, positive day</span>
   </div>
 </div>
+
+<details class="card" style="margin-top:1rem" id="map" open>
+  <summary style="cursor:pointer; font-weight:800">All metrics you can screen on, by group (click one to add it as a condition)</summary>
+  <div id="maplist" style="margin-top:.6rem"></div>
+</details>
 
 <div class="results">
   <div class="card">
@@ -191,6 +201,9 @@ function render() {
   document.getElementById('sectors').innerHTML = top.length ? top.map(([s, n], i) => `<div class="r"><span title="${s}">${s.length > 16 ? s.slice(0, 15) + '…' : s}</span><div class="b ${i ? 'dim' : ''}" style="width:${Math.max(3, n / max * 100)}%"></div><span class="num">${n}</span></div>`).join('') : '<div class="small">Nothing to show yet.</div>';
 }
 document.getElementById('theme').onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); const next = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; try { localStorage.setItem('theme', next); } catch (e) {} };
+const GROUP_NOTE = {'Price and size (every stock, Nasdaq feed)': 'levels', 'Price performance (3 years of daily closes)': 'how the price moved', 'Levels now (SEC filings, fiscal 2025)': 'where the numbers are', 'Changes over time (SEC filings)': 'how the numbers moved: year, trailing 12 months, quarter', 'Market summary (Yahoo Finance, largest companies)': 'ratios now'};
+document.getElementById('maplist').innerHTML = GROUPS.map(g => `<div class="mg">${g[0]} <span>· ${GROUP_NOTE[g[0]] || ''}</span></div>` + g[1].map(m => `<span class="mm" data-k="${m[0]}">${m[1]} <b>· ${m[2].toLocaleString()}</b></span>`).join('')).join('');
+document.querySelectorAll('.mm').forEach(el => el.onclick = () => { addCond(el.dataset.k, 'min', ''); conds.lastChild.querySelector('input').focus(); conds.lastChild.scrollIntoView({block: 'center'}); });
 document.getElementById('add').onclick = () => addCond();
 document.getElementById('run').onclick = run;
 document.getElementById('csv').onclick = () => {
