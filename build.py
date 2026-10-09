@@ -45,7 +45,7 @@ demo = (root / "src/demo.html").read_text()
 for slug, (title, blurb, app) in DEMOS.items():
     shot = root / "img" / f"{slug}.webp"  # a real screenshot shown while the sleeping app wakes up
     preview = f'<img src="/img/{slug}.webp" alt="Screenshot of the {title}">' if shot.exists() else ""
-    page_title, desc = SEO.get(slug, (f"{title} · Slimane Chanchoul", blurb))
+    page_title, desc = SEO.get(slug, (f"{title} · S'limane Chanchoul", blurb))
     page = (demo.replace("__PAGETITLE__", page_title).replace("__BLURB__", desc).replace("__ROBOTS__", "" if slug in PUBLIC else NOINDEX)
             .replace("__TITLE__", title).replace("__APP__", app)
             .replace("__UPWORK__", UPWORK).replace("__ICON__", icon).replace("__PREVIEW__", preview))
