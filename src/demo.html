@@ -3,10 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>__TITLE__ · Slimane Chanchoul</title>
+<title>__PAGETITLE__</title>
 <meta name="description" content="__BLURB__">
-<meta name="robots" content="noindex">
-<link rel="icon" href="__ICON__">
+__ROBOTS__<link rel="icon" href="__ICON__">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
@@ -29,6 +28,11 @@ iframe { border: 0; display: block; width: 100%; height: 100%; }
 .wait { position: absolute; inset: 0; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center; transition: opacity .4s; }
 .wait img { max-width: min(900px, 100%); max-height: 62vh; width: auto; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 10px 30px rgba(20,32,43,.12); }
 .wait p { margin: 0; color: var(--slate); }
+.wait .btn { border: 0; font: inherit; font-size: 1rem; cursor: pointer; padding: 0.7rem 1.1rem 0.6rem; }
+.wait .btn:hover { background: #22364a; }
+.wait button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.wait .new { font-size: 0.9rem; }
+.wait .new a { color: var(--slate); }
 .wait.gone { opacity: 0; pointer-events: none; }
 @media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
@@ -39,11 +43,10 @@ iframe { border: 0; display: block; width: 100%; height: 100%; }
   <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me on Upwork</a></nav>
 </header>
 <div class="stage">
-  <iframe src="__APP__?embed=true" title="__TITLE__ (live demo)" allow="clipboard-write; fullscreen"
-          onload="setTimeout(function(){document.getElementById('wait').classList.add('gone')}, 1500)"></iframe>
+  <iframe src="__APP__?embed=true" title="__TITLE__ (live demo)" allow="clipboard-write; fullscreen"></iframe>
   <div class="wait" id="wait">__PREVIEW__
-    <p><b>The live app is waking up</b> (free hosting sleeps when idle; about 20 seconds).</p>
-    <p><a href="__APP__" target="_blank" rel="noopener">Open the live app in a new tab</a> if it takes longer.</p>
+    <button class="btn" type="button" onclick="document.getElementById('wait').classList.add('gone')">Open the live app (free server, can take up to a minute to wake)</button>
+    <p class="new">or <a href="__APP__" target="_blank" rel="noopener">open it in a new tab</a></p>
   </div>
 </div>
 </body>

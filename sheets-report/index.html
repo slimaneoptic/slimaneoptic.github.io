@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Google Sheets weekly report demo · Slimane Chanchoul</title>
-<meta name="description" content="One click in Google Sheets: raw orders cleaned, bad rows listed with the reason, amounts converted to USD at live rates, a weekly summary with a chart, and an email to the owner. Apps Script.">
-<meta name="robots" content="noindex">
+<title>Google Sheets weekly report demo: 500 orders, 464 clean, 34 rejected</title>
+<meta name="description" content="Google Sheets weekly report (demo): one click on 500 synthetic orders, 464 clean, 34 rejected with the reason, USD at live rates, summary, chart, email. 31 of 31 tests.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,7 +68,7 @@ code { font-size: .9em; background: #EEF2F6; padding: .05rem .3rem; border-radiu
   <p class="lead">Click <b>Reports &gt; Run weekly report</b>. The raw Orders sheet is cleaned, every bad row is listed with its reason, all amounts are converted to USD at live rates, and a summary with a chart lands in the sheet and in your inbox. A Monday trigger can run it for you.</p>
   <div class="kpi"><div>Rows read<b>500</b></div><div>Clean orders used<b>464</b></div>
   <div>Bad rows left out, each with the reason<b>34</b></div><div>Tests passing<b>31 of 31</b></div></div>
-  <p class="status"><b>Status:</b> tested with a local harness against the live FX API; the Google Sheet screenshots come next. The same Apps Script files run in Node with stand-ins for the Google services, so the numbers below are from a real run on 500 synthetic orders.</p>
+  <p class="status"><b>Status:</b> Numbers from a real run of the same Apps Script files in a Node harness against the live exchange-rate API; the install guide for your own Google Sheet is included. The harness uses stand-ins for the Google services; the data is 500 synthetic orders.</p>
 
   <figure><video src="demo.mp4" poster="poster.webp" width="1280" height="720" controls muted playsinline preload="metadata"
     aria-label="Captioned replay of the local test run: dirty input rows, the issues found, the conversion to USD, the summary and the email"></video>
@@ -95,7 +94,7 @@ code { font-size: .9em; background: #EEF2F6; padding: .05rem .3rem; border-radiu
   <h2>The real email from the test run</h2>
   <div class="split">
     <figure><a href="email.html"><img src="email.webp" width="720" height="1402" loading="lazy" alt="The weekly report email: revenue, orders and average order, a table by region, the top 5 products, bars for the last 8 weeks and the data checks"></a>
-    <figcaption>Captured in the local run, not sent. <a href="email.html">Open it as HTML</a>.</figcaption></figure>
+    <figcaption>Harness output: captured in the Node harness run, not sent. <a href="email.html">Open it as HTML</a>.</figcaption></figure>
     <div>
       <h3>Cleaning rules</h3>
       <ul>

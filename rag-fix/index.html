@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG chatbot fix demo · Slimane Chanchoul</title>
-<meta name="description" content="A RAG support chatbot went from 20/30 to 29/30 correct answers on the same documents, questions and LLM, after fixing chunking, retrieval, dates and the prompt.">
-<meta name="robots" content="noindex">
+<title>RAG repair: 20/30 to 29/30 correct answers, case study</title>
+<meta name="description" content="RAG chatbot fix (case study): over 12 synthetic documents, 20 of 30 test questions correct before and 29 of 30 after; outdated facts given as valid 3 to 0; 29 answers cite a source.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +75,7 @@ table.t { border-collapse: collapse; width: 100%; background: #fff; font-size: .
 </header>
 <main>
   <h1>RAG chatbot fix: 20/30 correct answers before, 29/30 after</h1>
-  <p class="lead">A support chatbot over 12 company documents, tested on 30 questions with known answers. Same documents, same questions, same LLM. Only the pipeline changed. Each version was run twice, and both runs gave the same scores: 10 wrong answers became right, and 1 right answer became a miss.</p>
+  <p class="lead">A support chatbot over 12 synthetic company documents, tested on 30 questions with known answers. Same documents, same questions, same LLM. Only the pipeline changed. Each version was run twice, and both runs gave the same scores: 10 wrong answers became right, and 1 right answer became a miss.</p>
   <div class="kpi">
     <div>Correct answers, before<b>20/30</b></div>
     <div class="up">Correct answers, after<b>29/30</b></div>

@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Website chatbot and data extraction · Slimane Chanchoul</title>
-<meta name="description" content="Answers from a website or PDFs with sources; extracts fields into tables.">
-<meta name="robots" content="noindex">
+<title>Website chatbot and data extraction demo, answers with sources</title>
+<meta name="description" content="Website chatbot and data extraction (demo): it answers only from your site or PDFs, cites its sources, says when it doesn't know, and extracts the fields you name into a table.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +28,11 @@ iframe { border: 0; display: block; width: 100%; height: 100%; }
 .wait { position: absolute; inset: 0; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1.5rem; text-align: center; transition: opacity .4s; }
 .wait img { max-width: min(900px, 100%); max-height: 62vh; width: auto; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 10px 30px rgba(20,32,43,.12); }
 .wait p { margin: 0; color: var(--slate); }
+.wait .btn { border: 0; font: inherit; font-size: 1rem; cursor: pointer; padding: 0.7rem 1.1rem 0.6rem; }
+.wait .btn:hover { background: #22364a; }
+.wait button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.wait .new { font-size: 0.9rem; }
+.wait .new a { color: var(--slate); }
 .wait.gone { opacity: 0; pointer-events: none; }
 @media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
@@ -39,11 +43,10 @@ iframe { border: 0; display: block; width: 100%; height: 100%; }
   <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" rel="noopener">Hire me on Upwork</a></nav>
 </header>
 <div class="stage">
-  <iframe src="https://slimaneoptic-chatbot.streamlit.app/?embed=true" title="Website chatbot and data extraction (live demo)" allow="clipboard-write; fullscreen"
-          onload="setTimeout(function(){document.getElementById('wait').classList.add('gone')}, 1500)"></iframe>
+  <iframe src="https://slimaneoptic-chatbot.streamlit.app/?embed=true" title="Website chatbot and data extraction (live demo)" allow="clipboard-write; fullscreen"></iframe>
   <div class="wait" id="wait"><img src="/img/chatbot.webp" alt="Screenshot of the Website chatbot and data extraction">
-    <p><b>The live app is waking up</b> (free hosting sleeps when idle; about 20 seconds).</p>
-    <p><a href="https://slimaneoptic-chatbot.streamlit.app/" target="_blank" rel="noopener">Open the live app in a new tab</a> if it takes longer.</p>
+    <button class="btn" type="button" onclick="document.getElementById('wait').classList.add('gone')">Open the live app (free server, can take up to a minute to wake)</button>
+    <p class="new">or <a href="https://slimaneoptic-chatbot.streamlit.app/" target="_blank" rel="noopener">open it in a new tab</a></p>
   </div>
 </div>
 </body>
