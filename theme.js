@@ -32,7 +32,8 @@
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "theme-btn";
-    var host = document.querySelector("header nav, .bar .links");
+    // A page can mark where the button goes with data-theme-slot; section menus (nav.toc) are skipped.
+    var host = document.querySelector("[data-theme-slot]") || document.querySelector("header nav:not(.toc), .bar .links");
     if (host) host.appendChild(btn);
     else { btn.className += " floating"; document.body.appendChild(btn); }
     paint(btn);

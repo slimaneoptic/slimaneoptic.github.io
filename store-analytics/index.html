@@ -1,18 +1,21 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Store analytics sample report</title>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
 <style>
-body{margin:0;background:#F6F8FA;color:#14202B;font-family:system-ui,sans-serif;line-height:1.5}
+:root{--ink:#14202B;--paper:#F6F8FA;--slate:#5B6B7A;--rule:#D5DBE1;--blue:#2A78D6;--surface:#fff}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,sans-serif;line-height:1.5}
 main{max-width:980px;margin:0 auto;padding:1.5rem 1rem 3rem} h1{font-size:1.8rem;margin:.2rem 0}
-h2{font-size:1.15rem;margin:2rem 0 .5rem} .note{color:#5B6B7A;font-size:.92rem}
+h2{font-size:1.15rem;margin:2rem 0 .5rem} .note{color:var(--slate);font-size:.92rem}
 .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:.8rem;margin:1rem 0}
-.kpi div{background:#fff;border:1px solid #D5DBE1;border-radius:8px;padding:.7rem} .kpi b{display:block;font-size:1.3rem}
-.wrap{overflow-x:auto} table.t{border-collapse:collapse;width:100%;background:#fff;font-size:.88rem}
-.t th,.t td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid #D5DBE1;white-space:nowrap} .t th{color:#5B6B7A}
+.kpi div{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:.7rem} .kpi b{display:block;font-size:1.3rem}
+.wrap{overflow-x:auto} table.t{border-collapse:collapse;width:100%;background:var(--surface);font-size:.88rem}
+.t th,.t td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--rule);white-space:nowrap} .t th{color:var(--slate)}
 ol li{margin:.45rem 0} @media(max-width:700px){.kpi{grid-template-columns:1fr 1fr}}
 </style></head><body><main><p class="note" style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-<a href="/" style="color:#14202B;font-weight:700;text-decoration:none">S'limane Chanchoul</a>
-<a href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" style="color:#2A78D6">Hire me on Upwork</a></p>
+<a href="/" style="color:var(--ink);font-weight:700;text-decoration:none">S'limane Chanchoul</a>
+<span data-theme-slot style="display:flex;align-items:center;gap:.6rem"><a href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" style="color:var(--blue)">Hire me on Upwork</a></span></p>
 <p class="note">Sample data: 12 weeks of a convenience store's POS exports (generated, with the problems real exports have). Pipeline: Python + PostgreSQL; margins use the cost in force on each sale date.</p>
 <h1>Store analytics: sample report</h1>
 <div class="kpi">

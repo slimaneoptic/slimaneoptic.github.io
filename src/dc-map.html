@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
 .bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
        padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
@@ -21,16 +21,16 @@ html, body { margin: 0; background: var(--paper); color: var(--ink); font-family
 .links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
 .links a { color: var(--ink); text-decoration: none; }
 .links a:hover { color: var(--blue); }
-.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
-.btn:hover { background: #22364a; }
-.btn.alt { background: #fff; color: var(--ink) !important; border: 1px solid var(--ink); }
+.btn { background: var(--btnbg); color: var(--btnfg) !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: var(--btnhover); }
+.btn.alt { background: var(--surface); color: var(--ink) !important; border: 1px solid var(--ink); }
 a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
 main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
 h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
 h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
 .lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
-img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 figure { margin: 0; }
 figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
@@ -41,6 +41,8 @@ li { margin: 0.35rem 0; }
 @media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
 </head>
 <body>
 <header class="bar">

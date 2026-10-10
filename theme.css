@@ -10,6 +10,7 @@
     --bad: #F97066; --badbg: #2A1614; --ok: #47CD89; --okbg: #0F2A1C; --warn: #FDB022; --warnbg: #2A2010;
     --orange: #F07A48; --grey-route: #6B7886; --m1: #7D8A97; --m2: #A9B5C1; --m3: #56636F;
     --red: #F0844C; --up: #47CD89; --down: #F97066; --notebg: #2A1B10; --codebg: #1E2A36;
+    --amber: #F5B83D; --info: #9CC3F0; --infobg: #15283C;
   }
   :root:not([data-theme="light"]) img:not([src$=".svg"]), :root:not([data-theme="light"]) video { filter: brightness(.88); }
 }
@@ -21,15 +22,17 @@
   --bad: #F97066; --badbg: #2A1614; --ok: #47CD89; --okbg: #0F2A1C; --warn: #FDB022; --warnbg: #2A2010;
   --orange: #F07A48; --grey-route: #6B7886; --m1: #7D8A97; --m2: #A9B5C1; --m3: #56636F;
   --red: #F0844C; --up: #47CD89; --down: #F97066; --notebg: #2A1B10; --codebg: #1E2A36;
+  --amber: #F5B83D; --info: #9CC3F0; --infobg: #15283C;
 }
 :root[data-theme="dark"] img:not([src$=".svg"]), :root[data-theme="dark"] video { filter: brightness(.88); }
 
 .theme-btn {
   display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   width: 2.1rem; height: 2.1rem; padding: 0; border: 1px solid var(--rule); border-radius: 999px;
-  background: transparent; color: var(--ink); cursor: pointer;
+  background: transparent; color: var(--ink, currentColor); cursor: pointer;
 }
-.theme-btn:hover { border-color: var(--blue); color: var(--blue); }
-.theme-btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.theme-btn:hover { border-color: var(--blue, var(--accent)); color: var(--blue, var(--accent)); }
+.theme-btn:focus-visible { outline: 3px solid var(--blue, var(--accent)); outline-offset: 3px; }
 .theme-btn svg { width: 1.05rem; height: 1.05rem; }
-.theme-btn.floating { position: fixed; top: 0.7rem; right: 0.7rem; z-index: 50; background: var(--paper); }
+/* pages without a top bar: the button sits in the top-right corner and scrolls away with the page */
+.theme-btn.floating { position: absolute; top: 0.8rem; right: 0.8rem; z-index: 50; background: var(--paper, var(--bg)); }
