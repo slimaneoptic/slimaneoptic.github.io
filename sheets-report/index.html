@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Google Sheets weekly report demo: 500 orders, 464 clean, 34 rejected</title>
-<meta name="description" content="Google Sheets weekly report (demo): one click on 500 synthetic orders, 464 clean, 34 rejected with the reason, USD at live rates, summary, chart, email. 31 of 31 tests.">
+<meta name="description" content="Google Sheets weekly report (demo): one click on 500 synthetic orders, 464 clean, 34 rejected with the reason, USD at live rates, summary and chart. 31 of 31 tests.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --up: #1B7F4B; --down: #B3261E; }
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --up: #1B7F4B; --down: #B3261E; --codebg: #EEF2F6; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
 .bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
        padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
@@ -20,15 +20,15 @@ html, body { margin: 0; background: var(--paper); color: var(--ink); font-family
 .links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
 .links a { color: var(--ink); text-decoration: none; }
 .links a:hover { color: var(--blue); }
-.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
-.btn:hover { background: #22364a; }
+.btn { background: var(--btnbg); color: var(--btnfg) !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: var(--btnhover); }
 a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
 main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
 h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
 h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
 h3 { font-size: 1rem; margin: 1.4rem 0 0.5rem; }
 .lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
-img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: #fff; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
 video { display: block; width: 100%; height: auto; border-radius: 10px; background: #14202B; }
 figure { margin: 0; }
 figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
@@ -36,27 +36,29 @@ ul, ol { padding-left: 1.2rem; margin: 0; }
 li { margin: 0.35rem 0; }
 .small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
 .kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
-.kpi div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
 .kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
-.status { background: #fff; border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
 .scroll { overflow-x: auto; }
-table.t { border-collapse: collapse; width: 100%; background: #fff; font-size: .92rem; }
+table.t { border-collapse: collapse; width: 100%; background: var(--surface); font-size: .92rem; }
 .t td, .t th { padding: .45rem .6rem; border-bottom: 1px solid var(--rule); text-align: left; white-space: nowrap; }
 .t th { color: var(--slate); font-weight: 600; }
 .t td.n, .t th.n { text-align: right; font-variant-numeric: tabular-nums; }
 .up { color: var(--up); } .down { color: var(--down); }
 .gets { display: grid; grid-template-columns: repeat(2, 1fr); gap: .8rem; }
-.gets div { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; }
+.gets div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; }
 .gets b { display: block; margin-bottom: .15rem; }
 .gets p { margin: 0; color: var(--slate); font-size: .93rem; }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
 .split > * { min-width: 0; }
 .cta { margin-top: 2.2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-code { font-size: .9em; background: #EEF2F6; padding: .05rem .3rem; border-radius: 4px; }
+code { font-size: .9em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
 @media (max-width: 760px) { .kpi, .gets { grid-template-columns: 1fr 1fr; } .split { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } .t td, .t th { padding: .4rem .45rem; } }
 @media (max-width: 420px) { .gets { grid-template-columns: 1fr; } }
 </style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
 </head>
 <body>
 <header class="bar">

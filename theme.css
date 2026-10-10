@@ -1,0 +1,35 @@
+/* Shared dark theme. Each page sets its light colors as tokens in :root; this file overrides them in dark mode.
+   Dark follows the visitor's system setting; the theme button (theme.js) can force light or dark. */
+:root { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: #E6EDF3; --paper: #0E151C; --slate: #95A3B1; --body: #C3CDD7; --rule: #2A3743;
+    --blue: #5AA2F0; --blue-soft: #15283C; --surface: #16202A; --dark: #080D12;
+    --btnbg: #E6EDF3; --btnfg: #0E151C; --btnhover: #C9D4DE;
+    --bad: #F97066; --badbg: #2A1614; --ok: #47CD89; --okbg: #0F2A1C; --warn: #FDB022; --warnbg: #2A2010;
+    --orange: #F07A48; --grey-route: #6B7886; --m1: #7D8A97; --m2: #A9B5C1; --m3: #56636F;
+    --red: #F0844C; --up: #47CD89; --down: #F97066; --notebg: #2A1B10; --codebg: #1E2A36;
+  }
+  :root:not([data-theme="light"]) img:not([src$=".svg"]), :root:not([data-theme="light"]) video { filter: brightness(.88); }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #E6EDF3; --paper: #0E151C; --slate: #95A3B1; --body: #C3CDD7; --rule: #2A3743;
+  --blue: #5AA2F0; --blue-soft: #15283C; --surface: #16202A; --dark: #080D12;
+  --btnbg: #E6EDF3; --btnfg: #0E151C; --btnhover: #C9D4DE;
+  --bad: #F97066; --badbg: #2A1614; --ok: #47CD89; --okbg: #0F2A1C; --warn: #FDB022; --warnbg: #2A2010;
+  --orange: #F07A48; --grey-route: #6B7886; --m1: #7D8A97; --m2: #A9B5C1; --m3: #56636F;
+  --red: #F0844C; --up: #47CD89; --down: #F97066; --notebg: #2A1B10; --codebg: #1E2A36;
+}
+:root[data-theme="dark"] img:not([src$=".svg"]), :root[data-theme="dark"] video { filter: brightness(.88); }
+
+.theme-btn {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 2.1rem; height: 2.1rem; padding: 0; border: 1px solid var(--rule); border-radius: 999px;
+  background: transparent; color: var(--ink); cursor: pointer;
+}
+.theme-btn:hover { border-color: var(--blue); color: var(--blue); }
+.theme-btn:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.theme-btn svg { width: 1.05rem; height: 1.05rem; }
+.theme-btn.floating { position: fixed; top: 0.7rem; right: 0.7rem; z-index: 50; background: var(--paper); }

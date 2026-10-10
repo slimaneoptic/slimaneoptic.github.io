@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root { --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
 html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; }
 .bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
        padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
@@ -21,8 +21,8 @@ html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink
 .links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
 .links a { color: var(--ink); text-decoration: none; }
 .links a:hover { color: var(--blue); }
-.btn { background: var(--ink); color: #fff !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
-.btn:hover { background: #22364a; }
+.btn { background: var(--btnbg); color: var(--btnfg) !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
+.btn:hover { background: var(--btnhover); }
 a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
 .stage { position: relative; height: calc(100vh - var(--bar)); height: calc(100dvh - var(--bar)); }
 iframe { border: 0; display: block; width: 100%; height: 100%; }
@@ -30,13 +30,15 @@ iframe { border: 0; display: block; width: 100%; height: 100%; }
 .wait img { max-width: min(900px, 100%); max-height: 62vh; width: auto; border: 1px solid var(--rule); border-radius: 10px; box-shadow: 0 10px 30px rgba(20,32,43,.12); }
 .wait p { margin: 0; color: var(--slate); }
 .wait .btn { border: 0; font: inherit; font-size: 1rem; cursor: pointer; padding: 0.7rem 1.1rem 0.6rem; }
-.wait .btn:hover { background: #22364a; }
+.wait .btn:hover { background: var(--btnhover); }
 .wait button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
 .wait .new { font-size: 0.9rem; }
 .wait .new a { color: var(--slate); }
 .wait.gone { opacity: 0; pointer-events: none; }
 @media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
 </style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
 </head>
 <body>
 <header class="bar">
