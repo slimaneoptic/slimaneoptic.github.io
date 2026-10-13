@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ask Any Website</title>
+<meta name="description" content="Live demo: paste a website link or upload PDFs and ask questions. Every answer shows the passages it used, and says so when the answer is not there.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Noto+Sans+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<script src="/theme.js"></script>
+<link rel="stylesheet" href="/chat/core.css">
+<style>
+/* page-only layout: top bar + full-height app (the chat UI itself is styled by /chat/core.css) */
+html,body{height:100%}
+body{margin:0;background:var(--paper);color:var(--body);font:400 16px/1.6 "Overpass",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--btnbg);color:var(--btnfg);padding:10px 14px;border-radius:8px;font-weight:600}
+.skip:focus{top:8px}
+.app{display:grid;grid-template-rows:3.25rem minmax(0,1fr);height:100vh;height:100dvh}
+.top{display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--rule);background:var(--surface);min-width:0}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--ink);text-decoration:none;font-size:16px;white-space:nowrap;letter-spacing:-.005em}
+.divider{width:1px;height:20px;background:var(--slate);opacity:.55;flex:none}
+.demo-name{color:var(--slate);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
+.tlink{color:var(--ink);font-weight:600;text-decoration:none;padding:8px 10px;border-radius:6px}
+.tlink:hover{background:var(--subtle)}
+.hire{display:inline-flex;align-items:center;height:36px;background:var(--btnbg);color:var(--btnfg);border-radius:999px;padding:0 16px;font-weight:600;text-decoration:none;white-space:nowrap}
+.hire:hover{opacity:.9}
+.hire .s{display:none}
+.mbtn{display:none;width:36px;height:36px;border-radius:8px;place-items:center;border:0;background:transparent;color:var(--slate);padding:0;cursor:pointer}
+.mbtn:hover{background:var(--subtle);color:var(--ink)}
+.top :focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+.theme-btn{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:36px;height:36px;padding:0;border:1px solid var(--rule);border-radius:999px;background:transparent;color:var(--ink);cursor:pointer}
+.theme-btn:hover{border-color:var(--blue);color:var(--blue)}
+.theme-btn svg{width:1.05rem;height:1.05rem}
+#app{min-height:0}
+@media (max-width:1023px){.mbtn{display:inline-grid}}
+@media (max-width:640px){
+ .top{padding:0 8px 0 4px;gap:4px}
+ .brand{gap:8px;min-height:44px}
+ .divider,.demo-name,.tlink{display:none}
+ .hire{height:44px;padding:0 13px}
+ .hire .l{display:none}.hire .s{display:inline}
+ .mbtn,.theme-btn{width:44px;height:44px}
+}
+</style>
+</head>
+<body class="sc-tokens">
+<a class="skip" href="#main">Skip to the demo</a>
+<div class="app">
+<header class="top">
+  <button class="mbtn" id="menuBtn" type="button" aria-label="Open chat history" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+  <a class="brand" href="/">
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x=".5" y=".5" width="31" height="31" rx="7" fill="var(--logo-bg)" stroke="var(--logo-bd)"/><path d="M7 23 L13 12 L19 19 L25 8" fill="none" stroke="#2A78D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="23" r="2.6" fill="#fff"/><circle cx="25" cy="8" r="2.6" fill="#E8622C"/></svg>
+    <span>S'limane Chanchoul</span></a>
+  <span class="divider" aria-hidden="true"></span>
+  <span class="demo-name">Ask any website</span>
+  <div class="top-r" data-theme-slot>
+    <a class="tlink" href="/#work">All work</a>
+  </div>
+  <a class="hire" href="https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0" target="_blank" rel="noopener noreferrer" style="margin-left:6px"><span class="l">Hire me on Upwork</span><span class="s">Hire me</span></a>
+</header>
+<div id="app"></div>
+</div>
+<noscript><p style="padding:16px">This demo needs JavaScript.</p></noscript>
+<script type="module">
+import { mount } from "/chat/core.js";
+mount(document.getElementById("app"), { mode: "page", menuButton: document.getElementById("menuBtn") });
+</script>
+</body>
+</html>

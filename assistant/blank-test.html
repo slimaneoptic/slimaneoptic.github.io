@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Widget Blank Test</title>
+<meta name="robots" content="noindex">
+<style>
+body{margin:0;background:#fffdf7;color:#2b2b2b;font:17px/1.7 Georgia,"Times New Roman",serif}
+main{max-width:640px;margin:0 auto;padding:48px 20px 140px}
+h1{font-weight:400;font-size:34px;line-height:1.2;margin:0 0 16px}
+code,pre{font:14px/1.5 ui-monospace,Menlo,Consolas,monospace}
+pre{background:#f3efe4;border:1px solid #e2dccb;padding:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+a{color:#8a4b08}
+</style>
+</head>
+<body>
+<main>
+<h1>A plain third-party page</h1>
+<p>This page uses none of the styles of slimanechanchoul.com. It adds the assistant the way a client would, with one line before <code>&lt;/body&gt;</code>:</p>
+<pre>&lt;script src="https://slimanechanchoul.com/widget.js" data-site="docs.python.org/3/tutorial/" data-color="#1F64B0" defer&gt;&lt;/script&gt;</pre>
+<p>Open the bubble at the bottom right. On the first open, the assistant reads the site in <code>data-site</code> (public pages only, about 20 seconds), then answers from it with sources. The widget keeps its own styles in a Shadow DOM, so this page's serif font and colors do not leak in.</p>
+<p><a href="/assistant/">Back to the assistant demo</a></p>
+</main>
+<script src="/widget.js" data-site="docs.python.org/3/tutorial/" data-color="#1F64B0" defer></script>
+</body>
+</html>
