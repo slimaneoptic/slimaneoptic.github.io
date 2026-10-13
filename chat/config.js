@@ -1,5 +1,5 @@
 // Where the chat front ends find the API. `?api=<url>` overrides it only on a local machine (testing).
-export const DEFAULT_API = "https://site-chatbot-api.onrender.com";
+export const DEFAULT_API = "https://site-chatbot-omega.vercel.app";
 
 function pick() {
   try {
