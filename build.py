@@ -9,7 +9,6 @@ UPWORK = "https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0"
 DEMOS = {
     "routes": ("Route optimizer", "Cheapest delivery routes on real roads, with capacity, time windows and shift length.", "https://slimaneoptic-routes.streamlit.app/"),
     "scheduler": ("AI shift scheduler", "A weekly staff roster built by an optimizer, changed in plain words.", "https://slimaneoptic-scheduler.streamlit.app/"),
-    "chatbot": ("Website chatbot and data extraction", "Answers from a website or PDFs with sources; extracts fields into tables.", "https://slimaneoptic-chatbot.streamlit.app/"),
     "planner": ("Demand forecast and reorder planner", "Demo on synthetic sales data: forecasts every product, tests 4 models, and says what to order this week within your budget.", "https://slimaneoptic-planner.streamlit.app/"),
     "rooms": ("Room layout optimizer", "The best few, genuinely different furniture layouts under design rules.", "https://slimaneoptic-rooms.streamlit.app/"),
     "schoolbus": ("School bus routing analysis", "Walk zones, stop consolidation and bus routes on a real street network.", "https://slimaneoptic-schoolbus.streamlit.app/"),
@@ -19,7 +18,7 @@ DEMOS = {
 
 SITE = "https://slimanechanchoul.com"
 # Only these template slugs are indexable; every other slug (rooms, schoolbus, railway-crew, railway-linen) stays noindex.
-PUBLIC = {"routes", "scheduler", "chatbot", "planner"}
+PUBLIC = {"routes", "scheduler", "planner"}
 NOINDEX = '<meta name="robots" content="noindex">\n'
 # Page <title> and meta description for the public demo pages (PLAN.md section 2.2 copy, numbers only from there).
 SEO = {
@@ -27,13 +26,12 @@ SEO = {
                "Route optimizer (demo): on the sample cities 11-32% lower daily cost than a manual plan; Casablanca sample, 25 deliveries: 3 vans and 147 km by hand, 2 vans and 106 km optimized."),
     "scheduler": ("AI shift scheduler demo: weekly roster, re-planned in plain words",
                   "AI shift scheduler (demo): a weekly roster that respects rest, contracts and leave, aims for a senior on every shift, and names the rule that blocks a shift instead of failing silently."),
-    "chatbot": ("Website chatbot and data extraction demo, answers with sources",
-                "Website chatbot and data extraction (demo): it answers only from your site or PDFs, cites its sources, says when it doesn't know, and extracts the fields you name into a table."),
     "planner": ("Demand forecast and reorder planner demo: 4 models per product, 300 scenarios",
                 "Demand forecast and reorder planner (demo on synthetic data): four models tested per product, the most accurate kept, an order plan in whole cases, a budget optimizer over 300 demand scenarios per product."),
 }
-# The 10 indexable pages: exactly the sitemap; the assert at the end checks the rest are noindex.
-INDEXED = ["", "rag-fix", "mcp-excel", "agent-workflow-demo", "sheets-report", "routes", "scheduler", "planner", "chatbot", "vision"]
+# The indexable pages: exactly the sitemap; the assert at the end checks the rest are noindex.
+# ask/ and assistant/ are the chat demos (static pages on the Vercel API); /chatbot/ redirects to /ask/ (old proposal links).
+INDEXED = ["", "rag-fix", "mcp-excel", "agent-workflow-demo", "sheets-report", "routes", "scheduler", "planner", "ask", "assistant", "vision"]
 
 root = Path(__file__).parent
 home = (root / "src/template.html").read_text()
@@ -59,18 +57,28 @@ for slug in ("vision", "dc-map", "demand-planner", "telegram-digest"):
     page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
-print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner", "telegram-digest"]))
+# /chatbot/ was the Streamlit demo; proposals sent before 2026-10-13 link to it, so it forwards to /ask/ (query kept).
+(root / "chatbot").mkdir(exist_ok=True)
+(root / "chatbot" / "index.html").write_text(
+    '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+    '<title>Website chatbot demo</title>\n' + NOINDEX +
+    f'<link rel="canonical" href="{SITE}/ask/">\n'
+    '<script>location.replace("/ask/" + location.search + location.hash);</script>\n'
+    '<meta http-equiv="refresh" content="0; url=/ask/">\n</head>\n'
+    '<body><p>The chatbot demo has moved: <a href="/ask/">open it here</a>.</p></body>\n</html>\n')
+print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner", "telegram-digest", "chatbot (redirect)"]))
 
-# sitemap.xml with exactly the 10 indexable pages; robots.txt has only the Sitemap line (a Disallow line would list hidden paths)
+# sitemap.xml with exactly the indexable pages; robots.txt has only the Sitemap line (a Disallow line would list hidden paths)
 urls = "".join(f"  <url><loc>{SITE}/{p + '/' if p else ''}</loc></url>\n" for p in INDEXED)
 (root / "sitemap.xml").write_text('<?xml version="1.0" encoding="UTF-8"?>\n'
                                   f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n')
 (root / "robots.txt").write_text(f"Sitemap: {SITE}/sitemap.xml\n")
 
-# Indexability check: the 10 sitemap pages have no noindex, every other page has it.
+# Indexability check: the sitemap pages have no noindex, every other page has it.
 for p in INDEXED:
     assert "noindex" not in (root / p / "index.html").read_text(), f"/{p} must be indexable"
 for f in root.glob("*/index.html"):
     if f.parent.name not in INDEXED:
         assert "noindex" in f.read_text(), f"/{f.parent.name}/ must be noindex"
-print("sitemap.xml: 10 URLs; indexability check passed")
+print(f"sitemap.xml: {len(INDEXED)} URLs; indexability check passed")
