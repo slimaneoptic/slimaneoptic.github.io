@@ -76,16 +76,28 @@
     return w.replace(/\b\w/g, function (m) { return m.toUpperCase(); });
   }
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } return null; }
-  /** A short brand name from the crawled home page title ("HTTPX", "Acme Help | Acme" -> "Acme"), else "". */
+  /** A page title without the marks some sites put in headings (the Sphinx pilcrow, zero-width spaces). */
+  function cleanTitle(t) { return String(t || "").replace(/[\u00b6\u200b-\u200f\u2028\u2029\ufeff]/g, "").replace(/\s+/g, " ").trim(); }
+  /** A short brand name from the crawled home page title ("HTTPX", "Acme Help | Acme" -> "Acme",
+   *  "Requests: HTTP for Humans¶" -> "Requests"), at most 32 characters, else "". */
   function siteName(pageList, host) {
-    var t = pageList && pageList[0] && String(pageList[0].title || "").trim(); if (!t) return "";
-    var parts = t.split(/\s+[|\u2013\u2014\u00b7:\-]\s+/).map(function (x) { return x.trim(); }).filter(Boolean);
+    var t = pageList && pageList[0] && cleanTitle(pageList[0].title); if (!t) return "";
+    var parts = t.split(/\s+[|\u2013\u2014\u00b7:\-]\s+|:\s+/).map(function (x) { return x.trim(); }).filter(Boolean);
     var key = String(host || "").split(".").filter(function (p) { return !/^(www|help|docs|support|kb|faq)$/i.test(p); })[0] || "";
     var flat = function (x) { return x.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g, ""); };
-    var hit = parts.filter(function (x) { var f = flat(x), k = flat(key); return f && k && (f === k || k.indexOf(f) >= 0 || f.indexOf(k) >= 0); })[0];
+    var hit = parts.filter(function (x) { var f = flat(x), k = flat(key); return f && k && (f === k || k.indexOf(f) >= 0 || f.indexOf(k) >= 0); })
+      .sort(function (a, b) { var k = flat(key); return (flat(b) === k) - (flat(a) === k) || a.length - b.length; })[0];
     var pick = hit || (parts.length > 1 ? parts[parts.length - 1] : parts[0]) || "";
     if (!hit && parts.length > 1 && parts[0].length <= 24) pick = parts[0].length <= pick.length ? parts[0] : pick;
-    return pick.length >= 2 && pick.length <= 30 ? pick : "";
+    pick = pick.replace(/[\s|:\u2013\u2014\u00b7-]+$/, "");
+    if (/^(home|home ?page|welcome|index|accueil|start|main page|untitled)$/i.test(pick)) return "";
+    return pick.length >= 2 && pick.length <= 32 ? pick : "";
+  }
+  /** Composer placeholder: one line in the panel (at most 28 characters below 640 px). */
+  function placeholderFor(n) {
+    var full = "Ask about " + n + "...", narrow = false;
+    try { narrow = window.innerWidth < 640; } catch (e) { /* no window */ }
+    return full.length > (narrow ? 28 : 36) ? "Ask a question..." : full;
   }
   function ensureFont() {
     try {
@@ -121,6 +133,9 @@
     ".sa-title{font-weight:800;color:var(--ink);font-size:15px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
     ".sa-sub{font-size:12.5px;color:var(--slate);display:flex;align-items:center;gap:6px;line-height:1.3}",
     ".sa-sub .sa-dot{width:7px;height:7px;border-radius:50%;background:var(--ok-text);flex:none}",
+    ".sa-sub.reading .sa-dot{background:var(--brand);animation:sa-blink 1s ease-in-out infinite}",
+    ".sa-sub span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}",
+    "@keyframes sa-blink{50%{opacity:.25}}",
     ".sa-hbtns{margin-left:auto;display:flex;gap:2px}",
     ".sa-hbtn{width:36px;height:36px;border:0;background:transparent;border-radius:8px;color:var(--slate);display:grid;place-items:center;padding:0}",
     ".sa-hbtn:hover{background:var(--hover);color:var(--ink)}",
@@ -172,14 +187,17 @@
     var placement = cfg.placement === "frame" ? "frame" : "fixed";
     var site = normSite(cfg.site);
     var host = cfg.label || hostOf(site) || "this site";
-    var name = cfg.name || nameFrom(hostOf(site) || cfg.kb || "");
+    var name = cleanTitle(cfg.name) || nameFrom(hostOf(site) || cfg.kb || "");
+    if (name.length > 32) name = nameFrom(hostOf(site) || cfg.kb || "");
     var color = hex6(cfg.color) || "#2A78D6";
     var api = cfg.api && /^https?:\/\/[^\s]+$/i.test(cfg.api) ? String(cfg.api).replace(/\/+$/, "") : null;
     var key = "sc-w-" + (cfg.storeKey || hostOf(site) || cfg.kb || "default");
     var defGreeting = function () { return "Hi! I answer from the " + name + " pages, with sources. What do you need?"; };
     var coreOpts = {mode: "widget", kb: cfg.kb || undefined, site: site || undefined, color: color, historyKey: key,
-      greeting: cfg.greeting || defGreeting(), placeholder: "Ask about " + name + "...",
+      greeting: cfg.greeting || defGreeting(), placeholder: placeholderFor(name),
       starters: Array.isArray(cfg.starters) && cfg.starters.length ? cfg.starters.slice(0, 4) : undefined,
+      siteStarters: Array.isArray(cfg.siteStarters) ? cfg.siteStarters.slice(0, 4) : undefined,
+      read: cfg.read && typeof cfg.read.then === "function" ? cfg.read : undefined, readLabel: cfg.readLabel,
       onEvent: function (t, d) {
         if (t === "kb" && d && !cfg.name) rename(siteName(d.page_list, hostOf(d.url || site)));
         if (t === "answer" || t === "kb") renderHist();
@@ -204,8 +222,14 @@
     var histBtn = el("button", {class: "sa-hbtn", type: "button", "aria-label": "Your chats", title: "Your chats", "aria-expanded": "false"}, [icon("clock", 18)]);
     var newBtn = el("button", {class: "sa-hbtn", type: "button", "aria-label": "New chat", title: "New chat"}, [icon("newchat", 18)]);
     var closeBtn = el("button", {class: "sa-hbtn", type: "button", "aria-label": "Close chat", title: "Close (Esc)"}, [icon("x", 18)]);
+    var subIdle = cfg.sub || "Answers from our docs";
+    var subText = el("span", {text: coreOpts.read ? "Reading your site…" : subIdle});
+    var subEl = el("div", {class: "sa-sub" + (coreOpts.read ? " reading" : "")}, [el("span", {class: "sa-dot", "aria-hidden": "true"}), subText]);
+    var lastProg = null;
+    if (coreOpts.read) coreOpts.read.then(function () { subEl.classList.remove("reading"); subText.textContent = subIdle; },
+      function (e) { subEl.classList.remove("reading"); subText.textContent = e && e.name === "AbortError" ? subIdle : "Could not read the site"; });
     var head = el("div", {class: "sa-head"}, [avatar,
-      el("div", {class: "sa-ht"}, [titleEl, el("div", {class: "sa-sub"}, [el("span", {class: "sa-dot", "aria-hidden": "true"}), cfg.sub || "Answers from our docs"])]),
+      el("div", {class: "sa-ht"}, [titleEl, subEl]),
       el("div", {class: "sa-hbtns"}, [histBtn, newBtn, closeBtn])]);
     var coreRoot = el("div", {class: "sa-core"}, [el("p", {class: "sa-loading", text: "Loading the assistant..."})]);
     var pwLink = el("a", {href: HOME, target: "_blank", rel: "noopener noreferrer", text: "S'limane Chanchoul"});
@@ -251,7 +275,7 @@
     function rename(n) { // the crawled site title is a better brand name than the domain
       if (!n || n === name) return;
       name = n; titleEl.textContent = name + " Assistant"; avatar.textContent = (name[0] || "A").toUpperCase();
-      coreOpts.placeholder = "Ask about " + name + "...";
+      coreOpts.placeholder = placeholderFor(name);
       if (!cfg.greeting) coreOpts.greeting = defGreeting();
       if (ctl && ctl.state && !ctl.state.active) ctl.newChat();
     }
@@ -266,6 +290,7 @@
         coreRoot.replaceChildren();
         ctl = m.mount(coreRoot, coreOpts);
         applyBrand();
+        if (lastProg && ctl.readProgress) ctl.readProgress(lastProg[0], lastProg[1]);
         return ctl;
       }, function () {
         mounting = false;
@@ -282,7 +307,7 @@
       panel.hidden = false; teaser.hidden = true; ls("sc-w-teased", "1");
       launch.setAttribute("aria-expanded", "true"); launch.setAttribute("aria-label", "Close help chat");
       wg.classList.add("open");
-      mountCore().then(function () { if (focus) focusInput(); });
+      mountCore().then(function (c) { if (c && c.warm) c.warm(); if (focus) focusInput(); }); // wake the server while the visitor types
       if (cfg.onToggle) cfg.onToggle(true);
     }
     function close(silent) {
@@ -348,6 +373,14 @@
     return {
       open: open, close: close, isOpen: isOpen,
       setColor: function (c) { var x = hex6(c); if (x) { color = x; coreOpts.color = x; applyBrand(); } },
+      /** The site's own name once the host page has read it (title, avatar, placeholder, default greeting). */
+      setName: function (n) { var x = cleanTitle(n); if (x && x.length <= 32) rename(x); },
+      /** Host-page read progress (cfg.read): "Reading your site… 7/15" in the head, and in the chat. */
+      reading: function (n, max) {
+        lastProg = [n || 0, max || 0];
+        if (subEl.classList.contains("reading")) subText.textContent = "Reading your site… " + (n || 0) + (max ? "/" + max : "");
+        if (ctl && ctl.readProgress) ctl.readProgress(n, max);
+      },
       update: function (o) {
         if (o.greeting != null) coreOpts.greeting = String(o.greeting) || ("Hi! I answer from the " + name + " pages, with sources. What do you need?");
         if (o.starters) { var s = o.starters.map(String).map(function (x) { return x.trim(); }).filter(Boolean); coreOpts.starters = s.length ? s.slice(0, 4) : undefined; }
@@ -364,7 +397,7 @@
     };
   }
 
-  window.SiteAssistant = {create: create, normSite: normSite, hex: hex6, nameFrom: nameFrom, siteName: siteName};
+  window.SiteAssistant = {create: create, normSite: normSite, hex: hex6, nameFrom: nameFrom, siteName: siteName, cleanTitle: cleanTitle};
 
   /* auto start from the script tag */
   if (me && me.dataset && (me.dataset.site || me.dataset.kb)) {

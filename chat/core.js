@@ -85,6 +85,15 @@ function add(el, kids) {
 }
 const dot = () => h("span", {class: "dot", "aria-hidden": "true"});
 const AR = /[\u0600-\u06FF]/;
+const AR_G = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g, LAT_G = /[A-Za-z\u00C0-\u024F]/g;
+/** One block's own direction from its letters (links, URLs and `code` left out): more Arabic -> "rtl", more Latin
+ *  -> "ltr", fewer than `min` letters or a tie -> null (the block inherits). Keeps an English sentence LTR inside an
+ *  Arabic answer (full stop at the end, not the start) and an Arabic sentence that opens with a brand name RTL. */
+export function dirOf(text, min = 1) {
+  const t = String(text || "").replace(/`[^`\n]*`/g, " ").replace(/\]\(https?:\/\/[^\s)]+\)/g, "]").replace(/https?:\/\/\S+/g, " ");
+  const a = (t.match(AR_G) || []).length, l = (t.match(LAT_G) || []).length;
+  return a + l < min || a === l ? null : a > l ? "rtl" : "ltr";
+}
 const CAP_CODES = ["session_cap", "ip_cap", "global_budget"];
 const HIRE = "https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0";
 const PER_CHAT = 12;
@@ -148,12 +157,20 @@ async function jsonError(resp) {
   return {code: resp.status === 429 ? "ip_cap" : "server_error", message: "The demo server answered with an error (" + resp.status + "). Please try again."};
 }
 const NET = {code: "network", message: "Could not reach the demo server. Check your connection and try again."};
+/* JSON bodies go as text/plain: a CORS "simple" request, so the browser sends no OPTIONS preflight first
+   (the API parses the body as JSON whatever the content type). */
+const JSON_CT = "text/plain;charset=UTF-8";
+const lastPing = new Map(); // api -> time of the last request that reached (or tried to reach) the server
+const pinged = (api) => lastPing.set(api, Date.now());
 
-export async function streamChat({api = API_BASE, kb_id, messages, session_id, signal, on = {}}) {
+export async function streamChat({api = API_BASE, kb_id, messages, session_id, restore, signal, on = {}}) {
   let resp;
+  const body = {kb_id, messages, session_id};
+  if (restore) body.restore = restore; // the saved snapshot, exactly as the server sent it
   try {
-    resp = await fetch(api + "/api/chat", {method: "POST", signal, headers: {"Content-Type": "application/json", Accept: "text/event-stream"},
-      body: JSON.stringify({kb_id, messages, session_id})});
+    pinged(api);
+    resp = await fetch(api + "/api/chat", {method: "POST", signal, headers: {"Content-Type": JSON_CT, Accept: "text/event-stream"},
+      body: JSON.stringify(body)});
   } catch (e) { if (e && e.name === "AbortError") throw e; on.error && on.error(NET); return; }
   if (!resp.ok || !(resp.headers.get("content-type") || "").includes("event-stream")) { on.error && on.error(await jsonError(resp)); return; }
   for await (const ev of sseEvents(resp)) { const f = on[ev.event]; if (f) f(ev.data); }
@@ -167,10 +184,10 @@ export async function readSite({api = API_BASE, url, files, signal, onStart, onP
     for (const f of files) fd.append("files", f, f.name);
     opts.body = fd;
   } else {
-    opts.headers["Content-Type"] = "application/json";
-    opts.body = JSON.stringify({url});
+    opts.headers["Content-Type"] = JSON_CT;
+    opts.body = JSON.stringify({url, snapshot: true});
   }
-  try { resp = await fetch(api + "/api/kb?stream=1", opts); } catch (e) { if (e && e.name === "AbortError") throw e; throw NET; }
+  try { pinged(api); resp = await fetch(api + "/api/kb?stream=1", opts); } catch (e) { if (e && e.name === "AbortError") throw e; throw NET; }
   if (!resp.ok) throw await jsonError(resp);
   if (!(resp.headers.get("content-type") || "").includes("event-stream")) {
     const j = await resp.json(); if (j && j.error) throw j.error; return j;
@@ -184,15 +201,92 @@ export async function readSite({api = API_BASE, url, files, signal, onStart, onP
   throw {code: "server_error", message: "The reading stopped before the end. Please try again."};
 }
 
-export async function checkHealth(api = API_BASE, ms = 5000) {
-  const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), ms);
-  try { const r = await fetch(api + "/healthz", {signal: ctrl.signal, cache: "no-store"}); return r.ok; }
-  catch (e) { return false; } finally { clearTimeout(t); }
+let hcLast = null; // checks started within 2.5 s share one request (page + widget on the same load)
+export function checkHealth(api = API_BASE, ms = 5000) {
+  if (hcLast && hcLast.api === api && Date.now() - hcLast.t < 2500) return hcLast.p;
+  pinged(api);
+  const p = (async () => {
+    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), ms);
+    try { const r = await fetch(api + "/healthz", {signal: ctrl.signal, cache: "no-store"}); return r.ok; }
+    catch (e) { return false; } finally { clearTimeout(t); }
+  })();
+  hcLast = {api, t: Date.now(), p};
+  return p;
 }
 
-export async function getExamples(api = API_BASE) {
+/** Wake the server before the visitor asks (question box focus or typing, widget open, pointer on a starter): one
+ *  GET /healthz once the server has been idle more than 90 s (no request of ours reached it), so at most one ping
+ *  every 90 s; never from a hidden tab. Returns the checkHealth promise, or null when skipped. */
+export const WARM_IDLE_MS = 90000;
+export function warm(api = API_BASE) {
+  try { if (document.visibilityState === "hidden") return null; } catch (e) { /* no document */ }
+  if (Date.now() - (lastPing.get(api) || 0) <= WARM_IDLE_MS) return null;
+  return checkHealth(api, 8000);
+}
+
+/* ------------------------------------------------------------------ KB snapshots (fast path after kb_expired)
+   POST /api/kb with snapshot:true returns summary.snapshot: opaque, signed by the server. A new server instance
+   that no longer has the site rebuilds it from the snapshot (chat/extract `restore`) instead of a 10 s re-read.
+   Kept in memory and in localStorage "sc-snap:<kb_id>" (last 3, none over 1 MB), never modified. */
+const SNAP = "sc-snap:", SNAP_IDX = "sc-snaps", SNAP_MAX = 3, SNAP_BYTES = 1e6;
+const snapMem = new Map();
+function snapExp(s) { const e = Number(s && s.exp); return !e ? Infinity : e < 1e12 ? e * 1000 : e; }
+function snapKeys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(SNAP)) out.push(k); } } catch (e) { /* blocked */ } return out; }
+export const snapshots = {
+  put(kb_id, snap) {
+    if (!kb_id || !snap || typeof snap !== "object") return false;
+    snapMem.set(kb_id, snap);
+    let txt; try { txt = JSON.stringify(snap); } catch (e) { return false; }
+    if (txt.length > SNAP_BYTES) return false;
+    try {
+      let idx = []; try { idx = JSON.parse(localStorage.getItem(SNAP_IDX) || "[]"); } catch (e) { idx = []; }
+      if (!Array.isArray(idx)) idx = [];
+      idx = [kb_id, ...idx.filter((k) => k !== kb_id)].slice(0, SNAP_MAX);
+      for (const k of snapKeys()) if (!idx.includes(k.slice(SNAP.length))) localStorage.removeItem(k);
+      try { localStorage.setItem(SNAP + kb_id, txt); }
+      catch (e) { // full: keep only this one
+        for (const k of snapKeys()) localStorage.removeItem(k);
+        idx = [kb_id]; localStorage.setItem(SNAP + kb_id, txt);
+      }
+      localStorage.setItem(SNAP_IDX, JSON.stringify(idx));
+      return true;
+    } catch (e) { return false; } // storage blocked (private window): memory only
+  },
+  /** The snapshot for this kb, or null (none, unreadable or past its exp). */
+  get(kb_id) {
+    if (!kb_id) return null;
+    let s = snapMem.get(kb_id) || null;
+    if (!s) { try { s = JSON.parse(localStorage.getItem(SNAP + kb_id) || "null"); } catch (e) { s = null; } }
+    if (!s || typeof s !== "object" || Array.isArray(s)) return null;
+    if (snapExp(s) < Date.now()) { this.drop(kb_id); return null; }
+    return s;
+  },
+  drop(kb_id) { snapMem.delete(kb_id); try { localStorage.removeItem(SNAP + kb_id); } catch (e) { /* blocked */ } },
+  /** Free the space for chat history (quota): stored snapshots go first. */
+  clearStored() { try { for (const k of snapKeys()) localStorage.removeItem(k); localStorage.removeItem(SNAP_IDX); } catch (e) { /* blocked */ } },
+};
+
+/* The Arabic web font loads only when Arabic text is first shown (page mode): the Arabic starter chip uses the
+   system Arabic font, so most visits never download it. */
+const AR_FONT = "https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600&display=swap";
+let arFontOn = false;
+function arabicFont() {
+  if (arFontOn) return; arFontOn = true;
   try {
-    const r = await fetch(new URL("./examples.json", import.meta.url), {cache: "no-cache"});
+    if (document.querySelector('link[href*="Noto+Sans+Arabic"]')) return;
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = AR_FONT; document.head.appendChild(l);
+  } catch (e) { /* no head */ }
+}
+
+const exMemo = new Map();
+/** examples.json, fetched once per page (the widget and the page share this promise). */
+export function getExamples(api = API_BASE) {
+  if (!exMemo.has(api)) exMemo.set(api, loadExamples(api).then((r) => { if (!r.length) exMemo.delete(api); return r; }));
+  return exMemo.get(api);
+}
+async function loadExamples(api) {
+  try {
+    const r = await fetch(new URL("./examples.json", import.meta.url)); // normal HTTP cache (GitHub Pages: max-age 600)
     if (r.ok) { const j = await r.json(); if (j && Array.isArray(j.examples)) return j.examples; }
   } catch (e) { /* fall back to the API */ }
   try {
@@ -213,7 +307,7 @@ function cleanChat(c) {
   return {id: c.id, kb_id: c.kb_id, source: c.source, title: c.title, updatedAt: c.updatedAt, capped: c.capped || null, example: c.example || null,
     messages: (c.messages || []).map((m) => {
       if (m.role === "user") return {role: "user", content: m.content};
-      const st = ["search", "stream", "wake", "reread"].includes(m.status) ? "stopped" : m.status;
+      const st = ["search", "stream", "wake", "reread", "reconnect"].includes(m.status) ? "stopped" : m.status;
       return {role: "assistant", content: m.content || "", meta: m.meta || null, sources: m.sources || [], notice: m.notice || null,
         followups: m.followups || [], done: m.done || null, status: st, error: m.error || null, v: m.v || 0, local: !!m.local};
     })};
@@ -226,6 +320,7 @@ export const history = {
   saveAll(chats) {
     const all = chats.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, HMAX).map(cleanChat);
     let ok = lsSet(HKEY, JSON.stringify(all));
+    if (!ok) { snapshots.clearStored(); ok = lsSet(HKEY, JSON.stringify(all)); } // quota: snapshots go before chats
     while (!ok && all.length > 1) { all.pop(); ok = lsSet(HKEY, JSON.stringify(all)); } // quota: drop the oldest
     return ok;
   },
@@ -259,6 +354,7 @@ export function makeHistory(key) {
     saveAll(chats) {
       const all = chats.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, HMAX).map(cleanChat);
       let ok = lsSet(key, JSON.stringify(all));
+      if (!ok) { snapshots.clearStored(); ok = lsSet(key, JSON.stringify(all)); }
       while (!ok && all.length > 1) { all.pop(); ok = lsSet(key, JSON.stringify(all)); }
       return ok;
     },
@@ -354,16 +450,20 @@ export function renderAnswer(el, text, {sources = [], idx = 0, streaming = false
   if (streaming) t = t.replace(RE_TAIL, "");
   const ctx = {sources, idx};
   const frag = document.createDocumentFragment();
+  // each block takes its own direction (dirOf); while streaming a block needs 12 letters first, so it does not flip
+  const min = streaming ? 12 : 1, bd = (x) => dirOf(unprot(x), min);
   for (const b of mdBlocks(t)) {
     if (b.t === "code") frag.appendChild(h("pre", {dir: "ltr"}, h("code", {text: unprot(b.text, true)})));
-    else if (b.t === "h") { const x = h("h3"); inline(x, b.text, ctx); frag.appendChild(x); }
-    else if (b.t === "ol" || b.t === "ul") { const l = h(b.t); b.items.forEach((it) => { const li = h("li"); inline(li, it, ctx); l.appendChild(li); }); frag.appendChild(l); }
-    else if (b.t === "table") {
+    else if (b.t === "h") { const x = h("h3", {dir: bd(b.text)}); inline(x, b.text, ctx); frag.appendChild(x); }
+    else if (b.t === "ol" || b.t === "ul") {
+      const ld = bd(b.items.join(" ")), l = h(b.t, {dir: ld});
+      b.items.forEach((it) => { const d = bd(it), li = h("li", {dir: d && d !== ld ? d : null}); inline(li, it, ctx); l.appendChild(li); }); frag.appendChild(l);
+    } else if (b.t === "table") {
       const tb = h("tbody");
       b.rows.forEach((r) => { const tr = h("tr"); r.forEach((c) => { const td = h("td"); inline(td, c, ctx); tr.appendChild(td); }); tb.appendChild(tr); });
-      frag.appendChild(h("div", {class: "tw"}, h("table", null, h("thead", null, h("tr", null, b.head.map((x) => h("th", {text: x})))), tb)));
-    } else if (b.t === "quote") { const bq = h("blockquote", {class: "quote", dir: "auto"}); inline(bq, b.text, ctx); frag.appendChild(bq); }
-    else { const p = h("p"); inline(p, b.text, ctx); frag.appendChild(p); }
+      frag.appendChild(h("div", {class: "tw"}, h("table", {dir: bd(b.head.join(" ") + " " + b.rows.flat().join(" "))}, h("thead", null, h("tr", null, b.head.map((x) => h("th", {text: x})))), tb)));
+    } else if (b.t === "quote") { const bq = h("blockquote", {class: "quote", dir: bd(b.text) || "auto"}); inline(bq, b.text, ctx); frag.appendChild(bq); }
+    else { const p = h("p", {dir: bd(b.text)}); inline(p, b.text, ctx); frag.appendChild(p); }
   }
   { const tw = document.createTreeWalker(frag, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) if (/[\uE000-\uE07F]/.test(n.data)) n.data = unprot(n.data); }
   frag.querySelectorAll("th").forEach((th) => { th.textContent = unprot(th.textContent); });
@@ -399,6 +499,16 @@ const GENERIC = [
   {q: "How can I contact you?", k: "Cites the exact page", ic: "info"},
   {q: "What are the prices?", k: "Says so when it is not there", ic: "info"},
   {q: "Summarize the main pages in 3 points", k: "Ask in Arabic or French too", ic: "globe"}];
+/** Starter questions for a site or PDFs the visitor read: the server's site-specific ones (summary.starters,
+ *  each checked against the site's own search) when it sent at least 2; else padded with / replaced by GENERIC. */
+function siteStarters(src) {
+  const got = (src && Array.isArray(src.starters) ? src.starters : []).filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()).slice(0, 4);
+  if (!got.length) return GENERIC.map((g) => ({...g, kind: "live"}));
+  const out = got.map((x) => ({q: x, k: src.kind === "pdf" ? "From your PDFs" : "From your site", ic: "book", kind: "live", own: true}));
+  if (out.length < 2) for (const g of GENERIC) { if (out.length >= 4) break; if (!out.some((o) => o.q === g.q)) out.push({...g, kind: "live"}); }
+  return out;
+}
+function cleanStarters(v) { return Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()).slice(0, 4) : null; }
 
 export function mount(root, opts = {}) {
   const mode = opts.mode === "widget" ? "widget" : "page";
@@ -509,6 +619,23 @@ export function mount(root, opts = {}) {
     return st || null;
   }
   function starterAnswer(c, text) { return c ? cachedAns(c.source.kind, c.kb_id, text) : null; }
+  /** A follow-up chip under an example answer, answered ahead of time in examples.json (followup_answers). */
+  function followAnswer(c, text) {
+    if (!c || c.source.kind !== "example") return null;
+    const e = exampleOf(c.kb_id), fa = e && e.followup_answers;
+    const x = fa && typeof fa === "object" && Object.prototype.hasOwnProperty.call(fa, text) ? fa[text] : null;
+    return x && typeof x.text === "string" && x.text ? x : null;
+  }
+  /** An example's precomputed Extract table (examples.json `extract`): undefined = not in this file, null = none. */
+  function cachedExtract(kb) {
+    const e = exampleOf(kb); if (!e || !("extract" in e)) return undefined;
+    const x = e.extract;
+    if (!x || !Array.isArray(x.fields) || !Array.isArray(x.rows)) return null;
+    return {fields: x.fields.map(String), rows: x.rows, pages_read: x.pages_read || 0, cached: true, kb_id: kb};
+  }
+  const sameFields = (a, b) => a.length === b.length && a.every((x, i) => String(x).trim().toLowerCase() === String(b[i]).trim().toLowerCase());
+  const warmUp = () => { const p = warm(api); if (p) p.then((ok) => { if (ok && S.server !== "ready") setServer("ready"); }); };
+  const arFont = () => { if (page) arabicFont(); };
   /** One question at a time: a stream, a question waiting for the server, or a re-read all count as busy. */
   function busy() { return !!(S.streaming || S.rereading || S.waitQ.length); }
   function saveSrc() { if (S.src) lsSet(SRC_KEY, JSON.stringify(S.src)); }
@@ -587,15 +714,18 @@ export function mount(root, opts = {}) {
         const arEx = exampleOf("ex-shop_ar"), arQ = arEx && (arEx.starters || []).filter((s) => s.text)[1];
         if (arQ) out.push({q: arQ.q, k: "Ask in Arabic or French", ic: "globe", kind: "cached", kb: arEx.kb_id});
       }
-      out.push({q: "Extract " + S.ex.fields.join(", "), k: src.kb_id === "ex-shop" || ar ? "Turn a shop into a table" : "Turn pages into a table", ic: "table", kind: "extract"});
-      for (const s of sts) { if (out.length >= 4) break; if (!out.some((o) => o.q === s.q)) out.splice(out.length - 1, 0, {q: s.q, k: "Cites the exact passage", ic: "lines", kind: "cached"}); }
+      const cx = cachedExtract(src.kb_id); // null: this example has no table worth showing, so no Extract card
+      if (cx !== null) out.push({q: "Extract " + (cx ? cx.fields : S.ex.fields).join(", "), k: src.kb_id === "ex-shop" || ar ? "Turn a shop into a table" : "Turn pages into a table", ic: "table", kind: "extract", cached: !!cx});
+      const xi = out.findIndex((o) => o.kind === "extract");
+      for (const s of sts) { if (out.length >= 4) break; if (!out.some((o) => o.q === s.q)) out.splice(xi < 0 ? out.length : out.length - 1, 0, {q: s.q, k: "Cites the exact passage", ic: "lines", kind: "cached"}); }
       return out.slice(0, 4);
     }
-    return GENERIC.map((g) => ({...g, kind: "live"}));
+    return siteStarters(src);
   }
   function costTag(st) {
     if (st.kind === "cached") return h("span", {class: "tag cache"}, "Cached", dot(), "$0");
     if (st.kind === "nomatch") return h("span", {class: "tag cache"}, "No AI call", dot(), "$0");
+    if (st.kind === "extract" && st.cached) return h("span", {class: "tag cache"}, icon("table", 13), "Cached", dot(), "$0");
     if (st.kind === "extract") return h("span", {class: "tag plain"}, icon("table", 13), "Opens Extract");
     return h("span", {class: "tag plain", text: "Uses 1 question"});
   }
@@ -606,13 +736,17 @@ export function mount(root, opts = {}) {
     const vq = keepQ ? keepQ.value : "", vu = keepU ? keepU.value : "";
     const fid = activeEl() && activeEl().dataset ? activeEl().dataset.fid : null;
     const s = S.src, busy = !!(S.crawl || S.err);
-    const sec = h("section", {class: "hero" + (busy ? " compact" : ""), "aria-labelledby": P + "-heroT"});
+    const ph = phone(); // phone: the "read your site" field comes first, then the examples, then the 4 cards
+    if (s && (s.lang === "ar" || AR.test(s.label || ""))) arFont();
+    const sec = h("section", {class: "hero" + (busy ? " compact" : "") + (ph ? " ph" : ""), "aria-labelledby": P + "-heroT"});
     sec.appendChild(h("h1", {id: P + "-heroT"}, "Ask any website or PDF.", h("br"), "Get answers with sources."));
-    if (!busy) sec.appendChild(h("p", {class: "lead", text: "Paste a link or upload PDFs, then ask. Each answer shows the passages it used, and says so when the answer is not there."}));
+    if (!busy) sec.appendChild(h("p", {class: "lead", text: ph ? "Paste a link or upload PDFs, then ask. Each answer shows its sources." : "Paste a link or upload PDFs, then ask. Each answer shows the passages it used, and says so when the answer is not there."}));
+    let startersSec = null;
     if (s && !busy) {
       const capped = !!S.capped;
       const grid = h("div", {class: "grid4"});
-      startersFor(s).forEach((st) => {
+      const list = startersFor(s);
+      list.forEach((st) => {
         const off = capped && (st.kind === "live" || st.kind === "nomatch");
         const ds = st.kind === "extract" ? {xt: "1", fid: "st-xt"} : {ask: st.q, kb: st.kb || null, fid: "st-" + st.q};
         if (!ds.kb) delete ds.kb;
@@ -622,7 +756,9 @@ export function mount(root, opts = {}) {
           h("span", {class: "sq", dir: "auto", lang: AR.test(st.q) ? "ar" : null, text: st.q}));
         grid.appendChild(b);
       });
-      sec.appendChild(h("div", {class: "starters"}, h("h2", {class: "lab"}, icon("star", 15), "Start here ", h("span", {class: "n", text: "4 questions that show what it does"})), grid));
+      const sub = s.kind === "example" ? "4 questions that show what it does" : list.some((x) => x.own) ? "Questions found in " + (s.kind === "pdf" ? "your PDFs" : srcLabel(s)) : list.length + " questions to try";
+      startersSec = h("div", {class: "starters"}, h("h2", {class: "lab"}, icon("star", 15), "Start here ", h("span", {class: "n", dir: "auto", text: sub})), grid);
+      if (!ph) sec.appendChild(startersSec);
     }
     const pillEl = S.crawl
       ? h("span", {class: "srcpill"}, h("span", {class: "ok"}, icon("clock", 14)), h("span", {class: "sl", dir: "auto", text: S.crawl.label}), h("span", {class: "pc", text: "reading"}))
@@ -638,15 +774,28 @@ export function mount(root, opts = {}) {
       placeholder: S.capped ? "AI answers are paused until 00:00 GMT. The cached example questions above still work."
         : s && !S.err ? "Ask anything about " + (s.kind === "pdf" ? "your PDFs" : s.kind === "example" && SHORT[s.kb_id] ? (s.label || "").replace(/\s*\(.*\)$/, "") : srcLabel(s)) + "..." : "Ask a question..."});
     const hu = h("input", {class: P + "-hu", type: "text", inputmode: "url", autocapitalize: "off", spellcheck: "false", "aria-label": "Your website link", dataset: {fid: "hu"},
-      placeholder: "Or paste your site: your-site.com/help"});
+      placeholder: ph ? "your-site.com/help" : "Or paste your site: your-site.com/help"});
     const file = h("input", {type: "file", accept: "application/pdf", multiple: true, hidden: true, class: P + "-pdf"});
-    const form = h("form", {class: "big", dataset: {form: "hero"}},
-      h("div", {class: "boxhd"}, pillEl, exs), hq,
-      h("div", {class: "bar"}, h("label", {class: "field"}, icon("globe", 16), hu),
-        h("button", {type: "button", class: "ghost", dataset: {act: "pdf", fid: "pdf"}}, icon("upload", 16), "Upload PDFs"), file,
-        h("button", {class: "send", type: "submit", "aria-label": S.capped ? "Ask (paused until 00:00 GMT)" : "Ask", dataset: {fid: "send"}, disabled: !!S.capped}, icon("up"))));
-    sec.appendChild(form);
-    sec.appendChild(h("p", {class: "err " + P + "-herr", role: "alert"}));
+    const upBtn = h("button", {type: "button", class: "ghost", dataset: {act: "pdf", fid: "pdf"}}, icon("upload", 16), "Upload PDFs");
+    const sendB = h("button", {class: "send", type: "submit", "aria-label": S.capped ? "Ask (paused until 00:00 GMT)" : "Ask", dataset: {fid: "send"}, disabled: !!S.capped}, icon("up"));
+    const errP = h("p", {class: "err " + P + "-herr", role: "alert"});
+    if (ph) {
+      // phone: own form for the main feature (read your site), above the examples and the cards; same submit handler
+      sec.appendChild(h("form", {class: "urlf", dataset: {form: "hero", only: "url"}, "aria-label": "Read your website"},
+        h("label", {class: "lab2", for: P + "-hu", text: "Ask your own site"}),
+        h("div", {class: "urow"}, h("label", {class: "field"}, icon("globe", 16), Object.assign(hu, {id: P + "-hu"})),
+          h("button", {class: "btn read", type: "submit", dataset: {fid: "read"}, text: "Read site"}))));
+      sec.appendChild(errP);
+      sec.appendChild(h("div", {class: "exrow"}, exs));
+      if (startersSec) sec.appendChild(startersSec);
+      sec.appendChild(h("form", {class: "big", dataset: {form: "hero"}}, h("div", {class: "boxhd"}, pillEl), hq,
+        h("div", {class: "bar"}, upBtn, file, sendB)));
+    } else {
+      sec.appendChild(h("form", {class: "big", dataset: {form: "hero"}},
+        h("div", {class: "boxhd"}, pillEl, exs), hq,
+        h("div", {class: "bar"}, h("label", {class: "field"}, icon("globe", 16), hu), upBtn, file, sendB)));
+      sec.appendChild(errP);
+    }
     if (S.crawl) sec.appendChild(crawlCard());
     if (S.err) sec.appendChild(errCard());
     if (!S.crawl) {
@@ -664,10 +813,11 @@ export function mount(root, opts = {}) {
   function renderWidgetIntro() {
     const ex = S.src && S.src.kind === "example" ? exampleOf(S.src.kb_id) : null;
     const list = Array.isArray(opts.starters) && opts.starters.length ? opts.starters.map((x) => ({q: String(x), cached: false}))
-      : ex ? (ex.starters || []).map((x) => ({q: x.q, cached: !!x.text})) : GENERIC.map((g) => ({q: g.q, cached: false}));
+      : ex ? (ex.starters || []).map((x) => ({q: x.q, cached: !!x.text})) : siteStarters(S.src).map((g) => ({q: g.q, cached: false}));
     hero.replaceChildren(h("div", {class: "col"},
       h("p", {class: "greet", dir: "auto", text: opts.greeting || "Hi! Ask me anything about this site. I answer from its pages, with sources."}),
-      S.crawl ? h("p", {class: "note"}, h("span", {class: "spin", "aria-hidden": "true"}), " Reading " + S.crawl.label + (S.crawl.n ? " (" + S.crawl.n + " pages)" : "") + "...") : null,
+      S.crawl ? h("p", {class: "note"}, h("span", {class: "spin", "aria-hidden": "true"}), " Reading " + S.crawl.label + (S.crawl.n ? " (" + S.crawl.n + (S.crawl.max ? "/" + S.crawl.max : "") + " pages)" : "") + "...") : null,
+      S.crawl && S.pend ? h("p", {class: "note pend", dir: "auto"}, icon("clock", 14), " Your question “", h("bdi", {text: trunc(S.pend, 90)}), "” runs when the reading ends.") : null,
       S.err ? h("p", {class: "errline", role: "alert", text: S.err.message}) : null,
       S.src && !S.crawl ? h("div", {class: "chips"}, list.slice(0, 4).map((st) => {
         const cached = st.cached || !!(ex && (ex.starters || []).some((x) => x.q === st.q && x.text));
@@ -686,13 +836,13 @@ export function mount(root, opts = {}) {
     else lis.push(h("li", {class: "done"}, ok(), h("div", null, pdf ? "Sent the files" : "Checked robots.txt", h("small", {text: pdf ? "Text PDFs only, up to 20 MB" : "Pages it asks crawlers to skip are skipped"}))));
     const track = h("div", {class: "track" + (pdf || !c.n ? " indet" : ""), role: "progressbar", "aria-label": "Pages read", "aria-valuemin": "0", "aria-valuemax": String(c.max || 0), "aria-valuenow": String(c.n || 0)}, h("i", {style: pdf || !c.n ? "" : "width:" + pct + "%"}));
     lis.push(h("li", {class: c.waiting ? "" : "now"}, c.waiting ? now() : now(), h("div", null,
-      pdf ? "Reading " + c.label : "Reading pages " + c.n + (c.max ? " (up to " + c.max + ")" : ""), c.waiting ? null : track,
+      pdf ? ["Reading ", h("bdi", {text: c.label})] : "Reading pages " + c.n + (c.max ? " (up to " + c.max + ")" : ""), c.waiting ? null : track,
       pdf ? null : h("ul", {class: "feed", "aria-hidden": "true"}, c.feed.slice(-3).reverse().map((u) => h("li", {text: u})))), h("span", {class: "r", text: pdf || !c.max ? "" : pct + "%"})));
     lis.push(h("li", null, now(), h("div", null, "Splitting into passages", h("small", {text: "Short passages make exact citations possible"}))));
     lis.push(h("li", null, now(), h("div", null, "Suggested questions", h("small", {text: "Appear when reading is done. A question you type now runs then."}))));
     return h("div", {class: "card crawlc", style: "margin-top:22px"},
       h("div", {style: "display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px"},
-        h("b", {style: "color:var(--ink)", dir: "auto", text: "Reading " + c.label}),
+        h("b", {style: "color:var(--ink)", dir: "auto"}, "Reading ", h("bdi", {text: c.label})),
         h("span", {class: "tag ok"}, icon("shield", 14), pdf ? "Text PDFs only" : "Same site, follows robots.txt")),
       h("ol", {class: "tl", "aria-label": "Reading progress"}, lis),
       h("div", {class: "row3", style: "margin-top:8px"}, h("button", {type: "button", class: "ghost", dataset: {act: "cancelread"}, text: "Cancel"})));
@@ -716,8 +866,9 @@ export function mount(root, opts = {}) {
     const pages = (a.meta && a.meta.pages) || c.source.pages || 0;
     const what = c.source.kind === "pdf" ? pages + " PDF pages" : pages + " pages";
     const ul = h("ul", {class: "steps", "aria-label": "Progress"});
-    if (a.status === "wake") { add(ul, [h("li", {class: "now"}, sp(), "Server starting (about 1 min)"), h("li", {text: "Search " + what}), h("li", {text: "Write"})]); return ul; }
-    if (a.status === "reread") { add(ul, [h("li", {class: "now"}, sp(), "Reading the site again (about 20 s)"), h("li", {text: "Search"}), h("li", {text: "Write"})]); return ul; }
+    if (a.status === "wake") { add(ul, [h("li", {class: "now"}, sp(), h("bdi", {text: "Server starting (about 1 min)"})), h("li", {text: "Search " + what}), h("li", {text: "Write"})]); return ul; }
+    if (a.status === "reread") { add(ul, [h("li", {class: "now"}, sp(), h("bdi", {text: "Reading the site again (about 20 s)"})), h("li", {text: "Search"}), h("li", {text: "Write"})]); return ul; }
+    if (a.status === "reconnect") { add(ul, [h("li", {class: "now"}, sp(), h("bdi", {text: "Reconnecting…"})), h("li", {text: "Search " + what}), h("li", {text: "Write"})]); return ul; }
     if (a.status === "search" && !a.sources.length) { add(ul, [h("li", {class: "now"}, sp(), "Searching " + what), h("li", {text: "Passages"}), h("li", {text: "Writing"})]); return ul; }
     const d = a.done;
     if (!page && d && a.status === "done" && d.status !== "no_match") { // widget (mockup c2): one stats line
@@ -747,14 +898,22 @@ export function mount(root, opts = {}) {
         h("small", null, h("bdi", {text: hostOf(s.url)}), un && page ? [dot(), "not used"] : null),
         h("span", {class: "snip"}, passageNode(s, true)))));
   }
+  /** done.closest {title, url}: the page nearest to a question the pages do not answer. */
+  function closestEl(a, nf) {
+    const cl = a.done && a.done.closest, href = cl && typeof cl === "object" ? safeHref(cl.url) : null;
+    if (!href) return null;
+    if (nf && (a.sources || []).slice(0, 2).some((s) => safeHref(s.url) === href)) return null; // already in "Closest pages"
+    return h("p", {class: "closest", dir: "auto"}, icon("corner", 14), h("span", null, "Closest page I read: ", link(href, h("bdi", {text: String(cl.title || "").trim() || pathOf(href)}))));
+  }
   function nfCard(c, a) {
     const close = (a.sources || []).slice(0, 2);
-    return h("div", {class: "card nf"},
+    return h("div", {class: "card nf", dir: "auto", lang: "en"},
       h("span", {class: "tag warn"}, icon("info", 14), "Not on this site"),
-      h("p", {text: "I searched " + ((a.meta && a.meta.pages) || c.source.pages || 0) + " pages on " + srcLabel(c.source) + " and no passage answers this. I would rather tell you than guess."}),
+      h("p", {dir: "auto"}, "I searched " + ((a.meta && a.meta.pages) || c.source.pages || 0) + " pages on ", h("bdi", {text: srcLabel(c.source)}), " and no passage answers this. I would rather tell you than guess."),
       close.length ? [h("h3", {class: "lab", text: "Closest pages"}), h("ul", {class: "close2"}, close.map((s) => h("li", null,
-        link(s.url, h("span", {class: "tx"}, h("b", {dir: "auto", text: s.title}), h("small", {text: "Closest sentence:"}), h("span", {class: "snip", dir: "auto", text: "“" + trunc(s.hl || s.passage, 200) + "”"}))))))] : null,
-      h("p", {class: "note"}, icon("chart", 14), page ? "Added to Insights as a gap to cover. No question used." : "No question used."));
+        link(s.url, h("span", {class: "tx"}, h("b", {dir: "auto", text: s.title}), h("small", {dir: "auto", text: "Closest sentence:"}), h("span", {class: "snip", dir: "auto", lang: AR.test(s.hl || s.passage || "") ? "ar" : null, text: "“" + trunc(s.hl || s.passage, 200) + "”"}))))))] : null,
+      closestEl(a, true),
+      h("p", {class: "note", dir: "auto"}, icon("chart", 14), page ? "Added to Insights as a gap to cover. No question used." : "No question used."));
   }
   function acts(c, a, idx) {
     const off = cappedFor(c) || busy();
@@ -772,30 +931,33 @@ export function mount(root, opts = {}) {
   function turnEl(c, i) {
     const qm = c.messages[i], a = c.messages[i + 1], idx = i + 1;
     const ar = (a && a.meta && a.meta.dir === "rtl") || AR.test(qm.content);
+    if (ar || (a && (a.sources || []).some((x) => AR.test(x.passage || "") || AR.test(x.title || "")))) arFont();
     const art = h("article", {class: "turn", dataset: {i: idx}, "aria-labelledby": P + "-q" + i, dir: ar ? "rtl" : null, lang: ar ? "ar" : null});
-    art.appendChild(h("h2", {class: "q", id: P + "-q" + i, tabindex: "-1", dir: "auto", text: qm.content}));
+    art.appendChild(h("h2", {class: "q", id: P + "-q" + i, tabindex: "-1", dir: dirOf(qm.content) || "auto", text: qm.content}));
     if (!a) return art;
     art.appendChild(stepsEl(c, a));
     if (a.status === "wake") {
-      art.appendChild(h("div", {class: "card wake"},
+      art.appendChild(h("div", {class: "card wake", dir: "auto", lang: "en"},
         h("p", {class: "cap-h"}, icon("server", 18), "The demo server is starting"),
-        h("p", null, "It starts on demand and takes ", h("strong", {text: "about 1 minute"}), ". Your question is saved and sends by itself; after that, answers start in 1 to 3 seconds."),
+        h("p", {dir: "auto"}, "It starts on demand and takes ", h("strong", {text: "about 1 minute"}), ". Your question is saved and sends by itself; after that, answers start in 1 to 3 seconds."),
         h("div", {class: "row3"}, h("button", {type: "button", class: "ghost", dataset: {act: "cancelq", a: idx}, text: "Cancel question"}),
           h("span", {class: "note"}, icon("clock", 14), "Waiting ", h("span", {class: "tm", text: clock(Date.now() - (wakeStart || Date.now()))})))));
       return art;
     }
-    if (a.status === "reread") return art;
+    if (a.status === "reread" || a.status === "reconnect") return art;
     if (a.error && a.error.code === "kb_gone_pdf") {
-      art.appendChild(h("div", {class: "card reread", role: "status"},
+      art.appendChild(h("div", {class: "card reread", role: "status", dir: "auto", lang: "en"},
         h("p", {class: "cap-h"}, icon("refresh", 18), "Attach the PDFs again to keep asking"),
-        h("p", {text: "The server keeps uploaded files for 1 hour, then deletes them. Attach " + (c.source.label || "the PDFs") + " again; your old answers stay here."}),
+        h("p", {dir: "auto"}, "The server keeps uploaded files for 1 hour, then deletes them. Attach ", h("bdi", {text: c.source.label || "the PDFs"}), " again; your old answers stay here."),
         h("div", {class: "row3"}, h("button", {type: "button", class: "btn", dataset: {act: "repdf", a: idx}}, icon("upload", 16), "Attach PDFs"))));
       return art;
     }
     if (a.done && a.done.status === "no_match") { art.appendChild(nfCard(c, a)); return art; }
     if (a.notice) {
-      const capN = CAP_CODES.includes(a.notice.code);
-      art.appendChild(h("div", {class: "card ntc", role: "note"}, h("span", {class: "tag warn"}, icon("info", 14), capN ? "AI answers paused" : "The AI is busy"), h("p", {text: a.notice.message})));
+      const capN = CAP_CODES.includes(a.notice.code), offN = a.notice.code === "ai_unavailable";
+      const nt = offN ? "The AI is off right now; here are the most relevant passages." : a.notice.message;
+      art.appendChild(h("div", {class: "card ntc" + (offN ? " off" : ""), role: "note", dir: "auto"}, h("span", {class: "tag warn"}, icon("info", 14), capN ? "AI answers paused" : offN ? "Passages only" : "The AI is busy"),
+        h("p", {dir: dirOf(nt) || "auto", text: nt})));
     }
     const done = !["search", "stream"].includes(a.status);
     const cited = new Set((a.done && a.done.cited) || []);
@@ -808,20 +970,22 @@ export function mount(root, opts = {}) {
     renderAnswer(ans, a.content, {sources: a.sources, idx, streaming: a.status === "stream" || a.status === "search"});
     art.appendChild(ans);
     if (a.status === "search" || a.status === "stream") return art;
-    if (a.status === "stopped") art.appendChild(h("p", {class: "stopped", text: "Stopped. Regenerate to get the full answer."}));
+    if (a.status === "done") { const cl = closestEl(a, false); if (cl) art.appendChild(cl); }
+    if (a.status === "stopped") art.appendChild(h("p", {class: "stopped", dir: "auto", text: "Stopped. Regenerate to get the full answer."}));
     if (a.status === "error" && a.error) {
-      art.appendChild(h("div", {class: "card errc", role: "alert"}, h("p", {class: "cap-h"}, icon("alert", 18), "This answer did not finish"),
-        h("p", {text: a.error.message || "Something went wrong."}),
+      const em = a.error.message || "Something went wrong.";
+      art.appendChild(h("div", {class: "card errc", role: "alert", dir: "auto"}, h("p", {class: "cap-h"}, icon("alert", 18), "This answer did not finish"),
+        h("p", {dir: dirOf(em) || "auto", text: em}),
         h("div", {class: "row3"}, h("button", {type: "button", class: "btn", dataset: {act: "regen", a: idx}, disabled: cappedFor(c)}, icon("refresh", 16), "Try again"))));
     }
     const off = cappedFor(c);
     if (a.followups && a.followups.length && a.status === "done") {
       art.appendChild(h("div", {class: "fu"}, h("h3", {class: "lab"}, icon("corner", 15), "Follow-ups"),
-        h("div", {class: "chips"}, a.followups.map((f) => h("button", {type: "button", class: "chip", dataset: {ask: f}, dir: "auto", lang: AR.test(f) ? "ar" : "en", disabled: off}, icon("plus", 14), f))),
-        off ? h("p", {class: "note"}, icon("info", 14), S.capped ? "No AI answers left today." : "No questions left in this chat.") : null));
+        h("div", {class: "chips"}, a.followups.map((f) => h("button", {type: "button", class: "chip", dataset: {ask: f}, dir: "auto", lang: AR.test(f) ? "ar" : "en", disabled: off && !followAnswer(c, f)}, icon("plus", 14), f))),
+        off ? h("p", {class: "note", dir: "auto"}, icon("info", 14), S.capped ? "No AI answers left today." : "No questions left in this chat.") : null));
     }
     if (a.status !== "error") art.appendChild(acts(c, a, idx));
-    if (idx === 3 && page) art.appendChild(h("p", {class: "quiet"}, h("a", {href: "/assistant/"}, "Want this on your website? See the widget demo ", icon("ext", 13))));
+    if (idx === 3 && page) art.appendChild(h("p", {class: "quiet", dir: "auto"}, h("a", {href: "/assistant/"}, "Want this on your website? See the widget demo ", icon("ext", 13))));
     return art;
   }
   function renderThread() {
@@ -890,7 +1054,7 @@ export function mount(root, opts = {}) {
     dock.hidden = !show; if (!show) return;
     if (!c) {
       capSlot.replaceChildren(); composer.hidden = !!S.capped; stopBtn.hidden = true; sendBtn.hidden = false;
-      ask.placeholder = S.crawl ? "Reading the site... your question runs when it is ready." : !page && opts.placeholder ? String(opts.placeholder) : "Ask a question...";
+      ask.placeholder = S.crawl ? (page ? "Reading the site... your question runs when it is ready." : "Ask now, it runs when ready") : !page && opts.placeholder ? String(opts.placeholder) : "Ask a question...";
       msrc.replaceChildren(...(S.src ? [icon("globe", 14), h("bdi", {text: srcLabel(S.src)})] : []));
       counter.replaceChildren();
       return;
@@ -924,6 +1088,7 @@ export function mount(root, opts = {}) {
   }
   function rowEl(c) {
     const on = c.id === S.active;
+    if (AR.test(c.title || "")) arFont();
     if (S.renaming === c.id) {
       return h("li", {class: "row on"}, h("input", {dir: "auto", value: c.title, dataset: {rn: c.id}, "aria-label": "Rename chat"}));
     }
@@ -952,6 +1117,7 @@ export function mount(root, opts = {}) {
   function renderExtract() {
     const e = S.ex, srcs = knownSources();
     if (!e.kb || !srcs.some((s) => s.kb_id === e.kb)) e.kb = srcs[0] ? srcs[0].kb_id : null;
+    if (e.state === "idle" && !e.res && !e.error && e.kb) showCachedExtract(e.kb); // an example's table shows at once
     const sel = h("select", {class: "sel", id: P + "-exSrc", dataset: {exsrc: "1"}}, srcs.map((s) => h("option", {value: s.kb_id, selected: s.kb_id === e.kb, text: srcLabel(s) + (s.kind === "example" ? " (example)" : "")})));
     const fieldsBox = h("div", {class: "fields"}, e.fields.map((f, i) => h("span", {class: "ftag"}, f, h("button", {type: "button", dataset: {rmf: i}, "aria-label": "Remove field " + f}, icon("x", 14)))),
       h("input", {id: P + "-exAdd", placeholder: "Add a field, press Enter", dataset: {exadd: "1"}}));
@@ -966,31 +1132,50 @@ export function mount(root, opts = {}) {
       h("small", {style: "color:var(--slate)", text: S.server === "ready" ? "One AI call per page. This takes 5 to 20 seconds." : "Waiting for the demo server to start (about 1 min)."})));
     if (e.error) kids.push(h("p", {class: "errline", role: "alert", text: e.error}));
     if (e.state === "done" && e.res) {
-      const r = e.res, fields = r.fields && r.fields.length ? r.fields.map((f) => (Array.isArray(f) ? f[0] : (f.label || f))) : e.fields;
-      const labels = r.rows[0] ? Object.keys(r.rows[0]).filter((k) => k !== "source") : fields;
-      kids.push(h("div", {class: "tbar"}, h("span", {class: "sum"}, h("b", {text: r.rows.length + " row" + (r.rows.length === 1 ? "" : "s")}), " from " + r.pages_read + " page" + (r.pages_read === 1 ? "" : "s"), dot(), labels.length + " fields"),
+      const r = e.res, labels = extractLabels(r);
+      if (labels.some((l) => AR.test(l)) || r.rows.some((x) => labels.some((l) => AR.test(String(x[l] || ""))))) arFont();
+      kids.push(h("div", {class: "tbar"}, h("span", {class: "sum"}, h("b", {text: r.rows.length + " row" + (r.rows.length === 1 ? "" : "s")}), " from " + r.pages_read + " page" + (r.pages_read === 1 ? "" : "s"), dot(), labels.length + " fields",
+          r.cached ? [" ", h("span", {class: "tag cache"}, h("bdi", null, "Cached", dot(), "$0"))] : null),
         h("span", {class: "ex"}, // built in the browser from this visitor's own result (the server keeps only the last extract per site)
           h("button", {type: "button", class: "ghost", dataset: {act: "xcsv"}, disabled: !r.rows.length, "aria-label": "Download this table as CSV"}, icon("download", 16), "CSV"),
           h("button", {type: "button", class: "ghost", dataset: {act: "xjson"}, disabled: !r.rows.length, "aria-label": "Download this table as JSON"}, icon("download", 16), "JSON"))));
       kids.push(h("div", {class: "tw cards"}, h("table", null, h("caption", {class: "sr", text: "Extracted rows"}),
         h("thead", null, h("tr", null, h("th", {text: "#"}), labels.map((l) => h("th", {text: l})), h("th", {text: "Source page"}))),
         h("tbody", null, r.rows.map((row, i) => h("tr", null, h("td", {class: "n idx", text: String(i + 1)}),
-          labels.map((l, j) => { const v = row[l]; const empty = v == null || v === ""; return h("td", {class: j === 0 ? "k" : "", dataset: {l}, style: empty ? "color:var(--slate)" : null, dir: "auto", text: empty ? "—" : String(v)}); }),
+          labels.map((l, j) => { const v = row[l]; const empty = v == null || v === ""; return h("td", {class: j === 0 ? "k" : "", dataset: {l}, style: empty ? "color:var(--slate)" : null, dir: "auto", text: empty ? "—" : typeof v === "object" ? JSON.stringify(v) : String(v)}); }),
           h("td", {dataset: {l: "Source page"}}, row.source ? link(row.source.url, [pathOf(row.source.url), " ", icon("ext", 12)]) : "")))))));
       if (!r.rows.length) kids.push(h("p", {class: "tfoot", text: "No page had these fields. Try fields that appear on the pages, such as a price or a contact."}));
       (r.warnings || []).forEach((w) => kids.push(h("p", {class: "xwarn", text: w})));
     }
     exCol.replaceChildren(...kids);
   }
+  /** Column names: an example's precomputed table keeps its own field order; a live result uses its row keys. */
+  function extractLabels(r) {
+    if (r.cached && Array.isArray(r.fields) && r.fields.length) return r.fields.map(String);
+    return r.rows[0] ? Object.keys(r.rows[0]).filter((k) => k !== "source") : S.ex.fields;
+  }
+  /** An example with a precomputed table: show it at once (no AI call), with the example's own field names. */
+  function showCachedExtract(kb) {
+    const cx = cachedExtract(kb); if (!cx) return false;
+    const e = S.ex; e.kb = kb; e.fields = cx.fields.slice(); e.res = cx; e.state = "done"; e.error = null;
+    return true;
+  }
   async function runExtract() {
     const e = S.ex;
     const add = q("#" + P + "-exAdd"); if (add && add.value.trim()) { e.fields.push(add.value.trim()); add.value = ""; }
     if (!e.kb || !e.fields.length) { e.error = "Name at least one field."; renderExtract(); return; }
+    const cx = cachedExtract(e.kb);
+    if (cx && sameFields(cx.fields, e.fields)) { showCachedExtract(e.kb); renderExtract(); status("Table ready: " + cx.rows.length + " rows (cached)"); return; }
     e.state = "run"; e.error = null; e.res = null; renderExtract(); status("Extracting...", true);
     try { await whenReady(); } catch (err) { e.state = "idle"; e.error = err.message; status(e.error); if (S.view === "extract") renderExtract(); return; }
     try {
-      const r = await fetch(api + "/api/extract", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({kb_id: e.kb, fields: e.fields, session_id: history.sessionId()})});
-      const j = await r.json();
+      const post = (restore) => fetch(api + "/api/extract", {method: "POST", headers: {"Content-Type": JSON_CT},
+        body: JSON.stringify(Object.assign({kb_id: e.kb, fields: e.fields, session_id: history.sessionId()}, restore ? {restore} : {}))}).then((r) => r.json());
+      let j = await post(null);
+      if (j.error && j.error.code === "kb_expired") { // rebuild from the saved snapshot, once
+        const snap = snapshots.get(e.kb);
+        if (snap) { status("Reconnecting…", true); j = await post(snap); if (j.error && j.error.code === "kb_expired") snapshots.drop(e.kb); }
+      }
       if (j.error) {
         e.state = "idle";
         e.error = j.error.code === "kb_expired" ? "The server cleared this site after 1 hour. Read it again from the Chat tab, then extract." : j.error.message;
@@ -1005,7 +1190,7 @@ export function mount(root, opts = {}) {
   }
   function exportExtract(kind) {
     const r = S.ex.res; if (!r || !r.rows.length) return;
-    const labels = Object.keys(r.rows[0]).filter((k) => k !== "source");
+    const labels = extractLabels(r);
     const name = slug((S.ex.kb || "table").replace(/^ex-/, "")) + "-table";
     if (kind === "json") download(name + ".json", JSON.stringify({fields: labels, rows: r.rows}, null, 2), "application/json");
     else download(name + ".csv", csvOf([...labels, "source_url", "source_title"], r.rows.map((x) => [...labels.map((l) => x[l]), x.source && x.source.url, x.source && x.source.title])), "text/csv");
@@ -1026,13 +1211,14 @@ export function mount(root, opts = {}) {
     if (!s) { dataCol.replaceChildren(h("p", {class: "empty-s", text: "Pick an example or read a site first."})); return; }
     const pl = s.page_list || (s.kind === "example" && exampleOf(s.kb_id) ? exampleOf(s.kb_id).page_list : []) || [];
     dataCol.replaceChildren(
-      h("div", {class: "vh"}, h("div", null, h("h1", {text: "Pages read"}), h("p", {text: "The pages the crawler read from " + srcLabel(s) + ". The server keeps them for 1 hour, then deletes them (examples stay)."})),
+      h("div", {class: "vh"}, h("div", null, h("h1", {text: "Pages read"}), h("p", {dir: "auto"}, "The pages the crawler read from ", h("bdi", {text: srcLabel(s)}), ". The server keeps them for 1 hour, then deletes them (examples stay).")),
         h("span", {class: "ex", style: "display:flex;gap:8px"},
           h("button", {type: "button", class: "ghost", dataset: {act: "pcsv", kb: s.kb_id}, "aria-label": "Download the page list as CSV"}, icon("download", 16), "CSV"),
           h("button", {type: "button", class: "ghost", dataset: {act: "pjson", kb: s.kb_id}, "aria-label": "Download the pages as JSON"}, icon("download", 16), "JSON"))),
-      h("div", {class: "tbar", style: "margin-top:0"}, h("span", {class: "sum"}, h("b", {text: (s.pages || pl.length) + " pages read"}), s.words ? [dot(), s.words + " words"] : null)),
+      h("div", {class: "tbar", style: "margin-top:0"}, h("span", {class: "sum"}, h("b", {text: (s.pages || pl.length) + " pages read"}), s.words ? [dot(), s.words + " words"] : null,
+        s.rendered > 0 ? [dot(), s.rendered + " page" + (s.rendered === 1 ? "" : "s") + " rendered (JavaScript site)"] : null)),
       pl.length ? h("div", {class: "tw"}, h("table", null, h("caption", {class: "sr", text: "Pages read"}), h("thead", null, h("tr", null, h("th", {text: "Page"}), h("th", {text: "URL"}))),
-        h("tbody", null, pl.map((p) => h("tr", null, h("td", {class: "k", dir: "auto", text: p.title || "(no title)"}), h("td", null, link(p.url, pathOf(p.url)))))))) : h("p", {class: "empty-s", text: "The page list appears after a site is read."}),
+        h("tbody", null, pl.map((p) => h("tr", null, h("td", {class: "k", dir: "auto"}, p.title || "(no title)", p.rendered ? [" ", h("span", {class: "tag plain js", title: "Read through a page renderer (JavaScript)", text: "rendered"})] : null), h("td", null, link(p.url, pathOf(p.url)))))))) : h("p", {class: "empty-s", text: "The page list appears after a site is read."}),
       pl.length ? h("p", {class: "tfoot", text: "Showing the first " + pl.length + " pages in reading order. CSV and JSON include every page."}) : null);
   }
   function stats() {
@@ -1073,7 +1259,7 @@ export function mount(root, opts = {}) {
 
   /* ---------- ask + stream */
   function newChatFor(src, text) {
-    const c = {id: uid(), kb_id: src.kb_id, source: {kind: src.kind, url: src.url || "", label: src.label, pages: src.pages, page_list: (src.page_list || []).slice(0, 20), words: src.words},
+    const c = {id: uid(), kb_id: src.kb_id, source: {kind: src.kind, url: src.url || "", label: src.label, pages: src.pages, page_list: (src.page_list || []).slice(0, 20), words: src.words, rendered: src.rendered || 0},
       title: trunc(text, 80), messages: [], updatedAt: Date.now()};
     S.chats.unshift(c); S.active = c.id;
     if (S.chats.length > HMAX) S.chats = S.chats.slice(0, HMAX);
@@ -1085,13 +1271,17 @@ export function mount(root, opts = {}) {
     if (busy()) { S.queue.push({text, from}); renderDock(); status(S.queue.length > 1 ? S.queue.length + " questions wait their turn" : "Your question waits for this answer to end"); return; }
     let c = chat();
     if (!c) {
-      if (S.crawl) { S.pend = text; heroErr(""); status("Still reading the pages. Your question runs when they are ready."); return; }
+      if (S.crawl) {
+        if (S.pend && !page && S.pend !== text) S.queue.push({text, from}); else S.pend = text;
+        heroErr(""); if (!page) renderHero();
+        status("Still reading the pages. Your question runs when they are ready."); return;
+      }
       if (!S.src) { heroErr("Pick an example or paste a link first."); return; }
       if (S.capped && !cachedAns(S.src.kind, S.src.kb_id, text)) { heroErr("AI answers are paused until 00:00 GMT. The cached example questions still work."); status("No AI answers left today"); return; }
       c = newChatFor(S.src, text);
     }
     const first = c.messages.length === 0;
-    const cachedSt = first ? starterAnswer(c, text) : null;
+    const cachedSt = first ? starterAnswer(c, text) : followAnswer(c, text);
     if (!cachedSt && cappedFor(c)) { renderDock(); status("No questions left"); return; }
     c.updatedAt = Date.now();
     c.messages.push({role: "user", content: text});
@@ -1138,12 +1328,11 @@ export function mount(root, opts = {}) {
     if (c.id === S.active) { renderTurn(mi); renderDock(); }
     status("Searching the pages", true);
     const repaint = () => { if (c.id === S.active) { renderTurn(mi); follow(mi); } };
-    try {
-      await streamChat({api, kb_id: c.kb_id, session_id: c.id, signal: ctrl.signal,
+    const attempt = (restore) => streamChat({api, kb_id: c.kb_id, session_id: c.id, signal: ctrl.signal, restore,
         messages: [...priorTurns(c, mi), {role: "user", content: question}],
         on: {
-          meta: (d) => { a.meta = d; },
-          sources: (d) => { a.sources = Array.isArray(d) ? d : []; repaint(); },
+          meta: (d) => { a.meta = d; if (a.status === "reconnect") a.status = "search"; },
+          sources: (d) => { a.sources = Array.isArray(d) ? d : []; if (a.status === "reconnect") a.status = "search"; repaint(); },
           notice: (d) => {
             a.notice = d; emit("notice", d);
             if (d.code === "session_cap") c.capped = d.code;
@@ -1166,6 +1355,18 @@ export function mount(root, opts = {}) {
           },
           error: (d) => { a.error = d; },
         }});
+    try {
+      await attempt(undefined);
+      // a new server instance no longer has this site: rebuild it from the saved snapshot (one retry), not a re-read
+      if (a.error && a.error.code === "kb_expired" && !a.content) {
+        const snap = snapshots.get(c.kb_id);
+        if (snap) {
+          Object.assign(a, {error: null, meta: null, sources: [], notice: null, followups: [], done: null, status: "reconnect"});
+          repaint(); status("Reconnecting…", true);
+          await attempt(snap);
+          if (a.error && a.error.code === "kb_expired") snapshots.drop(c.kb_id); // refused: the re-read below replaces it
+        }
+      }
     } catch (e) {
       if (e && e.name === "AbortError") a.status = "stopped";
       else a.error = NET;
@@ -1180,8 +1381,9 @@ export function mount(root, opts = {}) {
         try {
           const sum = await readSite({api, url: c.source.url});
           S.rereading = false;
+          if (sum.snapshot && typeof sum.snapshot === "object") snapshots.put(sum.kb_id, sum.snapshot);
           c.kb_id = sum.kb_id; c.source.pages = sum.pages; c.source.page_list = sum.page_list || c.source.page_list;
-          if (S.src && S.src.url === c.source.url) { S.src.kb_id = sum.kb_id; saveSrc(); }
+          if (S.src && S.src.url === c.source.url) { S.src.kb_id = sum.kb_id; if (sum.starters) S.src.starters = cleanStarters(sum.starters); saveSrc(); }
           save(); return run(c, mi);
         } catch (err) { S.rereading = false; a.status = "error"; a.error = {code: err.code || "server_error", message: "Could not read the site again: " + (err.message || "")}; }
       } else if (c.source.kind === "pdf") { a.status = "error"; a.error = {code: "kb_gone_pdf", message: ""}; }
@@ -1226,15 +1428,7 @@ export function mount(root, opts = {}) {
       const sum = await readSite({api, url, files, signal: myCtrl.signal,
         onStart: (d) => { if (S.crawl) { S.crawl.max = d.max_pages || 0; } },
         onProgress: (d) => { if (!S.crawl) return; S.crawl.n = d.n; S.crawl.feed.push(d.url); const card = q(".crawlc"); if (card) card.replaceWith(crawlCard()); }});
-      S.crawl = null;
-      S.src = {kb_id: sum.kb_id, kind: sum.kind === "pdf" ? "pdf" : "site", label: sum.kind === "pdf" ? sum.label : hostOf(sum.url || url), url: sum.url || url || "",
-        pages: sum.pages, words: sum.words, lang: sum.lang, page_list: sum.page_list || [], input: pdf ? "" : url, at: Date.now()};
-      saveSrc(); emit("kb", sum);
-      { const hu = q("." + P + "-hu"); if (hu) hu.value = ""; const hq = q("." + P + "-hq"); if (hq && S.pend) hq.value = ""; }
-      const warn = (sum.warnings || []).length ? " " + sum.warnings[0] : "";
-      renderAll(); status("Ready: " + sum.pages + " pages read." + warn);
-      if (S.pend) { const p = S.pend; S.pend = null; askText(p); }
-      else { const hq = q("." + P + "-hq"); if (hq) hq.focus(); }
+      readDone(sum, url, pdf);
     } catch (e) {
       if (readCtrl !== myCtrl && !(e && e.name === "AbortError")) return; // a newer read replaced this one
       const was = S.crawl; S.crawl = null;
@@ -1244,6 +1438,35 @@ export function mount(root, opts = {}) {
       emit("error", e);
     }
     if (readCtrl === myCtrl) readCtrl = null;
+  }
+  /** A finished read (ours, or the host page's opts.read): the new source, its snapshot, then any waiting question. */
+  function readDone(sum, url, pdf) {
+    S.crawl = null;
+    S.src = {kb_id: sum.kb_id, kind: sum.kind === "pdf" ? "pdf" : "site", label: sum.kind === "pdf" ? sum.label : hostOf(sum.url || url), url: sum.url || url || "",
+      pages: sum.pages, words: sum.words, lang: sum.lang, page_list: sum.page_list || [], input: pdf ? "" : url, at: Date.now(),
+      starters: cleanStarters(sum.starters), rendered: sum.rendered || 0};
+    if (sum.snapshot && typeof sum.snapshot === "object") snapshots.put(sum.kb_id, sum.snapshot);
+    saveSrc(); emit("kb", sum);
+    { const hu = q("." + P + "-hu"); if (hu) hu.value = ""; const hq = q("." + P + "-hq"); if (hq && S.pend) hq.value = ""; }
+    const warn = (sum.warnings || []).length ? " " + sum.warnings[0] : "";
+    renderAll(); status("Ready: " + sum.pages + " pages read." + warn);
+    if (S.pend) { const p = S.pend; S.pend = null; askText(p); }
+    else if (page) { const hq = q("." + P + "-hq"); if (hq) hq.focus(); }
+  }
+  /** Widget on a page that reads the site itself (/assistant/ proposal link): the chat is usable at once and
+   *  typed questions wait for opts.read, the host's readSite() promise. Progress comes through ctl.readProgress. */
+  function hostRead(p) {
+    const label = opts.readLabel || hostOf(opts.site || "") || "the site";
+    S.crawl = {kind: opts.site ? "site" : "pdf", label, url: opts.site || "", n: 0, max: 0, feed: [], waiting: false, host: true};
+    const mine = S.crawl;
+    p.then((sum) => { if (S.crawl !== mine) return; readDone(sum, opts.site || "", !opts.site); },
+      (e) => {
+        if (S.crawl !== mine) return;
+        S.crawl = null;
+        if (e && e.name === "AbortError") { S.pend = null; renderAll(); return; }
+        S.err = {label, kind: opts.site ? "site" : "pdf", code: e && e.code, message: (e && e.message) || NET.message};
+        S.pend = null; S.queue = []; renderAll(); status("Could not read " + label);
+      });
   }
   function normUrl(u) { u = String(u || "").trim(); if (!u || /\s/.test(u)) return ""; if (!/^https?:\/\//i.test(u)) u = "https://" + u; return safeHref(u) ? u : ""; }
   function pickExample(kb, quiet) {
@@ -1340,7 +1563,7 @@ export function mount(root, opts = {}) {
     const i = S.chats.findIndex((c) => c.id === id); if (i < 0) return;
     if (S.streaming && S.streaming.chatId === id) stop();
     const c = S.chats.splice(i, 1)[0]; if (S.active === id) S.active = null; save(); renderAll();
-    showToast("Chat deleted: “" + trunc(c.title, 26) + "”", () => {
+    showToast("Chat deleted: “" + trunc(c.title, 26) + "”", ["Chat deleted: “", h("bdi", {text: trunc(c.title, 26)}), "”"], () => {
       S.chats.splice(Math.min(i, S.chats.length), 0, c); save(); renderAll(); status("Chat restored");
       const b = rail.querySelector('[data-open="' + CSS.escape(c.id) + '"]'); if (b) b.focus();
     });
@@ -1349,10 +1572,10 @@ export function mount(root, opts = {}) {
     clearInterval(toastIv); const had = toast.contains(activeEl()); toast.hidden = true;
     if (had) { const t = rq && rq.offsetParent ? rq : rail.querySelector('[data-act="newchat"]'); if (t) t.focus(); }
   }
-  function showToast(msg, undo) {
+  function showToast(msg, view, undo) { // msg: plain text (screen readers); view: the same with <bdi> for a title
     let left = 5000; clearInterval(toastIv); toastHold = false;
     const ub = h("button", {type: "button", text: "Undo"}), cd = h("span", {class: "cd", "aria-hidden": "true", text: "5 s"}), bar = h("i");
-    toast.replaceChildren(h("span", {dir: "auto", text: msg}), cd, ub, h("span", {class: "tbar2", "aria-hidden": "true"}, bar));
+    toast.replaceChildren(h("span", {dir: "auto"}, view || msg), cd, ub, h("span", {class: "tbar2", "aria-hidden": "true"}, bar));
     toast.hidden = false; status("", false, msg + ". Undo is available for 5 seconds");
     ub.addEventListener("click", () => { clearInterval(toastIv); toast.hidden = true; undo(); });
     ub.focus(); toastHold = true; toast.classList.add("hold"); // focus is inside: the countdown waits
@@ -1380,7 +1603,7 @@ export function mount(root, opts = {}) {
       askText(b.dataset.ask, b.classList.contains("chip") ? "chip" : "starter"); return;
     }
     if ((b = t.closest("[data-xt]")) && !b.disabled) {
-      e.preventDefault(); if (S.src) { S.ex.kb = S.src.kb_id; S.ex.res = null; S.ex.state = "idle"; S.ex.error = null; }
+      e.preventDefault(); if (S.src && !showCachedExtract(S.src.kb_id)) { S.ex.kb = S.src.kb_id; S.ex.res = null; S.ex.state = "idle"; S.ex.error = null; }
       setView("extract"); const sb = q('#' + P + "-p-extract button[type=submit]"); if (sb) sb.focus(); return;
     }
     if ((b = t.closest(".cite"))) { e.preventDefault(); openDrawer(+b.dataset.a, +b.dataset.c, b); return; }
@@ -1447,6 +1670,7 @@ export function mount(root, opts = {}) {
       const u = normUrl((q("." + P + "-hu") || {}).value), text = ((q("." + P + "-hq") || {}).value || "").trim();
       const rawU = ((q("." + P + "-hu") || {}).value || "").trim();
       if (rawU && !u) { heroErr("That link does not look like a web address. Try something like your-site.com/help."); return; }
+      if (!rawU && f.dataset.only === "url") { heroErr("Paste your site link first, like your-site.com/help."); const hu = q("." + P + "-hu"); if (hu) hu.focus(); return; }
       if (u) { S.pend = text || null; readSource({url: u}); return; }
       if (!text) { heroErr("Type a question, or pick one of the 4 above."); const hq = q("." + P + "-hq"); if (hq) hq.focus(); return; }
       askText(text, "hero"); return;
@@ -1461,10 +1685,10 @@ export function mount(root, opts = {}) {
       S.pend = ((q("." + P + "-hq") || {}).value || "").trim() || null;
       readSource({files}); return;
     }
-    if (t.dataset && t.dataset.exsrc) { S.ex.kb = t.value; S.ex.res = null; S.ex.state = "idle"; renderExtract(); const s = q("#" + P + "-exSrc"); if (s) s.focus(); }
+    if (t.dataset && t.dataset.exsrc) { if (!showCachedExtract(t.value)) { S.ex.kb = t.value; S.ex.res = null; S.ex.state = "idle"; } renderExtract(); const s = q("#" + P + "-exSrc"); if (s) s.focus(); }
   }
   function grow(t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 160) + "px"; }
-  function onInput(e) { if (e.target === ask) grow(ask); else if (rq && e.target === rq) { renderRail(); rq.focus(); } }
+  function onInput(e) { if (e.target === ask || (e.target.dataset && e.target.dataset.fid === "hq")) warmUp(); if (e.target === ask) grow(ask); else if (rq && e.target === rq) { renderRail(); rq.focus(); } }
   function onKey(e) {
     const t = e.target;
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
@@ -1525,20 +1749,29 @@ export function mount(root, opts = {}) {
     if (e.key === "Escape" && !root.contains(e.target) && escTop()) e.preventDefault();
   };
   if (page) { addEventListener("resize", onResize); document.addEventListener("keydown", onDocKey); }
+  // the phone hero has its own order (site field first): rebuild it when the width crosses 640 px
+  let phoneMq = null; const onPhone = () => { if (!chat() && S.view === "chat") renderHero(); };
+  if (page) { try { phoneMq = matchMedia("(max-width:640px)"); phoneMq.addEventListener("change", onPhone); } catch (e) { phoneMq = null; } }
+  // warm the server before a question: question box focus or typing (onInput), pointer on a starter or chip;
+  // warm() pings only after 90 s idle, so a visitor back after a pause wakes a cold server before pressing Send
+  root.addEventListener("focusin", (e) => { const t = e.target; if (t === ask || (t.dataset && (t.dataset.fid === "hq" || t.dataset.fid === "hu"))) warmUp(); });
+  root.addEventListener("pointerover", (e) => { if (e.target.closest && e.target.closest(".starter,.chip")) warmUp(); });
 
   /* ---------- start */
   try { const s = JSON.parse(lsGet(SRC_KEY) || "null"); if (s && s.kb_id && s.kind) S.src = s; } catch (e) { /* none saved */ }
   const ticker = setInterval(() => { if (S.server !== "ready") qa(".wake .tm, .crawlc .tm").forEach((t) => { t.textContent = clock(Date.now() - (wakeStart || Date.now())); }); }, 1000);
+  if (opts.read && typeof opts.read.then === "function" && mode === "widget") { S.src = null; hostRead(opts.read); }
   renderAll();
   getExamples(api).then((ex) => {
     S.examples = ex || [];
-    if (opts.kb) { const e = exampleOf(opts.kb); S.src = e ? srcFromExample(e) : {kb_id: opts.kb, kind: "site", label: hostOf(opts.site || ""), url: opts.site || "", pages: 0}; }
+    if (opts.read && mode === "widget") { renderAll(); emit("ready", {examples: S.examples.length}); return; } // the host page reads the site
+    if (opts.kb) { const e = exampleOf(opts.kb); S.src = e ? srcFromExample(e) : {kb_id: opts.kb, kind: "site", label: hostOf(opts.site || ""), url: opts.site || "", pages: 0, starters: cleanStarters(opts.siteStarters)}; }
     else if (!S.src || (S.src.kind === "example" && !exampleOf(S.src.kb_id))) { if (S.examples[0]) S.src = srcFromExample(S.examples[0]); }
     renderAll(); emit("ready", {examples: S.examples.length});
     if (!opts.kb && opts.site && mode === "widget") {
-      // reuse the site this browser read in the last 50 minutes (the server keeps it 1 hour; kb_expired re-reads it)
+      // reuse the site this browser read before: within 50 minutes, or while its snapshot is valid (kb_expired restores it)
       const want = normUrl(opts.site), sv = S.src;
-      const fresh = sv && sv.kind === "site" && (sv.input === want || sv.url === want) && sv.at && Date.now() - sv.at < 50 * 60e3;
+      const fresh = sv && sv.kind === "site" && (sv.input === want || sv.url === want) && sv.at && (Date.now() - sv.at < 50 * 60e3 || !!snapshots.get(sv.kb_id));
       if (fresh) emit("kb", {...sv, reused: true}); else readSource({url: want});
     }
   });
@@ -1555,10 +1788,13 @@ export function mount(root, opts = {}) {
     newChat,
     open(id) { if (!S.chats.some((c) => c.id === id)) return false; S.active = id; S.view = "chat"; renderAll(); chatScroll.scrollTop = 0; return true; },
     get state() { return S; },
+    /** Host-page read progress (opts.read): n pages of max. */
+    readProgress(n, max) { if (S.crawl && S.crawl.host) { S.crawl.n = n || 0; if (max) S.crawl.max = max; if (!chat() && S.view === "chat") renderHero(); } },
+    warm: warmUp,
     destroy() {
       stop(); clearInterval(ticker); clearInterval(wakeT); wakeT = null; clearInterval(toastIv);
       if (readCtrl) { const rc = readCtrl; readCtrl = null; rc.abort(); } S.crawl = null; readyWaiters = [];
-      if (page) { removeEventListener("resize", onResize); document.removeEventListener("keydown", onDocKey); }
+      if (page) { removeEventListener("resize", onResize); document.removeEventListener("keydown", onDocKey); if (phoneMq) phoneMq.removeEventListener("change", onPhone); }
       root.replaceChildren();
     },
   };

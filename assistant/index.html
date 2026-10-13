@@ -9,7 +9,10 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet"></noscript>
+<link rel="modulepreload" href="/chat/core.js">
+<link rel="modulepreload" href="/chat/config.js">
 <script src="/theme.js"></script>
 <style>
 :root{
@@ -346,7 +349,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45}
   .bars li{grid-template-columns:minmax(0,120px) minmax(0,1fr) 28px}
   .ex-grid{grid-template-columns:minmax(0,1fr)}
   .url-row{flex-wrap:wrap}.url-row .btn{flex:1}
-  .toast{left:12px;right:12px;transform:none;bottom:16px;min-width:0}
+  .toast{left:12px;right:12px;transform:none;bottom:calc(16px + env(safe-area-inset-bottom));min-width:0}
 }
 @media (hover:none){.h-more{opacity:1}}
 @media (prefers-reduced-motion:reduce){
@@ -365,6 +368,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45}
 .nw-pages{margin:10px 0 0;padding-left:22px}
 .nw-pages li{font-size:15px;line-height:1.6}
 .nw-pages a{color:var(--brand-ink)}
+.jsmark{display:inline-block;margin-inline-start:8px;font-size:12px;line-height:1.5;padding:0 7px;border-radius:999px;background:var(--nw-side);border:1px solid var(--nw-rule);color:var(--nw-mute);vertical-align:1px}
 .nw-card{margin-top:18px;border:1px solid var(--nw-rule);border-radius:10px;padding:16px 18px;background:var(--nw-side)}
 .nw-card .timeline{margin-top:10px}
 .nw-card h2{margin:0;font-size:16px}
@@ -568,7 +572,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.45}
 <noscript><p style="padding:16px">This demo needs JavaScript.</p></noscript>
 <script src="/widget.js"></script>
 <script type="module">
-import { readSite, checkHealth, makeHistory, getExamples } from "/chat/core.js";
+import { readSite, checkHealth, makeHistory, getExamples, snapshots } from "/chat/core.js";
 import { API_BASE } from "/chat/config.js";
 
 /* ---------- helpers */
@@ -612,8 +616,32 @@ function announce(t) { const s = $("#status"); s.textContent = ""; setTimeout(()
 const isPhone = () => matchMedia("(max-width:760px)").matches;
 const mmss = (ms) => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
 const secs = (ms) => (ms / 1000).toFixed(1) + " s";
-let toastT = null;
-function toast(msg) { const t = $("#toast"); clearTimeout(toastT); t.replaceChildren(h("span", {role: "status", text: msg})); t.hidden = false; toastT = setTimeout(() => { t.hidden = true; }, 4000); }
+let toastT = null, toastIv = null;
+/** The widget's question box (in its shadow root) when it is on screen, else null. */
+function widgetBox() {
+  const host = document.querySelector("#wRoot [data-site-assistant]"), sr = host && host.shadowRoot;
+  const b = sr && sr.querySelector(".composer");
+  return b && b.getClientRects().length ? b.getBoundingClientRect() : null;
+}
+/** Keep the toast off the widget's question box: when the two would overlap (a phone, where the widget fills the
+ *  screen, or a wide toast over the panel) it sits 10 px above the box. Re-checked while shown: the box moves when
+ *  the widget's status line or the starters change under it. */
+function placeToast(t) {
+  t.style.bottom = "";
+  const r = t.getBoundingClientRect(), b = widgetBox();
+  if (b && r.bottom > b.top - 10 && r.top < b.bottom && r.right > b.left && r.left < b.right)
+    t.style.bottom = Math.max(16, Math.round(innerHeight - b.top + 10)) + "px";
+}
+function hideToast() { clearTimeout(toastT); clearInterval(toastIv); $("#toast").hidden = true; }
+/** A short notice, gone after 3 s or a tap. */
+function toast(msg) {
+  const t = $("#toast"); hideToast();
+  t.replaceChildren(h("span", {role: "status", dir: "auto", text: msg}));
+  t.hidden = false; placeToast(t);
+  toastIv = setInterval(() => placeToast(t), 150);
+  toastT = setTimeout(hideToast, 3000);
+}
+$("#toast").addEventListener("click", hideToast); // a tap closes it
 async function copyText(t) {
   try { await navigator.clipboard.writeText(t); return true; } catch (e) {
     try { const ta = h("textarea", {style: "position:fixed;opacity:0"}); ta.value = t; document.body.append(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove(); return ok; } catch (e2) { return false; }
@@ -648,12 +676,14 @@ function saveSettings() { lsSet(setKey(), JSON.stringify({color: S.color, greeti
 function exampleStarters() { const e = S.examples.find((x) => x.kb_id === EXAMPLE.kb); return e ? (e.starters || []).map((s) => s.q) : []; }
 
 /* ---------- widget (the real one, from /widget.js) */
-function makeWidget(openIt) {
+/** readP: the read in progress (proposal link): the widget is usable at once and typed questions run when it ends. */
+function makeWidget(openIt, readP) {
   if (S.widget) { S.widget.destroy(); S.widget = null; }
-  const sc = S.scene; if (!sc.kb) return;
+  const sc = S.scene; if (!sc.kb && !readP) return;
   const starters = S.custom ? S.starters.map((x) => x.trim()).filter(Boolean) : undefined;
   S.widget = SA.create($("#wRoot"), {
-    placement: "frame", kb: sc.kb, site: sc.kind === "site" ? sc.url : undefined, label: sc.host, name: sc.name, storeKey: sc.host,
+    placement: "frame", kb: readP ? undefined : sc.kb, site: sc.kind === "site" ? sc.url : undefined, label: sc.host, name: sc.name, storeKey: sc.host,
+    read: readP, readLabel: sc.kind === "pdf" ? sc.host : undefined, siteStarters: sc.starters && sc.starters.length >= 2 ? sc.starters : undefined,
     color: S.color, api: API_BASE, greeting: S.greeting.trim() || defGreeting(), starters, open: openIt && !isPhone(),
     onEvent: (t) => { if (t === "answer" && !$("#p-insights").hidden) renderInsights(); },
   });
@@ -680,11 +710,11 @@ function renderFrameSite() {
   const side = $("#nwSide"), art = $("#nwArt");
   const pl = (sc.page_list || []).slice(0, 12);
   side.replaceChildren(h("h2", {text: pl.length ? "Pages it read" : "Pages"}),
-    ...(pl.length ? pl.map((p, i) => { const href = safeHref(p.url); return h("a", {href: href || "#", target: href ? "_blank" : null, rel: href ? "noopener noreferrer" : null, class: "pl", "aria-current": i === 0 ? "page" : null, dir: "auto", title: p.url, text: p.title || hostPath(p.url)}); })
+    ...(pl.length ? pl.map((p, i) => { const href = safeHref(p.url); return h("a", {href: href || "#", target: href ? "_blank" : null, rel: href ? "noopener noreferrer" : null, class: "pl", "aria-current": i === 0 ? "page" : null, dir: "auto", title: p.url + (p.rendered ? " (rendered with JavaScript)" : ""), text: ttl(p.title) || hostPath(p.url)}); })
       : [h("div", {class: "nw-skel", style: "width:80%"}), h("div", {class: "nw-skel", style: "width:65%"}), h("div", {class: "nw-skel", style: "width:72%"})]));
   if (c && c.phase !== "done") {
     const card = h("div", {class: "nw-card"}, h("h2", {text: c.phase === "error" ? "Could not read " + sc.host : "Reading " + sc.host + " for the assistant"}),
-      c.phase === "error" ? [h("p", {class: "nw-err", role: "alert", text: c.err}), h("div", {class: "row"}, h("button", {class: "btn btn-pri", type: "button", "data-retry": "", text: "Try again"}), h("a", {class: "btn", href: location.pathname, text: "See the example site"}))]
+      c.phase === "error" ? [h("p", {class: "nw-err", role: "alert", text: c.err}), h("div", {class: "row"}, NO_RETRY.includes(c.code) ? null : h("button", {class: "btn btn-pri", type: "button", "data-retry": "", text: "Try again"}), h("a", {class: NO_RETRY.includes(c.code) ? "btn btn-pri" : "btn", href: location.pathname, text: "See the example site"}))]
         : timelineEl());
     art.replaceChildren(h("div", {class: "crumbs", text: sc.host}), h("h1", {text: c.phase === "error" ? sc.host : "Setting up your assistant"}),
       h("div", {class: "nw-meta", text: "Public pages only. Same site and folder, follows robots.txt."}), card);
@@ -692,11 +722,11 @@ function renderFrameSite() {
   }
   const first = pl[0] || {};
   art.replaceChildren(...[h("div", {class: "crumbs", text: hostPath(first.url || sc.url)}),
-    h("h1", {dir: "auto", text: first.title || sc.host}),
-    h("div", {class: "nw-meta"}, (sc.pages || 0) + " pages read", dsep(), (sc.words || 0).toLocaleString("en-US") + " words", c && c.ms ? [dsep(), "ready in " + secs(c.ms)] : null),
+    h("h1", {dir: "auto", text: ttl(first.title) || sc.host}),
+    h("div", {class: "nw-meta"}, (sc.pages || 0) + " pages read", dsep(), (sc.words || 0).toLocaleString("en-US") + " words", sc.rendered > 0 ? [dsep(), sc.rendered + " rendered (JavaScript site)"] : null, c && c.ms ? [dsep(), "ready in " + secs(c.ms)] : null),
     h("p", {text: "This is a preview of the assistant on " + sc.host + ". It read the pages listed here and answers your visitors from them, with the source of every answer."}),
     h("div", {class: "nw-note", text: isPhone() ? "Tap the chat bubble and ask something your customers often ask." : "Ask the assistant something your customers often ask. Try a question your pages do not answer too: it says so instead of guessing."}),
-    pl.length ? [h("h2", {text: "Pages it read"}), h("ol", {class: "nw-pages"}, pl.slice(0, 8).map((p) => { const href = safeHref(p.url); return h("li", null, href ? h("a", {href, target: "_blank", rel: "noopener noreferrer", dir: "auto", text: p.title || hostPath(p.url)}) : h("span", {text: p.title})); }))] : null,
+    pl.length ? [h("h2", {text: "Pages it read"}), h("ol", {class: "nw-pages"}, pl.slice(0, 8).map((p) => { const href = safeHref(p.url); return h("li", null, href ? h("a", {href, target: "_blank", rel: "noopener noreferrer", dir: "auto", text: ttl(p.title) || hostPath(p.url)}) : h("span", {text: ttl(p.title)}), p.rendered ? h("span", {class: "jsmark", title: "Read through a page renderer (JavaScript)", text: "rendered"}) : null); }))] : null,
     h("div", {class: "nw-help-q"}, "Built from your public pages in this demo.", h("a", {href: location.pathname, text: "See the example site"}))].flat().filter(Boolean));
 }
 
@@ -716,6 +746,7 @@ function timelineEl() {
     h("div", {class: "prog", role: "progressbar", "aria-label": "Pages read", "aria-valuemin": "0", "aria-valuemax": String(c.max || 0), "aria-valuenow": String(c.n)}, h("i", {style: "width:" + pct + "%"})))
     : after ? row("done", "Read " + c.pages + (c.kind === "pdf" ? " pages of PDF" : " pages"), c.kind === "pdf" ? c.label : "Same folder, follows robots.txt", c.tRead ? secs(c.tRead) : "")
       : row("todo", c.kind === "pdf" ? "Read the PDFs" : "Read pages", "", ""));
+  if (after && c.rendered > 0) steps.push(row("done", c.rendered + (c.rendered === 1 ? " page" : " pages") + " rendered (JavaScript site)", "Read through a page renderer, like a browser", ""));
   steps.push(c.phase === "done" ? row("done", "Split into passages and indexed", (c.words || 0).toLocaleString("en-US") + " words", c.tIndex ? secs(c.tIndex) : "")
     : row(reading && c.max && c.n >= c.max ? "now" : "todo", "Split into passages and index", "", ""));
   steps.push(c.phase === "done" ? row("done", "Assistant updated", "The widget now answers from these pages", new Date(c.at).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}))
@@ -728,16 +759,22 @@ function renderCrawl() {
   $("#crawlBtn").disabled = !!(S.crawl && ["wake", "read"].includes(S.crawl.phase));
 }
 let crawlTick = null, readCtrl = null;
-async function waitServer(c) {
-  if (await checkHealth(API_BASE, 6000)) return true;
-  if (S.crawl !== c) return false;
-  c.phase = "wake"; c.waitStart = Date.now(); renderCrawl();
+/* errors a second try cannot change: no "Try again" button for them */
+const NO_RETRY = ["bad_url", "blocked", "not_found", "robots", "no_text", "js_only", "too_big", "ip_crawl_cap", "ip_upload_cap"];
+const ttl = (t) => SA.cleanTitle ? SA.cleanTitle(t) : String(t || "").replace(/¶/g, "").trim();
+function showWake(c) {
+  c.phase = "wake"; c.waitStart = c.waitStart || Date.now(); renderCrawl();
   clearInterval(crawlTick);
-  crawlTick = setInterval(() => { $$(".wake-tm").forEach((t) => { t.textContent = mmss(Date.now() - c.waitStart); }); }, 1000);
+  crawlTick = setInterval(() => { if (S.crawl !== c || c.phase !== "wake") { clearInterval(crawlTick); return; } $$(".wake-tm").forEach((t) => { t.textContent = mmss(Date.now() - c.waitStart); }); }, 1000);
+}
+/** The server did not answer: show the waking card and poll /healthz (about 1 min on a cold start). */
+async function waitServer(c) {
+  showWake(c);
   for (let i = 0; i < 40; i++) {
+    if (await checkHealth(API_BASE, 6000)) { clearInterval(crawlTick); c.waited = Date.now() - c.waitStart; return true; }
+    if (S.crawl !== c) { clearInterval(crawlTick); return false; }
     await new Promise((r) => setTimeout(r, 4000));
     if (S.crawl !== c) { clearInterval(crawlTick); return false; }
-    if (await checkHealth(API_BASE, 6000)) { clearInterval(crawlTick); c.waited = Date.now() - c.waitStart; return true; }
   }
   clearInterval(crawlTick); return false;
 }
@@ -745,38 +782,57 @@ const KB_CACHE = "sc-assist-kb:";
 async function readInto(scene, src) {
   // src: {url} or {files}
   const pdf = !!src.files;
-  const c = {phase: "check", kind: pdf ? "pdf" : "site", label: pdf ? (src.files.length === 1 ? src.files[0].name : src.files.length + " PDFs") : scene.host, n: 0, max: 0, url: "", t0: 0};
+  const c = {phase: "read", kind: pdf ? "pdf" : "site", label: pdf ? (src.files.length === 1 ? src.files[0].name : src.files.length + " PDFs") : scene.host, n: 0, max: 0, url: "", t0: performance.now()};
   if (readCtrl) readCtrl.abort(); // a new read (PDFs, Try again) stops the old one on the server too
   const ctrl = readCtrl = new AbortController();
   S.crawl = c; S.scene = scene; loadSettings(); applyColor(); renderAllSettings();
-  if (S.widget) { S.widget.destroy(); S.widget = null; }
+  let tLast = c.t0;
+  const prog = () => { if (S.widget && S.widget.reading) S.widget.reading(c.n, c.max); };
+  const go = () => readSite({api: API_BASE, url: src.url, files: src.files, signal: ctrl.signal,
+    onStart: (d) => { if (S.crawl !== c) return; c.max = d.max_pages || 0; if (c.phase === "wake") c.phase = "read"; renderCrawl(); prog(); },
+    onProgress: (d) => { if (S.crawl !== c) return; c.phase = "read"; c.n = d.n; c.url = d.url; tLast = performance.now(); renderCrawl(); prog(); }});
+  // The read starts now, next to the health check (no waiting for examples.json or /healthz first). Only a read
+  // that cannot reach the server goes to the waking card, then reads once more.
+  const job = (async () => {
+    try { return await go(); }
+    catch (e) {
+      if (!e || e.code !== "network" || S.crawl !== c) throw e;
+      if (!(await waitServer(c))) throw {code: "server_down", message: "The demo server did not start. Please try again in a few minutes."};
+      if (S.crawl !== c || ctrl.signal.aborted) throw Object.assign(new Error("replaced"), {name: "AbortError"});
+      c.phase = "read"; c.t0 = performance.now(); tLast = c.t0; renderCrawl();
+      return await go();
+    }
+  })();
+  job.catch(() => { /* handled below and by the widget */ });
+  makeWidget(true, job); // usable at once: a question typed now runs when the read ends
   renderCrawl(); announce("Reading " + c.label);
-  if (!(await waitServer(c))) {
-    if (S.crawl !== c) return;
-    c.phase = "error"; c.err = "The demo server did not start. Please try again in a few minutes."; renderCrawl(); return;
-  }
-  if (S.crawl !== c) return;
-  c.phase = "read"; c.t0 = performance.now(); let tLast = c.t0; renderCrawl();
+  checkHealth(API_BASE, 6000).then((ok) => { if (!ok && S.crawl === c && c.phase === "read" && !c.n && !c.max) showWake(c); });
   try {
-    const sum = await readSite({api: API_BASE, url: src.url, files: src.files, signal: ctrl.signal,
-      onStart: (d) => { c.max = d.max_pages || 0; renderCrawl(); },
-      onProgress: (d) => { if (S.crawl !== c) return; c.n = d.n; c.url = d.url; tLast = performance.now(); renderCrawl(); }});
+    const sum = await job;
     if (S.crawl !== c) return;
+    clearInterval(crawlTick);
     const t1 = performance.now();
-    c.phase = "done"; c.pages = sum.pages; c.words = sum.words; c.at = Date.now(); c.ms = t1 - c.t0; c.tRead = (c.n ? tLast : t1) - c.t0; c.tIndex = c.n ? t1 - tLast : 0;
-    Object.assign(scene, {kb: sum.kb_id, pages: sum.pages, words: sum.words, page_list: sum.page_list || [], url: pdf ? scene.url : (sum.url || scene.url)});
+    c.phase = "done"; c.pages = sum.pages; c.words = sum.words; c.rendered = sum.rendered || 0; c.at = Date.now(); c.ms = t1 - c.t0; c.tRead = (c.n ? tLast : t1) - c.t0; c.tIndex = c.n ? t1 - tLast : 0;
+    const starters = Array.isArray(sum.starters) ? sum.starters.filter((x) => typeof x === "string" && x.trim()).slice(0, 4) : [];
+    Object.assign(scene, {kb: sum.kb_id, pages: sum.pages, words: sum.words, rendered: sum.rendered || 0, starters, page_list: sum.page_list || [], url: pdf ? scene.url : (sum.url || scene.url)});
     if (!pdf) scene.name = SA.siteName(scene.page_list, scene.host) || scene.name; // the site's own title, not the domain
     if (readCtrl === ctrl) readCtrl = null;
-    if (!pdf) lsSet(KB_CACHE + scene.url, JSON.stringify({at: Date.now(), sum: {kb_id: sum.kb_id, pages: sum.pages, words: sum.words, page_list: (sum.page_list || []).slice(0, 20), url: sum.url}}));
+    if (!pdf) lsSet(KB_CACHE + scene.url, JSON.stringify({at: Date.now(), sum: {kb_id: sum.kb_id, pages: sum.pages, words: sum.words, rendered: sum.rendered || 0, starters,
+      page_list: (sum.page_list || []).slice(0, 20), url: sum.url}}));
     renderCrawl(); renderPreview(); renderEmbed();
-    makeWidget(true);
+    if (!$("#studio").contains(document.activeElement)) renderAllSettings(); // starter fields now show the site's own questions
+    if (S.widget) { // the widget already has the site (its own copy of this read); give it the site's own name
+      if (S.widget.setName) S.widget.setName(scene.name);
+      S.widget.update({greeting: S.greeting.trim() || defGreeting(), starters: S.custom ? S.starters : []});
+    }
     const warn = (sum.warnings || [])[0];
     announce("Done. " + sum.pages + " pages read. The assistant is updated." + (warn ? " " + warn : ""));
     if (warn) toast(warn);
   } catch (e) {
     if (readCtrl === ctrl) readCtrl = null;
     if (S.crawl !== c || (e && e.name === "AbortError")) return;
-    c.phase = "error"; c.err = (e && e.message) || "Could not read that site."; renderCrawl();
+    clearInterval(crawlTick);
+    c.phase = "error"; c.code = e && e.code; c.err = (e && e.message) || "Could not read that site."; renderCrawl();
     announce("Could not read " + c.label);
   }
 }
@@ -786,8 +842,9 @@ function startSite(url, fresh) {
   if (!fresh) {
     try {
       const k = JSON.parse(lsGet(KB_CACHE + url) || "null");
-      if (k && k.sum && Date.now() - k.at < 50 * 60e3) {
-        Object.assign(scene, {kb: k.sum.kb_id, pages: k.sum.pages, words: k.sum.words, page_list: k.sum.page_list || []});
+      // reuse: within 50 minutes, or while the saved snapshot is valid (a new server instance restores it on kb_expired)
+      if (k && k.sum && k.sum.kb_id && (Date.now() - k.at < 50 * 60e3 || snapshots.get(k.sum.kb_id))) {
+        Object.assign(scene, {kb: k.sum.kb_id, pages: k.sum.pages, words: k.sum.words, rendered: k.sum.rendered || 0, starters: k.sum.starters || [], page_list: k.sum.page_list || []});
         scene.name = SA.siteName(scene.page_list, host) || scene.name;
         S.scene = scene; S.crawl = null; loadSettings(); applyColor(); renderAllSettings(); renderFrameSite(); renderCrawl(); makeWidget(true);
         return;
@@ -817,7 +874,12 @@ function embedEls() {
   return ["<script ", k("src"), "=", s("https://slimanechanchoul.com/widget.js"), " ", k("data-site"), "=", s(siteAttr()), " ", k("data-color"), "=", s(S.color.toUpperCase()), " ", k("defer"), "></" + "script>"];
 }
 function renderEmbed() { if (!S.scene) return; $("#embedCode").replaceChildren(...embedEls()); $("#embedCode2").replaceChildren(...embedEls()); }
-function previewStarters() { const st = S.custom ? S.starters.map((x) => x.trim()).filter(Boolean) : (S.scene.kind === "example" ? exampleStarters().slice(0, 3) : ["What does this site offer?", "How can I contact you?", "What are the prices?"]); return st; }
+function previewStarters() {
+  if (S.custom) return S.starters.map((x) => x.trim()).filter(Boolean);
+  if (S.scene.kind === "example") return exampleStarters().slice(0, 3);
+  const own = (S.scene.starters || []).filter(Boolean);
+  return own.length >= 2 ? own.slice(0, 3) : ["What does this site offer?", "How can I contact you?", "What are the prices?"];
+}
 function renderPreview() {
   if (!S.scene) return;
   const busy = S.crawl && ["wake", "read", "check"].includes(S.crawl.phase);
@@ -976,10 +1038,11 @@ function bind() {
 /* ---------- start */
 paintIcons(); bind();
 if (pSite && !linkSite) toast("That site link is not valid, so this shows the example site.");
+if (linkSite) startSite(linkSite, false); // the read starts at once; examples.json is only for the example scene
 getExamples(API_BASE).then((ex) => {
   S.examples = ex || [];
-  if (linkSite) startSite(linkSite, false);
-  else showExample();
+  if (!linkSite) showExample();
+  else if (S.scene && S.scene.kind === "example") renderAllSettings();
 });
 </script>
 </body>
