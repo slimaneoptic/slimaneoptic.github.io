@@ -252,7 +252,7 @@ function renderPanel(slug) {
     <div class="kpi"><div class="v">${fmt(P.areas)}</div><div class="l">areas after the 100 m merge</div></div>
     <div class="kpi"><div class="v">${fmt(P.matched_area_acres)}</div><div class="l">acres (${fmt(P.matched_area_km2, 1)} km&sup2;)</div></div>
     <div class="kpi"><div class="v">${fmt(P.matched_share_of_circle * 100, 2)}%</div><div class="l">of the 25-mile circle${ocean}</div></div>`;
-  $("t10").innerHTML = P.top10.map(a => `<li><button type="button" data-rank="${a.rank}" aria-current="false">
+  $("t10").innerHTML = P.top10.map(a => `<li><button type="button" data-rank="${a.rank}" data-track="${slug} top10 #${a.rank}" aria-current="false">
       <span class="rk">${a.rank}</span>
       <span><span class="num">${fmt(a.dist_miles, 1)} mi ${a.dir}</span><span class="ll">${a.coord[0].toFixed(5)}, ${a.coord[1].toFixed(5)}</span></span>
       <span class="r num">${fmt(a.acres)}</span><span class="r num">${fmt(a.mean_score, 2)}</span></button></li>`).join("");
@@ -273,7 +273,7 @@ function placeMarkers(P) {
   markers.forEach(m => m.remove());
   markers = P.top10.map(a => {
     const el = document.createElement("div");
-    el.className = "mk"; el.textContent = a.rank; el.title = `Area #${a.rank}: ${fmt(a.acres)} acres`;
+    el.className = "mk"; el.textContent = a.rank; el.title = `Area #${a.rank}: ${fmt(a.acres)} acres`; el.setAttribute("data-track", `${cur} map #${a.rank}`);
     el.addEventListener("click", ev => { ev.stopPropagation(); selectArea(a.rank); });
     return new maplibregl.Marker({ element: el }).setLngLat([a.coord[1], a.coord[0]]).addTo(map);
   });
