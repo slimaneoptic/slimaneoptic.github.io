@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy · S'limane Chanchoul</title>
+<meta name="description" content="What this site logs for each page view, what it never logs, and how long it is kept.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="__ICON__">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA;
+        --slate: #5B6B7A; --body: #33424f; --rule: #D5DBE1; --blue: #2A78D6; --codebg: #E9EEF3; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif;
+       font-size: 1.0625rem; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--blue); text-underline-offset: 3px; }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+.bar { height: 3.25rem; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); font-size: 1rem; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--btnbg); color: var(--btnfg) !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; }
+.btn:hover { background: var(--btnhover); }
+main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; color: var(--body); }
+h1 { color: var(--ink); font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 0.6rem; }
+h2 { color: var(--ink); font-size: 1.1rem; font-weight: 800; margin: 2rem 0 0.4rem; }
+.lead { font-size: 1.15rem; color: var(--ink); margin: 0; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.3rem 0; }
+p { margin: 0.4rem 0 0; }
+code { font-size: 0.92em; background: var(--codebg); padding: 0.05rem 0.3rem; border-radius: 4px; overflow-wrap: anywhere; }
+.date { color: var(--slate); font-size: 0.92rem; margin-top: 2.5rem; }
+@media (max-width: 640px) { .links .all { display: none; } .bar { padding: 0 1rem; } main { padding: 1.8rem 1rem 3rem; } h1 { font-size: 1.7rem; } }
+@media (max-width: 420px) { .btn .long { display: none; } }
+@media (max-width: 360px) { .bar { gap: 0.5rem; padding: 0 0.75rem; } .links { gap: 0.6rem; } }
+@media (max-width: 340px) { .links .btn { display: none; } } /* the Upwork link stays in Questions below */
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <a class="name" href="/">S'limane Chanchoul</a>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a><a class="btn" href="__UPWORK__" rel="noopener">Hire me<span class="long"> on Upwork</span></a></nav>
+</header>
+<main>
+  <h1>Privacy</h1>
+  <p class="lead">This site counts page views to see which pages are read and where visitors come from. It uses no cookies, and the visit log never stores your IP address.</p>
+
+  <h2>What is logged for each page view</h2>
+  <ul>
+    <li>The page, its title and the time.</li>
+    <li>The demo settings in the page link (<code>site</code>, <code>color</code>, <code>q</code>, <code>sel</code>, <code>theme</code>), for example the website a demo was opened for, and campaign tags (<code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>). Anything else in the link is dropped.</li>
+    <li>The website you came from: its name only, not the full address.</li>
+    <li>Country, region and city, looked up from your IP address by the host, Vercel.</li>
+    <li>Time zone and browser language.</li>
+    <li>Screen size, and the kind of device, browser and operating system.</li>
+    <li>A random id for the browser tab, kept in sessionStorage and deleted when you close the tab. It groups the pages of one visit.</li>
+  </ul>
+
+  <h2>What is not logged</h2>
+  <ul>
+    <li>Your IP address. The API only holds it in memory for the day, to limit abuse.</li>
+    <li>Cookies, or the full browser identification string (user agent).</li>
+  </ul>
+  <p>Your browser keeps only the tab id above and, if you click the theme button, your light or dark choice.</p>
+
+  <h2>How long it is kept</h2>
+  <p>The last 5,000 page views. Daily totals (views per country and per page) for up to 400 days.</p>
+
+  <h2>Where it is kept</h2>
+  <p>The site's API runs on Vercel and stores the log in an Upstash Redis database. Only I can read it.</p>
+  <p>The services that deliver the pages (GitHub Pages, Google Fonts, Vercel, and Streamlit for some demos) see your IP address with each request, under their own privacy policies.</p>
+
+  <h2>Cloudflare Web Analytics</h2>
+  <p>Page views may also be counted by Cloudflare Web Analytics, which uses no cookies and shows me totals only.</p>
+
+  <h2>Questions</h2>
+  <p>Message me on <a href="__UPWORK__" rel="noopener">Upwork</a>.</p>
+
+  <p class="date">Last updated 14 October 2026.</p>
+</main>
+</body>
+</html>

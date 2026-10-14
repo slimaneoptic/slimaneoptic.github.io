@@ -52,8 +52,9 @@ for slug, (title, blurb, app) in DEMOS.items():
 # Pages with their own content instead of an embedded app: vision (needs a GPU, so a video) and
 # dc-map (print files for one job: noindex, not listed on the homepage), demand-planner (approach brief for
 # one job, synthetic figures live in site/demand-planner/: noindex, not listed), telegram-digest (brief of the
-# personal-assistant Stage 1 demo, real run of 2026-10-06: noindex, not listed, reusable in proposals)
-for slug in ("vision", "dc-map", "demand-planner", "telegram-digest"):
+# personal-assistant Stage 1 demo, real run of 2026-10-06: noindex, not listed, reusable in proposals),
+# privacy (what hit.js logs, linked from the homepage footer: noindex)
+for slug in ("vision", "dc-map", "demand-planner", "telegram-digest", "privacy"):
     page = (root / f"src/{slug}.html").read_text().replace("__UPWORK__", UPWORK).replace("__ICON__", icon)
     (root / slug).mkdir(exist_ok=True)
     (root / slug / "index.html").write_text(page)
@@ -64,10 +65,12 @@ for slug in ("vision", "dc-map", "demand-planner", "telegram-digest"):
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
     '<title>Website chatbot demo</title>\n' + NOINDEX +
     f'<link rel="canonical" href="{SITE}/ask/">\n'
+    # hit.js without defer, before the redirect: the visit to the old link is logged with its real referrer
+    '<script src="/hit.js"></script>\n'
     '<script>location.replace("/ask/" + location.search + location.hash);</script>\n'
     '<meta http-equiv="refresh" content="0; url=/ask/">\n</head>\n'
     '<body><p>The chatbot demo has moved: <a href="/ask/">open it here</a>.</p></body>\n</html>\n')
-print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner", "telegram-digest", "chatbot (redirect)"]))
+print("built index.html +", ", ".join([*DEMOS, "vision", "dc-map", "demand-planner", "telegram-digest", "privacy", "chatbot (redirect)"]))
 
 # sitemap.xml with exactly the indexable pages; robots.txt has only the Sitemap line (a Disallow line would list hidden paths)
 urls = "".join(f"  <url><loc>{SITE}/{p + '/' if p else ''}</loc></url>\n" for p in INDEXED)
