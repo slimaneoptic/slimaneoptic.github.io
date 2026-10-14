@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex" />
     <title>In-browser PDF text editing: English + Arabic</title>
     <meta name="description" content="Edit existing English and Arabic text inside a PDF, in place, in your browser." />
-    <script type="module" crossorigin src="/pdf-edit/assets/index-t5FulPVX.js"></script>
+    <script type="module" crossorigin src="/pdf-edit/assets/index-ePdLx4pZ.js"></script>
     <link rel="modulepreload" crossorigin href="/pdf-edit/assets/rolldown-runtime-WkwZ5CU-.js">
     <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-BrC_5IR9.css">
   </head>
@@ -23,12 +23,13 @@
       <section class="toolbar" aria-label="Documents">
         <div class="samples">
           <span class="label">Samples</span>
-          <button type="button" data-sample="arabic" data-track="pdf sample arabic">Arabic sentence</button>
+          <button type="button" data-sample="amiri" data-track="pdf sample amiri">Arabic sentence (Chrome, Amiri)</button>
           <button type="button" data-sample="english" data-track="pdf sample english">English bold heading</button>
           <button type="button" data-sample="mixed" data-track="pdf sample mixed">Mixed Arabic / English / digits</button>
         </div>
         <div class="more">
           <span class="label">Other producers</span>
+          <button type="button" class="small" data-sample="arabic" data-track="pdf sample arabic">Chrome, Noto Sans Arabic (dots drawn separately)</button>
           <button type="button" class="small" data-sample="fpdf2" data-track="pdf sample fpdf2">fpdf2 (Kufi, Tc/Tz)</button>
           <button type="button" class="small" data-sample="libreoffice" data-track="pdf sample libreoffice">LibreOffice (Amiri)</button>
           <button type="button" class="small" data-sample="fullfont" data-track="pdf sample fullfont">Full embedded font</button>
@@ -83,13 +84,13 @@
               <li>pdf.js renders the page and locates the text run under your click (text content + operator list).</li>
               <li>The word's glyphs are replaced in the content stream; Tc, Tw and Tz are honoured and widths recomputed from the font's widths.</li>
               <li>Arabic is shaped (HarfBuzz WASM, joining forms, lam-alef) with bidi for digits and English inside Arabic; right-to-left lines keep their right edge.</li>
-              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (Noto Naskh Arabic, DejaVu Sans) embedded as a subset.</li>
-              <li>ToUnicode is updated so the new text extracts and searches correctly. The file is saved with pdf-lib.</li>
+              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (DejaVu Sans, Arabic and Latin) embedded as a subset.</li>
+              <li>Every new glyph gets its own ToUnicode text, so the new word extracts, searches and copies correctly. Fonts that draw dots or hamza as separate glyphs cannot map them cleanly, so only the edited word switches to the fallback font. The file is saved with pdf-lib.</li>
             </ul>
           </div>
         </aside>
       </div>
     </main>
-    <footer class="wrap foot">Fonts: Noto Naskh Arabic (SIL OFL 1.1), DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js.</footer>
+    <footer class="wrap foot">Fonts: DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js.</footer>
   </body>
 </html>
