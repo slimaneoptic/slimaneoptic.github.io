@@ -10,11 +10,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<script src="data.js"></script>
+<script src="points.js"></script>
 <style>
 :root {
   --bg: #f3f5f8; --surface: #ffffff; --surface-2: #e9edf3; --fg: #121821; --fg-2: #46516a; --fg-3: #657086;
-  --rule: #d5dbe4; --rule-strong: #aeb8c7; --accent: #1c55c6;
+  --rule: #d5dbe4; --rule-strong: #aeb8c7; --accent: #1c55c6; --row-hi: #e4ecfb;
   --match: #6a1fb5; --point: #d11f3a; --guess: #5f45b0; --guess-bg: #ebe6f8;
   --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -22,19 +22,20 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
-    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
+    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --row-hi: #1f2c44; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
-  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
+  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --row-hi: #1f2c44; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
-.app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+.app { display: grid; grid-template-columns: 380px 1fr; height: 100vh; }
 .panel { background: var(--surface); border-right: 1px solid var(--rule); overflow-y: auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
 #map { height: 100%; min-height: 360px; }
+.panel > * { flex-shrink: 0; }
 h1 { font-size: 1.35rem; line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
 h2 { font-size: 0.78rem; font-family: var(--font-data); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); margin: 0 0 6px; }
 p { margin: 0; }
@@ -55,9 +56,27 @@ dd { margin: 0; }
 .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; }
 .seg button { font: 600 0.82rem var(--font-body); background: transparent; color: var(--fg-2); border: 0; padding: 5px 12px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.seg-pt { display: flex; width: 100%; }
+.seg-pt button { flex: 1; font-size: 0.95rem; padding: 8px 10px; }
+.seg-pt button + button { border-left: 1px solid var(--rule-strong); }
 .ramp { height: 10px; border-radius: 3px; background: linear-gradient(90deg, rgb(255,237,160) 0%, rgb(254,178,76) 26%, rgb(240,59,32) 63%, rgb(128,0,38) 100%); }
 ol, ul { margin: 0; padding-left: 1.2em; font-size: 0.88rem; color: var(--fg-2); }
 li + li { margin-top: 3px; }
+/* top-10 list */
+.t10-head, .t10 button { display: grid; grid-template-columns: 22px 1fr 56px 44px; gap: 8px; align-items: center; }
+.t10-head { font-size: 0.74rem; color: var(--fg-3); padding: 0 8px 4px; border-bottom: 1px solid var(--rule); }
+.t10 { list-style: none; padding: 0; margin: 0; }
+.t10 li + li { margin-top: 0; border-top: 1px solid var(--rule); }
+.t10 button { width: 100%; text-align: left; background: transparent; border: 0; color: var(--fg); font: inherit; font-size: 0.9rem; padding: 6px 8px; cursor: pointer; border-radius: 4px; }
+.t10 button:hover { background: var(--surface-2); }
+.t10 button[aria-current="true"] { background: var(--row-hi); }
+.t10 .rk { font: 600 0.85rem var(--font-data); color: var(--match); }
+.t10 .ll { display: block; font: 500 0.74rem var(--font-data); color: var(--fg-3); }
+.r { text-align: right; }
+.dl li { list-style: none; }
+.dl { padding: 0; }
+.mk { width: 24px; height: 24px; border-radius: 50%; background: #fff; color: #121821; border: 2px solid #6a1fb5; font: 600 12px/20px "IBM Plex Mono", monospace; text-align: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.mk.on { background: #ffb000; border-color: #121821; }
 .maplibregl-popup-content { font-family: var(--font-body); font-size: 0.86rem; color: #121821; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (max-width: 820px) {
@@ -75,6 +94,10 @@ li + li { margin-top: 3px; }
       <h1>Similar forest within 25 miles</h1>
       <p class="muted small" id="pt"></p>
     </div>
+    <div class="seg seg-pt" role="group" aria-label="Test point">
+      <button type="button" data-pt="colorado" aria-pressed="true">Colorado</button>
+      <button type="button" data-pt="oregon" aria-pressed="false">Oregon</button>
+    </div>
     <p class="note"><strong>First pass on open data, not tuned.</strong> Built to test the idea before any Earth Engine work. Weights and thresholds are starting guesses.</p>
 
     <section>
@@ -85,6 +108,15 @@ li + li { margin-top: 3px; }
     <section>
       <h2>Result</h2>
       <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section>
+      <h2>Top 10 areas</h2>
+      <p class="muted small" style="margin-bottom:6px">Patches closer than 100 m are merged into one area. Ranked by acres &times; mean score. Tap a row to fly there.</p>
+      <p class="muted small" style="margin-bottom:6px">Coordinate = the highest-score cell inside the area (tie: nearest the area&rsquo;s centre); miles and direction are from the test point to it.</p>
+      <div class="t10-head" aria-hidden="true"><span>#</span><span>From the point &middot; best cell</span><span class="r">Acres</span><span class="r">Score</span></div>
+      <ol class="t10" id="t10"></ol>
+      <p class="muted small" id="atpt" style="margin-top:6px"></p>
     </section>
 
     <section class="layers">
@@ -102,22 +134,31 @@ li + li { margin-top: 3px; }
     </section>
 
     <section>
+      <h2>Downloads, <span id="dl-pt"></span></h2>
+      <ul class="dl">
+        <li><a id="dl-geo" href="#" download>Match areas, GeoJSON</a> <span class="muted num small" id="dl-geo-s"></span></li>
+        <li><a id="dl-cog" href="#" download>Similarity score, COG GeoTIFF</a> <span class="muted num small" id="dl-cog-s"></span></li>
+      </ul>
+      <p class="muted small" id="dl-note" style="margin-top:4px"></p>
+    </section>
+
+    <section>
       <h2>Method</h2>
       <ol>
         <li>Read vegetation type, elevation, slope and aspect on a 30 m grid (UTM).</li>
         <li>Take the reference values from a 90 m window at the point.</li>
-        <li>Keep only cells with the same vegetation type.</li>
-        <li>Score terrain closeness (elevation &plusmn;150 m, slope &plusmn;7&deg;, aspect) from 0 to 1.</li>
+        <li>Keep only cells with the same vegetation type (never water, developed land or no-data cells).</li>
+        <li>Score terrain closeness from 0 to 1 (scales: elevation 150 m, slope 7&deg;, plus aspect).</li>
         <li>Keep cells with score &ge; 0.30, drop patches under ~1 ha, turn them into polygons.</li>
+        <li>Merge patches closer than 100 m into areas; rank areas by acres &times; mean score.</li>
       </ol>
     </section>
 
     <section>
       <h2>Data</h2>
       <ul>
-        <li>Vegetation: <a href="https://planetarycomputer.microsoft.com/dataset/gap" target="_blank" rel="noopener">USGS GAP/LANDFIRE National Terrestrial Ecosystems 2011</a> (30 m)</li>
-        <li>Elevation: <a href="https://planetarycomputer.microsoft.com/dataset/3dep-seamless" target="_blank" rel="noopener">USGS 3DEP seamless DEM</a>, 1 arc-second</li>
-        <li>Both read from Microsoft Planetary Computer (STAC). Outputs: <code>matches.geojson</code>, <code>score.tif</code> (COG).</li>
+        <li>Vegetation: <a href="https://landfire.gov/vegetation/evt" target="_blank" rel="noopener">LANDFIRE 2025 Existing Vegetation Type</a> (30 m), read from the LANDFIRE image service on its native grid, nearest neighbour (class values kept exact).</li>
+        <li>Elevation: <a href="https://planetarycomputer.microsoft.com/dataset/3dep-seamless" target="_blank" rel="noopener">USGS 3DEP seamless DEM</a>, 1 arc-second, read from Microsoft Planetary Computer (STAC).</li>
       </ul>
     </section>
 
@@ -133,25 +174,26 @@ li + li { margin-top: 3px; }
   <div id="map" role="region" aria-label="Map of similar areas"></div>
 </div>
 <script>
-const D = window.POC;
-const S = D.stats, R = S.reference;
+const FM = window.FM;
 const fmt = (x, d = 0) => Number(x).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
 const compass = a => ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(a / 22.5) % 16];
-document.getElementById("pt").textContent = `Point ${D.point[1].toFixed(5)}, ${D.point[0].toFixed(5)}`;
-document.getElementById("ref").innerHTML = `
-  <dt>Forest type</dt><dd>${R.class_name}</dd>
-  <dt>Elevation</dt><dd class="num">${fmt(R.elev_m)} m (${fmt(R.elev_m * 3.28084)} ft)</dd>
-  <dt>Slope</dt><dd class="num">${fmt(R.slope_deg, 1)}&deg;</dd>
-  <dt>Faces</dt><dd class="num">${compass(R.aspect_deg)} (${fmt(R.aspect_deg)}&deg;)</dd>`;
-document.getElementById("kpis").innerHTML = `
-  <div class="kpi"><div class="v">${fmt(S.polygons)}</div><div class="l">match polygons</div></div>
-  <div class="kpi"><div class="v">${fmt(S.matched_area_acres)}</div><div class="l">acres (${fmt(S.matched_area_km2, 1)} km&sup2;)</div></div>
-  <div class="kpi"><div class="v">${fmt(S.matched_share_of_circle * 100, 1)}%</div><div class="l">of the 25-mile circle</div></div>
-  <div class="kpi"><div class="v">${fmt(S.threshold, 2)}</div><div class="l">min. score kept</div></div>`;
+const abs = p => new URL(p, location.href).href;
+const kb = b => b >= 1e6 ? `${fmt(b / 1048576, 1)} MB` : `${fmt(b / 1024)} KB`;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const $ = id => document.getElementById(id);
+const narrow = () => window.matchMedia("(max-width: 820px)").matches;
+const EMPTY = { type: "FeatureCollection", features: [] };
+const cache = {};
+const loadMatches = slug => cache[slug] || (cache[slug] = fetch(abs(`${slug}/matches.geojson`))
+  .then(r => { if (!r.ok) throw new Error(`matches ${r.status}`); return r.json(); }));
+let cur = null, markers = [], imgSlug = null, loaded = false;
 
+const startSlug = FM.points[location.hash.slice(1)] ? location.hash.slice(1) : FM.order[0];
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const TOPO_ATTR = 'Topo: USGS <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map">The National Map</a>';
 const IMG_ATTR = 'Imagery: USDA, USGS <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map">The National Map</a>';
+const P0 = FM.points[startSlug];
+imgSlug = startSlug;
 const map = window.map = new maplibregl.Map({
   container: "map",
   style: {
@@ -163,10 +205,10 @@ const map = window.map = new maplibregl.Map({
               tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"] },
       img: { type: "raster", tileSize: 256, maxzoom: 16, attribution: IMG_ATTR,
              tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"] },
-      score: { type: "image", url: D.overlay.url, coordinates: D.overlay.coordinates },
-      matches: { type: "geojson", data: D.matches },
-      circle: { type: "geojson", data: D.circle },
-      point: { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: D.point } } }
+      score: { type: "image", url: abs(`${startSlug}/overlay.png`), coordinates: P0.overlay.coordinates },
+      matches: { type: "geojson", data: EMPTY },
+      circle: { type: "geojson", data: P0.circle },
+      point: { type: "geojson", data: EMPTY }
     },
     layers: [
       { id: "osm", type: "raster", source: "osm" },
@@ -175,6 +217,7 @@ const map = window.map = new maplibregl.Map({
       { id: "score", type: "raster", source: "score", layout: { visibility: "none" }, paint: { "raster-opacity": 0.8, "raster-resampling": "nearest" } },
       { id: "match-fill", type: "fill", source: "matches", paint: { "fill-color": "#6a1fb5", "fill-opacity": 0.55 } },
       { id: "match-line", type: "line", source: "matches", paint: { "line-color": "#3d0a6e", "line-width": 1.2 } },
+      { id: "match-hi", type: "line", source: "matches", filter: ["==", ["get", "area_rank"], -1], paint: { "line-color": "#ffb000", "line-width": 3 } },
       { id: "circle", type: "line", source: "circle", paint: { "line-color": "#121821", "line-width": 2, "line-dasharray": [3, 2] } },
       { id: "point-halo", type: "circle", source: "point", paint: { "circle-radius": 9, "circle-color": "#ffffff" } },
       { id: "point", type: "circle", source: "point", paint: { "circle-radius": 6, "circle-color": "#d11f3a" } }
@@ -184,29 +227,121 @@ const map = window.map = new maplibregl.Map({
 });
 map.addControl(new maplibregl.NavigationControl(), "top-right");
 map.addControl(new maplibregl.ScaleControl({ unit: "imperial" }), "bottom-left");
-const ring = D.circle.geometry.coordinates[0];
-const lons = ring.map(c => c[0]), lats = ring.map(c => c[1]);
-const narrow = window.matchMedia("(max-width: 820px)").matches;
-map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: narrow ? 16 : 36, animate: false });
+const fitCircle = (P, animate) => {
+  const ring = P.circle.geometry.coordinates[0];
+  const lons = ring.map(c => c[0]), lats = ring.map(c => c[1]);
+  map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: narrow() ? 16 : 36, animate });
+};
+fitCircle(P0, false);
+
+function renderPanel(slug) {
+  const P = FM.points[slug], R = P.reference;
+  $("pt").textContent = `${P.label} test point ${P.point[0].toFixed(5)}, ${P.point[1].toFixed(5)}`;
+  const win = Object.entries(R.window_classes);
+  const winRow = win.length > 1
+    ? `<dt>90 m mix</dt><dd>${win.sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} of 9 cells ${esc(k)}`).join("; ")}</dd>` : "";
+  const srcRow = R.class_source === "exact cell" ? "" : `<dt>Note</dt><dd>Class from the 90 m window majority; the exact cell has none.</dd>`;
+  $("ref").innerHTML = `
+    <dt>Forest type</dt><dd>${esc(R.class_name)} <span class="muted small">(LANDFIRE 2025, EVT ${R.class})</span></dd>${winRow}${srcRow}
+    <dt>Elevation</dt><dd class="num">${fmt(R.elev_m)} m (${fmt(R.elev_m * 3.28084)} ft)</dd>
+    <dt>Slope</dt><dd class="num">${fmt(R.slope_deg, 1)}&deg;</dd>
+    <dt>Faces</dt><dd class="num">${compass(R.aspect_deg)} (${fmt(R.aspect_deg)}&deg;)</dd>`;
+  const ocean = slug === "oregon" ? " (ocean included)" : "";
+  $("kpis").innerHTML = `
+    <div class="kpi"><div class="v">${fmt(P.polygons)}</div><div class="l">match patches</div></div>
+    <div class="kpi"><div class="v">${fmt(P.areas)}</div><div class="l">areas after the 100 m merge</div></div>
+    <div class="kpi"><div class="v">${fmt(P.matched_area_acres)}</div><div class="l">acres (${fmt(P.matched_area_km2, 1)} km&sup2;)</div></div>
+    <div class="kpi"><div class="v">${fmt(P.matched_share_of_circle * 100, 2)}%</div><div class="l">of the 25-mile circle${ocean}</div></div>`;
+  $("t10").innerHTML = P.top10.map(a => `<li><button type="button" data-rank="${a.rank}" aria-current="false">
+      <span class="rk">${a.rank}</span>
+      <span><span class="num">${fmt(a.dist_miles, 1)} mi ${a.dir}</span><span class="ll">${a.coord[0].toFixed(5)}, ${a.coord[1].toFixed(5)}</span></span>
+      <span class="r num">${fmt(a.acres)}</span><span class="r num">${fmt(a.mean_score, 2)}</span></button></li>`).join("");
+  $("t10").querySelectorAll("button").forEach(b => b.onclick = () => selectArea(+b.dataset.rank));
+  const A = P.at_point;
+  $("atpt").textContent = A
+    ? `Not ranked: the area at the test point itself, ${fmt(A.acres)} acres, mean score ${fmt(A.mean_score, 2)}, ${A.patches} patch${A.patches > 1 ? "es" : ""}.`
+    : "No match patch within 90 m of the test point.";
+  $("dl-pt").textContent = P.label;
+  const g = P.files.geojson, c = P.files.cog;
+  $("dl-geo").href = g.path; $("dl-geo").setAttribute("download", `${slug}-matches.geojson`); $("dl-geo-s").textContent = `(${kb(g.bytes)})`;
+  $("dl-cog").href = c.path; $("dl-cog").setAttribute("download", `${slug}-score.tif`); $("dl-cog-s").textContent = `(${kb(c.bytes)})`;
+  $("dl-note").textContent = `GeoJSON: one feature per patch, with area_rank (0 = area at the test point). COG: score 0-100, 255 = outside the radius, ${P.crs}.`;
+  document.querySelectorAll("[data-pt]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pt === slug)));
+}
+
+function placeMarkers(P) {
+  markers.forEach(m => m.remove());
+  markers = P.top10.map(a => {
+    const el = document.createElement("div");
+    el.className = "mk"; el.textContent = a.rank; el.title = `Area #${a.rank}: ${fmt(a.acres)} acres`;
+    el.addEventListener("click", ev => { ev.stopPropagation(); selectArea(a.rank); });
+    return new maplibregl.Marker({ element: el }).setLngLat([a.coord[1], a.coord[0]]).addTo(map);
+  });
+}
+
+function selectArea(rank) {
+  const P = FM.points[cur], a = P.top10.find(t => t.rank === rank);
+  if (!a) return;
+  $("t10").querySelectorAll("button").forEach(b => b.setAttribute("aria-current", String(+b.dataset.rank === rank)));
+  markers.forEach((m, i) => m.getElement().classList.toggle("on", P.top10[i].rank === rank));
+  map.setFilter("match-hi", ["==", ["get", "area_rank"], rank]);
+  if (narrow()) map.getContainer().scrollIntoView({ behavior: "smooth", block: "start" });
+  const [w, s, e, n] = a.bbox;
+  map.fitBounds([[w, s], [e, n]], { padding: narrow() ? 40 : 80, maxZoom: 14.5, duration: 900 });
+  window.__fmSelected = rank;
+}
+
+async function showPoint(slug, animate) {
+  if (!FM.points[slug]) return;
+  cur = slug; window.__fmReady = null; window.__fmSelected = null;
+  const P = FM.points[slug];
+  renderPanel(slug);
+  map.setFilter("match-hi", ["==", ["get", "area_rank"], -1]);
+  document.querySelectorAll(".maplibregl-popup").forEach(p => p.remove());
+  map.getSource("circle").setData(P.circle);
+  map.getSource("point").setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [P.point[1], P.point[0]] } });
+  if (imgSlug !== null && imgSlug !== slug) map.getSource("score").updateImage({ url: abs(`${slug}/overlay.png`), coordinates: P.overlay.coordinates });
+  imgSlug = slug;
+  placeMarkers(P);
+  fitCircle(P, animate);
+  history.replaceState(null, "", `#${slug}`);
+  const gj = await loadMatches(slug);
+  if (cur !== slug) return;
+  map.getSource("matches").setData(gj);
+  map.once("idle", () => { if (cur === slug) window.__fmReady = slug; });
+}
 
 const vis = (id, on) => map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
-document.getElementById("l-match").onchange = e => { vis("match-fill", e.target.checked); vis("match-line", e.target.checked); };
-document.getElementById("l-score").onchange = e => vis("score", e.target.checked);
-document.getElementById("l-circle").onchange = e => vis("circle", e.target.checked);
 const baseBtns = document.querySelectorAll("[data-base]");
 const setBase = id => baseBtns.forEach(b => { const on = b.dataset.base === id; vis(b.dataset.base, on); b.setAttribute("aria-pressed", String(on)); });
-baseBtns.forEach(b => b.onclick = () => setBase(b.dataset.base));
-window.setBase = setBase;
+window.setBase = setBase; window.showPoint = showPoint; window.selectArea = selectArea;
+
+map.on("load", () => {
+  $("l-match").onchange = e => { vis("match-fill", e.target.checked); vis("match-line", e.target.checked); vis("match-hi", e.target.checked); };
+  $("l-score").onchange = e => vis("score", e.target.checked);
+  $("l-circle").onchange = e => vis("circle", e.target.checked);
+  baseBtns.forEach(b => b.onclick = () => setBase(b.dataset.base));
+  document.querySelectorAll("[data-pt]").forEach(b => b.onclick = () => { if (b.dataset.pt !== cur) showPoint(b.dataset.pt, true); });
+  loaded = true;
+  const h = location.hash.slice(1);
+  showPoint(FM.points[h] ? h : startSlug, false);
+});
+window.addEventListener("hashchange", () => {
+  const h = location.hash.slice(1);
+  if (loaded && FM.points[h] && h !== cur) showPoint(h, true);
+});
+renderPanel(startSlug);
 
 map.on("click", "match-fill", e => {
   const p = e.features[0].properties;
+  const P = FM.points[cur];
+  const area = p.area_rank === 0 ? "the area at the test point" : `area #${p.area_rank} of ${P.areas - (P.at_point ? 1 : 0)}`;
   new maplibregl.Popup().setLngLat(e.lngLat)
-    .setHTML(`<strong>Match #${p.id}</strong><br>${fmt(p.area_acres, 1)} acres (${fmt(p.area_ha, 1)} ha)<br>Mean score ${fmt(p.mean_score, 2)}`)
+    .setHTML(`<strong>Patch ${p.id}</strong>, part of ${area}<br>${fmt(p.area_acres, 1)} acres (${fmt(p.area_ha, 1)} ha)<br>Mean score ${fmt(p.mean_score, 2)}`)
     .addTo(map);
 });
 map.on("mouseenter", "match-fill", () => map.getCanvas().style.cursor = "pointer");
 map.on("mouseleave", "match-fill", () => map.getCanvas().style.cursor = "");
-map.on("idle", () => { document.body.dataset.ready = "1"; });
 </script>
 </body>
 </html>
