@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Similar Forest Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="data.js"></script>
+<style>
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --surface-2: #e9edf3; --fg: #121821; --fg-2: #46516a; --fg-3: #657086;
+  --rule: #d5dbe4; --rule-strong: #aeb8c7; --accent: #1c55c6;
+  --match: #6a1fb5; --point: #d11f3a; --guess: #5f45b0; --guess-bg: #ebe6f8;
+  --font-body: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+    --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e131a; --surface: #151b24; --surface-2: #1c2430; --fg: #e6ebf2; --fg-2: #aab4c3; --fg-3: #8a95a7;
+  --rule: #27303d; --rule-strong: #3d4858; --accent: #82a9ff; --guess: #b7a2f7; --guess-bg: #241d3b; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.app { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+.panel { background: var(--surface); border-right: 1px solid var(--rule); overflow-y: auto; padding: 20px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
+#map { height: 100%; min-height: 360px; }
+h1 { font-size: 1.35rem; line-height: 1.2; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 0.78rem; font-family: var(--font-data); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); margin: 0 0 6px; }
+p { margin: 0; }
+a { color: var(--accent); text-underline-offset: 2px; }
+.muted { color: var(--fg-3); }
+.small { font-size: 0.86rem; }
+.num, code { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.note { border-left: 3px solid var(--guess); background: var(--guess-bg); padding: 8px 10px; border-radius: 4px; font-size: 0.88rem; color: var(--fg); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { background: var(--surface-2); border-radius: 6px; padding: 8px 10px; }
+.kpi .v { font: 600 1.15rem/1.2 var(--font-data); font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 0.78rem; color: var(--fg-3); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 0.9rem; }
+dt { color: var(--fg-3); }
+dd { margin: 0; }
+.layers label { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; padding: 3px 0; cursor: pointer; }
+.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; flex: none; }
+.seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 6px; overflow: hidden; }
+.seg button { font: 600 0.82rem var(--font-body); background: transparent; color: var(--fg-2); border: 0; padding: 5px 12px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.ramp { height: 10px; border-radius: 3px; background: linear-gradient(90deg, rgb(255,237,160) 0%, rgb(254,178,76) 26%, rgb(240,59,32) 63%, rgb(128,0,38) 100%); }
+ol, ul { margin: 0; padding-left: 1.2em; font-size: 0.88rem; color: var(--fg-2); }
+li + li { margin-top: 3px; }
+.maplibregl-popup-content { font-family: var(--font-body); font-size: 0.86rem; color: #121821; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 820px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 62vh auto; height: auto; }
+  #map { grid-row: 1; height: 62vh; }
+  .panel { grid-row: 2; border-right: 0; border-top: 1px solid var(--rule); padding: 16px; }
+}
+</style>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<div class="app">
+  <aside class="panel">
+    <div>
+      <h1>Similar forest within 25 miles</h1>
+      <p class="muted small" id="pt"></p>
+    </div>
+    <p class="note"><strong>First pass on open data, not tuned.</strong> Built to test the idea before any Earth Engine work. Weights and thresholds are starting guesses.</p>
+
+    <section>
+      <h2>Reference spot (90 m window)</h2>
+      <dl id="ref"></dl>
+    </section>
+
+    <section>
+      <h2>Result</h2>
+      <div class="kpis" id="kpis"></div>
+    </section>
+
+    <section class="layers">
+      <h2>Layers</h2>
+      <label><input type="checkbox" id="l-match" checked><span class="sw" style="background:var(--match);opacity:.75"></span>Match areas (polygons)</label>
+      <label><input type="checkbox" id="l-score"><span class="sw" style="background:rgb(240,59,32)"></span>Similarity score, same forest type</label>
+      <div class="ramp" aria-hidden="true"></div>
+      <p class="muted small" style="display:flex;justify-content:space-between"><span>0.05</span><span>more similar &rarr;</span><span>1.00</span></p>
+      <label><input type="checkbox" id="l-circle" checked><span class="sw" style="border:2px dashed #121821"></span>25-mile radius</label>
+      <div style="margin-top:8px" class="seg" role="group" aria-label="Basemap">
+        <button type="button" data-base="osm" aria-pressed="true">Streets</button>
+        <button type="button" data-base="topo" aria-pressed="false">Topo</button>
+        <button type="button" data-base="img" aria-pressed="false">Imagery</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Method</h2>
+      <ol>
+        <li>Read vegetation type, elevation, slope and aspect on a 30 m grid (UTM).</li>
+        <li>Take the reference values from a 90 m window at the point.</li>
+        <li>Keep only cells with the same vegetation type.</li>
+        <li>Score terrain closeness (elevation &plusmn;150 m, slope &plusmn;7&deg;, aspect) from 0 to 1.</li>
+        <li>Keep cells with score &ge; 0.30, drop patches under ~1 ha, turn them into polygons.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Data</h2>
+      <ul>
+        <li>Vegetation: <a href="https://planetarycomputer.microsoft.com/dataset/gap" target="_blank" rel="noopener">USGS GAP/LANDFIRE National Terrestrial Ecosystems 2011</a> (30 m)</li>
+        <li>Elevation: <a href="https://planetarycomputer.microsoft.com/dataset/3dep-seamless" target="_blank" rel="noopener">USGS 3DEP seamless DEM</a>, 1 arc-second</li>
+        <li>Both read from Microsoft Planetary Computer (STAC). Outputs: <code>matches.geojson</code>, <code>score.tif</code> (COG).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Not yet included</h2>
+      <ul>
+        <li>Satellite-image similarity (the Earth Engine step).</li>
+        <li>Soil, public land status, tree age, recent fires.</li>
+        <li>Field checks of the matches.</li>
+      </ul>
+    </section>
+  </aside>
+  <div id="map" role="region" aria-label="Map of similar areas"></div>
+</div>
+<script>
+const D = window.POC;
+const S = D.stats, R = S.reference;
+const fmt = (x, d = 0) => Number(x).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d });
+const compass = a => ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(a / 22.5) % 16];
+document.getElementById("pt").textContent = `Point ${D.point[1].toFixed(5)}, ${D.point[0].toFixed(5)}`;
+document.getElementById("ref").innerHTML = `
+  <dt>Forest type</dt><dd>${R.class_name}</dd>
+  <dt>Elevation</dt><dd class="num">${fmt(R.elev_m)} m (${fmt(R.elev_m * 3.28084)} ft)</dd>
+  <dt>Slope</dt><dd class="num">${fmt(R.slope_deg, 1)}&deg;</dd>
+  <dt>Faces</dt><dd class="num">${compass(R.aspect_deg)} (${fmt(R.aspect_deg)}&deg;)</dd>`;
+document.getElementById("kpis").innerHTML = `
+  <div class="kpi"><div class="v">${fmt(S.polygons)}</div><div class="l">match polygons</div></div>
+  <div class="kpi"><div class="v">${fmt(S.matched_area_acres)}</div><div class="l">acres (${fmt(S.matched_area_km2, 1)} km&sup2;)</div></div>
+  <div class="kpi"><div class="v">${fmt(S.matched_share_of_circle * 100, 1)}%</div><div class="l">of the 25-mile circle</div></div>
+  <div class="kpi"><div class="v">${fmt(S.threshold, 2)}</div><div class="l">min. score kept</div></div>`;
+
+const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const TOPO_ATTR = 'Topo: USGS <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map">The National Map</a>';
+const IMG_ATTR = 'Imagery: USDA, USGS <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map">The National Map</a>';
+const map = window.map = new maplibregl.Map({
+  container: "map",
+  style: {
+    version: 8,
+    sources: {
+      osm: { type: "raster", tileSize: 256, maxzoom: 19, attribution: OSM_ATTR,
+             tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"] },
+      topo: { type: "raster", tileSize: 256, maxzoom: 16, attribution: TOPO_ATTR,
+              tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"] },
+      img: { type: "raster", tileSize: 256, maxzoom: 16, attribution: IMG_ATTR,
+             tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"] },
+      score: { type: "image", url: D.overlay.url, coordinates: D.overlay.coordinates },
+      matches: { type: "geojson", data: D.matches },
+      circle: { type: "geojson", data: D.circle },
+      point: { type: "geojson", data: { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: D.point } } }
+    },
+    layers: [
+      { id: "osm", type: "raster", source: "osm" },
+      { id: "topo", type: "raster", source: "topo", layout: { visibility: "none" } },
+      { id: "img", type: "raster", source: "img", layout: { visibility: "none" } },
+      { id: "score", type: "raster", source: "score", layout: { visibility: "none" }, paint: { "raster-opacity": 0.8, "raster-resampling": "nearest" } },
+      { id: "match-fill", type: "fill", source: "matches", paint: { "fill-color": "#6a1fb5", "fill-opacity": 0.55 } },
+      { id: "match-line", type: "line", source: "matches", paint: { "line-color": "#3d0a6e", "line-width": 1.2 } },
+      { id: "circle", type: "line", source: "circle", paint: { "line-color": "#121821", "line-width": 2, "line-dasharray": [3, 2] } },
+      { id: "point-halo", type: "circle", source: "point", paint: { "circle-radius": 9, "circle-color": "#ffffff" } },
+      { id: "point", type: "circle", source: "point", paint: { "circle-radius": 6, "circle-color": "#d11f3a" } }
+    ]
+  },
+  attributionControl: { compact: false }
+});
+map.addControl(new maplibregl.NavigationControl(), "top-right");
+map.addControl(new maplibregl.ScaleControl({ unit: "imperial" }), "bottom-left");
+const ring = D.circle.geometry.coordinates[0];
+const lons = ring.map(c => c[0]), lats = ring.map(c => c[1]);
+const narrow = window.matchMedia("(max-width: 820px)").matches;
+map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]], { padding: narrow ? 16 : 36, animate: false });
+
+const vis = (id, on) => map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+document.getElementById("l-match").onchange = e => { vis("match-fill", e.target.checked); vis("match-line", e.target.checked); };
+document.getElementById("l-score").onchange = e => vis("score", e.target.checked);
+document.getElementById("l-circle").onchange = e => vis("circle", e.target.checked);
+const baseBtns = document.querySelectorAll("[data-base]");
+const setBase = id => baseBtns.forEach(b => { const on = b.dataset.base === id; vis(b.dataset.base, on); b.setAttribute("aria-pressed", String(on)); });
+baseBtns.forEach(b => b.onclick = () => setBase(b.dataset.base));
+window.setBase = setBase;
+
+map.on("click", "match-fill", e => {
+  const p = e.features[0].properties;
+  new maplibregl.Popup().setLngLat(e.lngLat)
+    .setHTML(`<strong>Match #${p.id}</strong><br>${fmt(p.area_acres, 1)} acres (${fmt(p.area_ha, 1)} ha)<br>Mean score ${fmt(p.mean_score, 2)}`)
+    .addTo(map);
+});
+map.on("mouseenter", "match-fill", () => map.getCanvas().style.cursor = "pointer");
+map.on("mouseleave", "match-fill", () => map.getCanvas().style.cursor = "");
+map.on("idle", () => { document.body.dataset.ready = "1"; });
+</script>
+</body>
+</html>
