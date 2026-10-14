@@ -31,7 +31,7 @@ SEO = {
 }
 # The indexable pages: exactly the sitemap; the assert at the end checks the rest are noindex.
 # ask/ and assistant/ are the chat demos (static pages on the Vercel API); /chatbot/ redirects to /ask/ (old proposal links).
-INDEXED = ["", "rag-fix", "mcp-excel", "agent-workflow-demo", "sheets-report", "routes", "scheduler", "planner", "ask", "assistant", "vision"]
+INDEXED = ["", "rag-fix", "mcp-excel", "agent-workflow-demo", "sheets-report", "routes", "scheduler", "planner", "ask", "assistant", "vision", "wp-chatbot"]
 
 root = Path(__file__).parent
 home = (root / "src/template.html").read_text()
