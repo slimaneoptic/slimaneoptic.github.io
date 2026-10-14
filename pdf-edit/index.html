@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>In-browser PDF text editing: English + Arabic</title>
+    <meta name="description" content="Edit existing English and Arabic text inside a PDF, in place, in your browser." />
+    <script type="module" crossorigin src="/pdf-edit/assets/index-t5FulPVX.js"></script>
+    <link rel="modulepreload" crossorigin href="/pdf-edit/assets/rolldown-runtime-WkwZ5CU-.js">
+    <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-BrC_5IR9.css">
+  </head>
+  <body>
+    <header class="top">
+      <div class="wrap">
+        <h1>In-browser PDF text editing: English + Arabic</h1>
+        <p class="lead">Click a word in the PDF, type the new word, and the text is replaced inside the PDF content stream: same position, same font when the glyphs exist, shaped Arabic in right-to-left order.</p>
+        <p class="privacy"><span class="dot" aria-hidden="true"></span>Your PDF stays in your browser: nothing is uploaded.</p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="toolbar" aria-label="Documents">
+        <div class="samples">
+          <span class="label">Samples</span>
+          <button type="button" data-sample="arabic" data-track="pdf sample arabic">Arabic sentence</button>
+          <button type="button" data-sample="english" data-track="pdf sample english">English bold heading</button>
+          <button type="button" data-sample="mixed" data-track="pdf sample mixed">Mixed Arabic / English / digits</button>
+        </div>
+        <div class="more">
+          <span class="label">Other producers</span>
+          <button type="button" class="small" data-sample="fpdf2" data-track="pdf sample fpdf2">fpdf2 (Kufi, Tc/Tz)</button>
+          <button type="button" class="small" data-sample="libreoffice" data-track="pdf sample libreoffice">LibreOffice (Amiri)</button>
+          <button type="button" class="small" data-sample="fullfont" data-track="pdf sample fullfont">Full embedded font</button>
+          <button type="button" class="small" data-sample="tw" data-track="pdf sample tw">Single-byte font (Tw)</button>
+        </div>
+        <div class="own">
+          <label class="filebtn" data-track="pdf open own">
+            <input id="file" type="file" accept="application/pdf,.pdf" />
+            Open your own PDF
+          </label>
+        </div>
+      </section>
+
+      <div class="layout">
+        <section class="viewer" aria-label="PDF page">
+          <div class="viewer-bar">
+            <span id="docname" class="docname">No document</span>
+            <span class="spacer"></span>
+            <button type="button" id="prev" data-track="pdf page prev" disabled aria-label="Previous page">&#8249;</button>
+            <span id="pageinfo" class="pageinfo"></span>
+            <button type="button" id="next" data-track="pdf page next" disabled aria-label="Next page">&#8250;</button>
+            <button type="button" id="compare" data-track="pdf compare" disabled>Show original</button>
+            <button type="button" id="download" class="primary" data-track="pdf download" disabled>Download edited PDF</button>
+          </div>
+          <div id="stage" class="stage">
+            <div id="pagebox" class="pagebox">
+              <canvas id="canvas"></canvas>
+              <div id="overlay" class="overlay"></div>
+              <div id="hint" class="hint">Pick a sample or open a PDF.</div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="panel" aria-label="Edit and result">
+          <div class="card" id="editcard">
+            <h2>Edit</h2>
+            <p id="selinfo" class="muted">Click a word on the page.</p>
+            <form id="editform" class="editform" autocomplete="off">
+              <input id="newtext" type="text" dir="auto" placeholder="New text" disabled />
+              <label class="check"><input id="wholeline" type="checkbox" disabled /> Replace the whole line</label>
+              <button type="submit" id="replace" class="primary" data-track="pdf replace" disabled>Replace</button>
+            </form>
+            <p id="samplehint" class="samplehint"></p>
+          </div>
+          <div class="card" id="resultcard">
+            <h2>What happened</h2>
+            <div id="result" class="result muted">No edit yet.</div>
+          </div>
+          <div class="card small">
+            <h2>How it works</h2>
+            <ul>
+              <li>pdf.js renders the page and locates the text run under your click (text content + operator list).</li>
+              <li>The word's glyphs are replaced in the content stream; Tc, Tw and Tz are honoured and widths recomputed from the font's widths.</li>
+              <li>Arabic is shaped (HarfBuzz WASM, joining forms, lam-alef) with bidi for digits and English inside Arabic; right-to-left lines keep their right edge.</li>
+              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (Noto Naskh Arabic, DejaVu Sans) embedded as a subset.</li>
+              <li>ToUnicode is updated so the new text extracts and searches correctly. The file is saved with pdf-lib.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+    <footer class="wrap foot">Fonts: Noto Naskh Arabic (SIL OFL 1.1), DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js.</footer>
+  </body>
+</html>
