@@ -6,9 +6,10 @@
     <meta name="robots" content="noindex" />
     <title>In-browser PDF text editing: English + Arabic</title>
     <meta name="description" content="Edit existing English and Arabic text inside a PDF, in place, in your browser." />
-    <script type="module" crossorigin src="/pdf-edit/assets/index-ePdLx4pZ.js"></script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+    <script type="module" crossorigin src="/pdf-edit/assets/index-C75I98JE.js"></script>
     <link rel="modulepreload" crossorigin href="/pdf-edit/assets/rolldown-runtime-WkwZ5CU-.js">
-    <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-BrC_5IR9.css">
+    <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-CpnaKLfm.css">
   </head>
   <body>
     <header class="top">
@@ -58,7 +59,7 @@
             <div id="pagebox" class="pagebox">
               <canvas id="canvas"></canvas>
               <div id="overlay" class="overlay"></div>
-              <div id="hint" class="hint">Pick a sample or open a PDF.</div>
+              <div id="hint" class="hint">Loading the editor…</div>
             </div>
           </div>
         </section>
@@ -84,13 +85,23 @@
               <li>pdf.js renders the page and locates the text run under your click (text content + operator list).</li>
               <li>The word's glyphs are replaced in the content stream; Tc, Tw and Tz are honoured and widths recomputed from the font's widths.</li>
               <li>Arabic is shaped (HarfBuzz WASM, joining forms, lam-alef) with bidi for digits and English inside Arabic; right-to-left lines keep their right edge.</li>
-              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (DejaVu Sans, Arabic and Latin) embedded as a subset.</li>
-              <li>Every new glyph gets its own ToUnicode text, so the new word extracts, searches and copies correctly. Fonts that draw dots or hamza as separate glyphs cannot map them cleanly, so only the edited word switches to the fallback font. The file is saved with pdf-lib.</li>
+              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (DejaVu Sans, Arabic and Latin) embedded as a subset. Standard PDF fonts that are not embedded (Helvetica, Times, Courier) are written in their own encoding.</li>
+              <li>Every new letter gets its own ToUnicode text, so the new word extracts, searches and copies correctly. In fonts that draw dots or hamza as separate glyphs, those dots are drawn as outlines from the same font, so they need no text and the font stays the same. The file is saved with pdf-lib.</li>
+              <li>Punctuation next to a word (a period, an Arabic comma, brackets) is not part of the selection, so it stays in place.</li>
+            </ul>
+          </div>
+          <div class="card small" id="limits">
+            <h2>Limits of this demo</h2>
+            <ul>
+              <li>Not edited: text inside form XObjects, Type3 fonts, encrypted PDFs, vertical or rotated text, text without a Unicode mapping (the demo says so instead of guessing).</li>
+              <li>Typed harakat (tashkeel) use the fallback font when the subset has no mark glyphs.</li>
+              <li>A longer word moves the rest of the line; nothing wraps, and moved words can slide under boxes drawn later (highlights, table fills).</li>
+              <li>Tested in Chromium and Firefox, at desktop and phone size; Safari is not tested yet.</li>
             </ul>
           </div>
         </aside>
       </div>
     </main>
-    <footer class="wrap foot">Fonts: DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js.</footer>
+    <footer class="wrap foot">Fonts: DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js. Licenses: <a href="THIRD-PARTY-LICENSES.txt">bundled libraries</a>, <a href="licenses/HarfBuzz-COPYING.txt">HarfBuzz</a>, <a href="licenses/fontkit-MIT.txt">fontkit</a>, <a href="fonts/LICENSE-DejaVu.txt">DejaVu</a>.</footer>
   </body>
 </html>
