@@ -95,7 +95,6 @@ export function dirOf(text, min = 1) {
   return a + l < min || a === l ? null : a > l ? "rtl" : "ltr";
 }
 const CAP_CODES = ["session_cap", "ip_cap", "global_budget"];
-const HIRE = "https://www.upwork.com/freelancers/~01d6ae0f1a06a43ac0";
 const PER_CHAT = 12;
 
 export function safeHref(u) {
@@ -1046,7 +1045,7 @@ export function mount(root, opts = {}) {
   function capCard(t, p, btn) {
     return h("div", {class: "card capcard", role: "status"}, h("span", {class: "badge warnb", "aria-hidden": "true"}, icon("info", 16)),
       h("div", null, h("p", {class: "cap-h", text: t}), h("p", {text: p}), h("div", {class: "row3"}, btn,
-        page ? ext(h("a", {class: "ghost", href: HIRE}, "Hire me on Upwork ", icon("ext", 14))) : null)));
+        null)));
   }
   function renderDock() {
     const c = chat();
