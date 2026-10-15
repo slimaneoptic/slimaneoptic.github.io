@@ -4,104 +4,156 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1015" media="(prefers-color-scheme: dark)" />
     <title>In-browser PDF text editing: English + Arabic</title>
     <meta name="description" content="Edit existing English and Arabic text inside a PDF, in place, in your browser." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
-    <script type="module" crossorigin src="/pdf-edit/assets/index-Dveoc_vw.js"></script>
+    <link rel="preload" href="/pdf-edit/assets/ibm-plex-sans-arabic-latin-400-normal-Bo5KPYvw.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/pdf-edit/assets/ibm-plex-sans-arabic-latin-600-normal-KrqB56Mw.woff2" as="font" type="font/woff2" crossorigin />
+    <script type="module" crossorigin src="/pdf-edit/assets/index-BHgMnl_N.js"></script>
     <link rel="modulepreload" crossorigin href="/pdf-edit/assets/rolldown-runtime-WkwZ5CU-.js">
-    <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-CpnaKLfm.css">
+    <link rel="stylesheet" crossorigin href="/pdf-edit/assets/index-D_BaHBV4.css">
   </head>
   <body>
-    <header class="top">
-      <div class="wrap">
-        <h1>In-browser PDF text editing: English + Arabic</h1>
-        <p class="lead">Click a word in the PDF, type the new word, and the text is replaced inside the PDF content stream: same position, same font when the glyphs exist, shaped Arabic in right-to-left order.</p>
-        <p class="privacy"><span class="dot" aria-hidden="true"></span>Your PDF stays in your browser: nothing is uploaded.</p>
+    <header class="hero">
+      <div class="wrap hero-grid">
+        <h1>Edit the text inside a PDF, in English and Arabic</h1>
+        <p class="ar-title" lang="ar" dir="rtl"><span>عدّل النص داخل ملف PDF،</span> <span>بالعربية والإنجليزية</span></p>
+        <p class="lead"><span>Click a word and type the new one.</span> <span>The PDF’s own text is rewritten in place, not covered with a white box.</span></p>
+        <ul class="facts" aria-label="What the editor does">
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>Edits inside the PDF</li>
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>Original font when its glyphs exist</li>
+          <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" /></svg>Arabic shaping + bidi</li>
+        </ul>
+        <p class="privacy"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="9" width="12" height="8.5" rx="2" /><path d="M7 9V6.5a3 3 0 0 1 6 0V9" /></svg><span>Your PDF stays in your browser: nothing is uploaded.</span></p>
       </div>
     </header>
 
     <main class="wrap">
-      <section class="toolbar" aria-label="Documents">
-        <div class="samples">
-          <span class="label">Samples</span>
-          <button type="button" data-sample="amiri" data-track="pdf sample amiri">Arabic sentence (Chrome, Amiri)</button>
-          <button type="button" data-sample="english" data-track="pdf sample english">English bold heading</button>
-          <button type="button" data-sample="mixed" data-track="pdf sample mixed">Mixed Arabic / English / digits</button>
-        </div>
-        <div class="more">
-          <span class="label">Other producers</span>
-          <button type="button" class="small" data-sample="arabic" data-track="pdf sample arabic">Chrome, Noto Sans Arabic (dots drawn separately)</button>
-          <button type="button" class="small" data-sample="fpdf2" data-track="pdf sample fpdf2">fpdf2 (Kufi, Tc/Tz)</button>
-          <button type="button" class="small" data-sample="libreoffice" data-track="pdf sample libreoffice">LibreOffice (Amiri)</button>
-          <button type="button" class="small" data-sample="fullfont" data-track="pdf sample fullfont">Full embedded font</button>
-          <button type="button" class="small" data-sample="tw" data-track="pdf sample tw">Single-byte font (Tw)</button>
-        </div>
-        <div class="own">
-          <label class="filebtn" data-track="pdf open own">
-            <input id="file" type="file" accept="application/pdf,.pdf" />
-            Open your own PDF
-          </label>
-        </div>
-      </section>
-
       <div class="layout">
-        <section class="viewer" aria-label="PDF page">
-          <div class="viewer-bar">
-            <span id="docname" class="docname">No document</span>
-            <span class="spacer"></span>
-            <button type="button" id="prev" data-track="pdf page prev" disabled aria-label="Previous page">&#8249;</button>
-            <span id="pageinfo" class="pageinfo"></span>
-            <button type="button" id="next" data-track="pdf page next" disabled aria-label="Next page">&#8250;</button>
-            <button type="button" id="compare" data-track="pdf compare" disabled>Show original</button>
-            <button type="button" id="download" class="primary" data-track="pdf download" disabled>Download edited PDF</button>
-          </div>
-          <div id="stage" class="stage">
-            <div id="pagebox" class="pagebox">
-              <canvas id="canvas"></canvas>
-              <div id="overlay" class="overlay"></div>
-              <div id="hint" class="hint">Loading the editor…</div>
+        <div class="work">
+          <ol class="steps" id="steps" aria-label="How to try it">
+            <li class="current" aria-current="step"><span class="num">1</span><span class="txt">Pick a sample</span></li>
+            <li><span class="num">2</span><span class="txt">Click a word</span></li>
+            <li><span class="num">3</span><span class="txt">Type the new text</span></li>
+            <li><span class="num">4</span><span class="txt">Replace and download</span></li>
+          </ol>
+
+          <section class="toolbar" aria-label="Documents">
+            <div class="group">
+              <span class="label" id="lbl-samples">Samples</span>
+              <div class="row">
+                <div class="samples seg" role="group" aria-labelledby="lbl-samples">
+                  <button type="button" data-sample="amiri" data-track="pdf sample amiri" aria-pressed="false"><span class="t">Arabic sentence</span><span class="p">Chrome, Amiri</span></button>
+                  <button type="button" data-sample="english" data-track="pdf sample english" aria-pressed="false"><span class="t">English bold heading</span><span class="p">Chrome, Noto Serif</span></button>
+                  <button type="button" data-sample="mixed" data-track="pdf sample mixed" aria-pressed="false"><span class="t">Mixed Arabic / English / digits</span><span class="p">Chrome, Noto Sans Arabic</span></button>
+                </div>
+                <label class="filebtn" data-track="pdf open own">
+                  <input id="file" type="file" accept="application/pdf,.pdf" />
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 6A1.5 1.5 0 0 1 4 4.5h3.2l1.6 1.8H16A1.5 1.5 0 0 1 17.5 7.8v7.2a1.5 1.5 0 0 1-1.5 1.5H4A1.5 1.5 0 0 1 2.5 15z" /></svg>
+                  Open your own PDF
+                </label>
+              </div>
             </div>
-          </div>
-        </section>
+            <div class="group">
+              <span class="label" id="lbl-more">Other producers</span>
+              <div class="more seg" role="group" aria-labelledby="lbl-more">
+                <button type="button" data-sample="arabic" data-track="pdf sample arabic" aria-pressed="false" title="Chrome, Noto Sans Arabic"><span class="t">Dots drawn separately</span></button>
+                <button type="button" data-sample="fpdf2" data-track="pdf sample fpdf2" aria-pressed="false" title="fpdf2 + HarfBuzz"><span class="t">Kufi, Tc and Tz</span></button>
+                <button type="button" data-sample="libreoffice" data-track="pdf sample libreoffice" aria-pressed="false" title="LibreOffice, Amiri"><span class="t">Single-byte subsets</span></button>
+                <button type="button" data-sample="fullfont" data-track="pdf sample fullfont" aria-pressed="false" title="pikepdf, Noto Sans Arabic"><span class="t">Full embedded font</span></button>
+                <button type="button" data-sample="tw" data-track="pdf sample tw" aria-pressed="false" title="pikepdf, Noto Serif"><span class="t">Word spacing (Tw)</span></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="viewer" aria-label="PDF page">
+            <div class="viewer-bar">
+              <div class="doc">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 2.5h6l3.5 3.5v10.5a1 1 0 0 1-1 1h-8.5a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z" /><path d="M11.5 2.5V6H15" /></svg>
+                <span id="docname" class="docname">No document</span>
+              </div>
+              <div class="pager">
+                <button type="button" id="prev" class="icon" data-track="pdf page prev" disabled aria-label="Previous page"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M12 5l-5 5 5 5" /></svg></button>
+                <span id="pageinfo" class="pageinfo"></span>
+                <button type="button" id="next" class="icon" data-track="pdf page next" disabled aria-label="Next page"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M8 5l5 5-5 5" /></svg></button>
+              </div>
+              <span class="spacer"></span>
+              <div id="compare" class="compare is-disabled" role="group" aria-label="View" data-track="pdf compare"><button type="button" data-v="after" aria-pressed="true" disabled>Edited</button><button type="button" data-v="before" aria-pressed="false" disabled>Original</button></div>
+              <button type="button" id="download" class="primary" data-track="pdf download" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5v9M6 9l4 4 4-4M4 16.5h12" /></svg>Download edited PDF</button>
+              <span class="busybar" aria-hidden="true"></span>
+            </div>
+            <div id="stage" class="stage">
+              <div id="pagebox" class="pagebox">
+                <canvas id="canvas"></canvas>
+                <div id="overlay" class="overlay"></div>
+                <div id="hint" class="hint">Loading the editor…</div>
+              </div>
+            </div>
+          </section>
+        </div>
 
         <aside class="panel" aria-label="Edit and result">
-          <div class="card" id="editcard">
+          <div class="card edit idle" id="editcard">
             <h2>Edit</h2>
-            <p id="selinfo" class="muted">Click a word on the page.</p>
+            <div id="selinfo" class="selinfo">Click a word on the page.</div>
             <form id="editform" class="editform" autocomplete="off">
+              <label class="sr" for="newtext">New text</label>
               <input id="newtext" type="text" dir="auto" placeholder="New text" disabled />
-              <label class="check"><input id="wholeline" type="checkbox" disabled /> Replace the whole line</label>
+              <label class="switch"><input id="wholeline" type="checkbox" role="switch" disabled /><span>Replace the whole line</span></label>
               <button type="submit" id="replace" class="primary" data-track="pdf replace" disabled>Replace</button>
             </form>
-            <p id="samplehint" class="samplehint"></p>
           </div>
-          <div class="card" id="resultcard">
-            <h2>What happened</h2>
-            <div id="result" class="result muted">No edit yet.</div>
+          <div class="card report" id="resultcard">
+            <h2 id="result-title" tabindex="-1">What happened</h2>
+            <div id="result" class="result empty" aria-live="polite"><p>No edit yet.</p><p class="sub">Replace a word to see the font used, the width change and the text check.</p></div>
           </div>
-          <div class="card small">
-            <h2>How it works</h2>
-            <ul>
-              <li>pdf.js renders the page and locates the text run under your click (text content + operator list).</li>
-              <li>The word's glyphs are replaced in the content stream; Tc, Tw and Tz are honoured and widths recomputed from the font's widths.</li>
-              <li>Arabic is shaped (HarfBuzz WASM, joining forms, lam-alef) with bidi for digits and English inside Arabic; right-to-left lines keep their right edge.</li>
-              <li>Order of preference: the embedded font itself, then glyphs already in its subset, then a bundled fallback (DejaVu Sans, Arabic and Latin) embedded as a subset. Standard PDF fonts that are not embedded (Helvetica, Times, Courier) are written in their own encoding.</li>
-              <li>Every new letter gets its own ToUnicode text, so the new word extracts, searches and copies correctly. In fonts that draw dots or hamza as separate glyphs, those dots are drawn as outlines from the same font, so they need no text and the font stays the same. The file is saved with pdf-lib.</li>
-              <li>Punctuation next to a word (a period, an Arabic comma, brackets) is not part of the selection, so it stays in place.</li>
-            </ul>
-          </div>
-          <div class="card small" id="limits">
-            <h2>Limits of this demo</h2>
-            <ul>
-              <li>Not edited: text inside form XObjects, Type3 fonts, encrypted PDFs, vertical or rotated text, text without a Unicode mapping (the demo says so instead of guessing).</li>
-              <li>Typed harakat (tashkeel) use the fallback font when the subset has no mark glyphs.</li>
-              <li>A longer word moves the rest of the line; nothing wraps, and moved words can slide under boxes drawn later (highlights, table fills).</li>
-              <li>Tested in Chromium and Firefox, at desktop and phone size; Safari is not tested yet.</li>
-            </ul>
+          <div class="card tries-card" id="triescard" hidden>
+            <h2>Try on this file</h2>
+            <div id="samplehint" class="samplehint"></div>
           </div>
         </aside>
       </div>
+
+      <section class="hood" aria-labelledby="hood-title">
+        <div class="how-wrap">
+          <h2 id="hood-title">Under the hood</h2>
+          <ul class="how">
+            <li><h3>Find the word</h3><p>pdf.js renders the page and locates the text run under your click (text content and operator list).</p></li>
+            <li><h3>Rewrite the glyphs</h3><p>The word’s glyphs are replaced in the content stream. Tc, Tw and Tz are honoured, and widths come from the font’s own widths.</p></li>
+            <li><h3>Shape Arabic</h3><p>HarfBuzz (WASM) shapes joining forms and lam-alef; bidi places digits and English inside Arabic. Right-to-left lines keep their right edge.</p></li>
+            <li><h3>Choose the font</h3><p>First the embedded font itself, then glyphs already in its subset, then a bundled fallback (DejaVu Sans, Arabic and Latin) embedded as a subset. Standard PDF fonts that are not embedded (Helvetica, Times, Courier) are written in their own encoding.</p></li>
+            <li><h3>Keep it searchable</h3><p>Every new letter gets its own ToUnicode text, so the new word extracts, searches and copies correctly. Where a font draws dots or hamza as separate glyphs, those dots are drawn as outlines from the same font.</p></li>
+            <li><h3>Leave punctuation alone</h3><p>A period, an Arabic comma or brackets next to a word are not part of the selection, so they stay in place. The file is saved with pdf-lib.</p></li>
+          </ul>
+        </div>
+        <div class="limits" id="limits">
+          <h2>Limits of this demo</h2>
+          <ul>
+            <li>Not edited: text inside form XObjects, Type3 fonts, encrypted PDFs, vertical or rotated text, text without a Unicode mapping (the demo says so instead of guessing).</li>
+            <li>Typed harakat (tashkeel) use the fallback font when the subset has no mark glyphs.</li>
+            <li>A longer word moves the rest of the line; nothing wraps, and moved words can slide under boxes drawn later (highlights, table fills).</li>
+            <li>Tested in Chromium and Firefox, at desktop and phone size; Safari is not tested yet.</li>
+          </ul>
+        </div>
+      </section>
     </main>
-    <footer class="wrap foot">Fonts: DejaVu Sans (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js. Licenses: <a href="THIRD-PARTY-LICENSES.txt">bundled libraries</a>, <a href="licenses/HarfBuzz-COPYING.txt">HarfBuzz</a>, <a href="licenses/fontkit-MIT.txt">fontkit</a>, <a href="fonts/LICENSE-DejaVu.txt">DejaVu</a>.</footer>
+
+    <footer class="foot">
+      <div class="wrap">
+        <ul class="spec" aria-label="Facts">
+          <li>TypeScript, strict mode</li>
+          <li>pdf.js</li>
+          <li>pdf-lib + fontkit</li>
+          <li>HarfBuzz WASM</li>
+          <li>38 Playwright tests</li>
+          <li>qpdf-clean outputs</li>
+          <li>Nothing uploaded</li>
+        </ul>
+        <p class="licences">Fonts: IBM Plex Sans Arabic for this page (SIL Open Font License), DejaVu Sans as the fallback inside edited PDFs (DejaVu license). Libraries: pdf.js, pdf-lib, fontkit, HarfBuzz, bidi-js. Licenses: <a href="THIRD-PARTY-LICENSES.txt">bundled libraries</a>, <a href="licenses/HarfBuzz-COPYING.txt">HarfBuzz</a>, <a href="licenses/fontkit-MIT.txt">fontkit</a>, <a href="fonts/LICENSE-DejaVu.txt">DejaVu</a>, <a href="fonts/OFL-IBMPlexSansArabic.txt">IBM Plex Sans Arabic</a>.</p>
+      </div>
+    </footer>
   </body>
 </html>
