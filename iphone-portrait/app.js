@@ -35,6 +35,7 @@ const S = {
   mode: "person", point: { x: 0.5, y: 0.45 }, blur: 60, light: true, split: 50,
   W: 0, H: 0, src: null, sharp: null, out: null, seg: null, segW: 0, segH: 0, segRGBA: null, gray: null,
   mask: null, maskCv: null, lut: null, blob: null, blobGen: 0, gen: 0, busy: false, queued: null,
+  note: null, waitTap: false, autoObject: false,
 };
 const TEST = (window.__portrait = { state: "idle", times: {}, info: {}, errors: [], renders: 0 });
 
@@ -281,11 +282,11 @@ function prepareSeg() {
 }
 
 // AI cutout -> subject probability at seg size.
-async function cutout() {
-  const key = S.mode === "object" ? "object" : PERSON_KEY;
+async function cutout(mode = S.mode) {
+  const key = mode === "object" ? "object" : PERSON_KEY;
   const seg = await loadSegmenter(key);
   const t0 = T();
-  const res = S.mode === "object" ? seg.segment(S.seg, { keypoint: { x: S.point.x, y: S.point.y } }) : seg.segment(S.seg);
+  const res = mode === "object" ? seg.segment(S.seg, { keypoint: { x: S.point.x, y: S.point.y } }) : seg.segment(S.seg);
   const masks = res.confidenceMasks || [];
   if (!masks.length) { res.close && res.close(); throw new Error("The AI model returned no mask."); }
   // Multi-class person model (6 masks): mask 0 = background. Single-mask models (selfie, magic_touch): mask 0 = subject.
@@ -293,9 +294,104 @@ async function cutout() {
   const mw = pick.width, mh = pick.height, raw = Float32Array.from(pick.getAsFloat32Array());
   if (masks.length > 1) for (let i = 0; i < raw.length; i++) raw[i] = 1 - raw[i];
   TEST.info.masks = masks.length; TEST.info.maskSize = `${mw}x${mh}`;
+  // Multi-class model: share of hair / body skin / face skin (classes 1-3). Clothes and "others" alone
+  // also fire on cups, tables and shoes, so they do not prove a person.
+  let face = null;
+  if (masks.length >= 4) {
+    const cls = [1, 2, 3].map((j) => masks[j].getAsFloat32Array()), per = [0, 0, 0];
+    let tot = 0;
+    for (let i = 0; i < cls[0].length; i += 3, tot++) {
+      for (let j = 0; j < 3; j++) if (cls[j][i] > 0.5) per[j]++;
+    }
+    face = per[2] / tot;
+    TEST.info.hairBodyFace = per.map((v) => +(v / tot).toFixed(4));
+  }
   res.close && res.close();
   const t1 = T();
-  return { prob: resample(raw, mw, mh, S.segW, S.segH), ms: t1 - t0 };
+  return { prob: resample(raw, mw, mh, S.segW, S.segH), face, ms: t1 - t0 };
+}
+
+// ---------- automatic subject when the photo has no person (products, cups, plants) ----------
+// Share of pixels above a confidence level.
+function share(prob, level) {
+  let n = 0;
+  for (let i = 0; i < prob.length; i++) if (prob[i] > level) n++;
+  return n / prob.length;
+}
+
+// Focus maps on a grey copy (long side <= 800): |Laplacian| above a small noise floor.
+// F (light smoothing) scores a cutout; P (region-size smoothing, mild weight toward the centre,
+// where phone cameras focus) gives the points to try.
+function focusMaps() {
+  const k = Math.min(1, 800 / Math.max(S.segW, S.segH));
+  const w = Math.max(16, Math.round(S.segW * k)), h = Math.max(16, Math.round(S.segH * k)), N = w * h;
+  const g = resample(S.gray, S.segW, S.segH, w, h), E = new Float32Array(N);
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1, i = y * w + 1; x < w - 1; x++, i++) {
+      const lap = Math.abs(4 * g[i] - g[i - 1] - g[i + 1] - g[i - w] - g[i + w]) - 0.01;
+      E[i] = lap > 0 ? lap : 0;
+    }
+  }
+  const L = Math.max(w, h), tmp = new Float32Array(N);
+  const F = boxBlur(E, w, h, Math.max(1, Math.round(L * 0.005)), 2, tmp);
+  const P = boxBlur(Float32Array.from(F), w, h, Math.max(2, Math.round(L * 0.035)), 2, tmp);
+  for (let y = 0; y < h; y++) {
+    const dy = (y + 0.5) / h - 0.5;
+    for (let x = 0; x < w; x++) {
+      const dx = (x + 0.5) / w - 0.5;
+      P[y * w + x] *= 0.45 + 0.55 * Math.exp(-(dx * dx + dy * dy) / 0.18);
+    }
+  }
+  return { w, h, F, P };
+}
+
+// Up to n separate peaks of P (each one blanks a disc of 15% of the long side).
+function focusPeaks(fm, n) {
+  const { w, h } = fm, A = Float32Array.from(fm.P), rad = Math.round(Math.max(w, h) * 0.15), out = [];
+  for (let c = 0; c < n; c++) {
+    let best = 0, bi = -1;
+    for (let i = 0; i < A.length; i++) if (A[i] > best) { best = A[i]; bi = i; }
+    if (bi < 0 || (out.length && best < out[0].v * 0.3)) break;
+    const px = bi % w, py = (bi / w) | 0;
+    out.push({ x: (px + 0.5) / w, y: (py + 0.5) / h, v: best });
+    for (let y = Math.max(0, py - rad); y <= Math.min(h - 1, py + rad); y++) {
+      for (let x = Math.max(0, px - rad); x <= Math.min(w - 1, px + rad); x++) {
+        if ((x - px) * (x - px) + (y - py) * (y - py) <= rad * rad) A[y * w + x] = 0;
+      }
+    }
+  }
+  if (!out.length) out.push({ x: 0.5, y: 0.5, v: 0 });
+  return out;
+}
+
+// How good is a cutout: area, sharpness inside vs outside, image sides it runs along.
+function scoreMask(prob, fm) {
+  const { w, h, F } = fm, m = resample(prob, S.segW, S.segH, w, h), N = w * h;
+  let nIn = 0, fIn = 0, fOut = 0;
+  for (let i = 0; i < N; i++) { if (m[i] > 0.5) { nIn++; fIn += F[i]; } else fOut += F[i]; }
+  const side = (n, at) => { let c = 0; for (let j = 0; j < n; j++) if (m[at(j)] > 0.5) c++; return c / n; };
+  const sides = [side(w, (j) => j), side(w, (j) => (h - 1) * w + j), side(h, (j) => j * w), side(h, (j) => j * w + w - 1)];
+  const ratio = nIn > 0 && nIn < N ? fIn / nIn / (fOut / (N - nIn) + 1e-6) : 0;
+  return { cover: nIn / N, ratio, borders: sides.filter((v) => v > 0.25).length };
+}
+
+// No person: try the sharpest in-focus points with the object model and keep the first clean cutout.
+async function autoSubject(fm) {
+  fm = fm || focusMaps();
+  const peaks = focusPeaks(fm, 3), tries = [];
+  let ms = 0, best = null, backup = null, last = null;
+  for (const pk of peaks) {
+    S.point = { x: pk.x, y: pk.y };
+    const c = await cutout("object");
+    ms += c.ms; last = { pt: S.point, c };
+    const sc = scoreMask(c.prob, fm);
+    const ok = sc.cover >= 0.01 && sc.cover <= 0.6 && sc.ratio >= 1.3 && sc.borders <= 2;
+    tries.push({ x: +pk.x.toFixed(3), y: +pk.y.toFixed(3), cover: +sc.cover.toFixed(3), ratio: +sc.ratio.toFixed(2), borders: sc.borders, ok });
+    if (ok) { best = last; break; }
+    if (sc.cover >= 0.005 && sc.cover <= 0.9 && sc.ratio >= 1.15 && (!backup || sc.ratio > backup.ratio)) backup = { ...last, ratio: sc.ratio };
+  }
+  TEST.info.auto = { tries, picked: best ? "ok" : backup ? "backup" : "none" };
+  return { pick: best || backup, last, ms };
 }
 
 // Snap the cutout to the photo's edges, firm it up, feather it slightly.
@@ -371,7 +467,7 @@ function makeSharp() {
 function makeBackground() {
   const strength = S.blur / 100;
   freeCanvas(S.bgCv); S.bgCv = null;
-  if (strength <= 0 || S.cover < 0.004) return;
+  if (strength <= 0 || S.waitTap) return;
   const longF = Math.max(S.W, S.H), sigmaF = strength * 0.03 * longF;
   const bl = clamp(Math.round((longF * 7) / Math.max(sigmaF, 1)), 384, Math.min(1280, longF));
   const k = bl / longF, w = Math.max(1, Math.round(S.W * k)), h = Math.max(1, Math.round(S.H * k)), N = w * h;
@@ -412,7 +508,7 @@ function makeBackground() {
 function composite() {
   const g = ctx2d(S.out);
   g.globalCompositeOperation = "copy";
-  g.drawImage(S.sharp, 0, 0);
+  g.drawImage(S.waitTap ? S.src : S.sharp, 0, 0);
   if (S.bgCv) {
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
     g.globalCompositeOperation = "destination-in";
@@ -456,6 +552,8 @@ async function run(kind) {
   if (kind === "photo") {
     const file = pendingFile;
     pendingFile = null;
+    S.waitTap = false; S.note = null;
+    if (S.autoObject) { S.autoObject = false; setMode("person"); }
     status("Opening the photo…");
     await nextFrame();
     let a = T();
@@ -473,11 +571,48 @@ async function run(kind) {
   if (LEVEL[kind] >= LEVEL.mask) {
     status(S.mode === "object" ? "Finding the object at the dot…" : "Finding the person…");
     await nextFrame();
-    const c = await cutout();
+    let c = await cutout();
     t.cutout = c.ms;
+    S.note = null; S.waitTap = false; TEST.info.auto = null;
+    let autoFailed = false, noPerson = false, fm = null;
+    if (S.mode === "person") {
+      noPerson = share(c.prob, 0.5) < 0.02;
+      // Almost no face skin: the "person" may be a table or a cup (the model can take wood for hair or skin).
+      // Keep it only if it is sharper than the rest of the photo and does not run along 3-4 image sides.
+      if (!noPerson && c.face != null && c.face < 0.005) {
+        const a0 = T();
+        fm = focusMaps();
+        const sc = scoreMask(c.prob, fm);
+        t.focus = T() - a0;
+        TEST.info.personScore = { cover: +sc.cover.toFixed(3), ratio: +sc.ratio.toFixed(2), borders: sc.borders };
+        noPerson = sc.ratio < 1.15 || sc.borders >= 3;
+      }
+    }
+    if (noPerson) {
+      // No person: never blur the whole photo. Keep the sharpest object instead.
+      status("No person found. Looking for the sharpest object…");
+      await nextFrame();
+      const a0 = T(), r = await autoSubject(fm);
+      t.focus = (t.focus || 0) + T() - a0 - r.ms;
+      t.cutout += r.ms;
+      progress(null);
+      S.autoObject = true;
+      setMode("object");
+      const use = r.pick || r.last;
+      S.point = use.pt; c = use.c;
+      autoFailed = !r.pick;
+      if (r.pick) S.note = "No person found, so I kept the sharpest object. Tap another subject to change it.";
+    }
     const a = T();
     refineMask(c.prob);
     t.edges = T() - a;
+    // Safety net: an empty or near-full cutout gives a junk result. Show the original and wait for a tap.
+    if (autoFailed || S.cover < 0.005 || S.cover > 0.9) {
+      if (S.mode !== "object") { S.autoObject = true; setMode("object"); }
+      S.waitTap = true; S.note = "Tap what should stay sharp.";
+    }
+    placeDot();
+    Object.assign(TEST.info, { mode: S.mode, cover: +S.cover.toFixed(4), waitTap: S.waitTap, point: S.waitTap ? null : { x: +S.point.x.toFixed(3), y: +S.point.y.toFixed(3) } });
   }
   if (LEVEL[kind] >= LEVEL.light) {
     status("Fixing the light and sharpening…");
@@ -504,7 +639,7 @@ async function run(kind) {
   TEST.state = "done";
 }
 
-const STEP_NAMES = { decode: "open", cutout: "AI cutout", edges: "edges", light: "light + sharpen", blur: "blur", mix: "mix" };
+const STEP_NAMES = { decode: "open", cutout: "AI cutout", focus: "subject pick", edges: "edges", light: "light + sharpen", blur: "blur", mix: "mix" };
 function showStats(kind, t, total) {
   $("k-time").textContent = `${fmt(total)} ms`;
   $("k-out").textContent = `${S.W} × ${S.H}`;
@@ -515,11 +650,7 @@ function showStats(kind, t, total) {
   const o = S.dec.orient;
   const ex = o > 1 ? ` EXIF orientation ${o}, ${S.dec.manual ? "turned by the page" : "applied by the browser"}.` : "";
   $("k-steps").textContent = `${kind === "photo" ? "Full run" : "Re-run"}: ${steps} ms.${ex}`;
-  if (S.cover < 0.004) {
-    status(S.mode === "object" ? "No object found at the dot. Tap the subject in the photo." : "No person found. Switch to Object and tap the subject.");
-  } else {
-    status(`Done in ${fmt(total)} ms. Drag across the photo to compare.`);
-  }
+  status(S.note || `Done in ${fmt(total)} ms. Drag across the photo to compare.`);
 }
 
 // ---------- download / share ----------
@@ -575,7 +706,7 @@ $("split").addEventListener("input", (e) => setSplit(+e.target.value));
 
 function placeDot() {
   const dot = $("cmp-dot");
-  dot.hidden = S.mode !== "object";
+  dot.hidden = S.mode !== "object" || S.waitTap;
   dot.style.left = `${S.point.x * 100}%`; dot.style.top = `${S.point.y * 100}%`;
 }
 const cmp = $("cmp");
@@ -596,6 +727,7 @@ cmp.addEventListener("pointerup", (e) => {
   if (S.mode === "object" && S.src) {
     const r = cmp.getBoundingClientRect();
     S.point = { x: clamp((e.clientX - r.left) / r.width, 0, 1), y: clamp((e.clientY - r.top) / r.height, 0, 1) };
+    S.waitTap = false;
     placeDot();
     request("mask");
   } else {
@@ -604,13 +736,17 @@ cmp.addEventListener("pointerup", (e) => {
 });
 cmp.addEventListener("pointercancel", () => { drag = null; });
 
-document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
-  const m = b.dataset.mode;
-  if (m === S.mode) return;
+function setMode(m) {
   S.mode = m;
   document.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.mode === m)));
   $("mode-help").textContent = m === "object" ? "Object mode: tap the subject in the photo (the dot marks it)." : "Person mode finds people on its own.";
   placeDot();
+}
+document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+  const m = b.dataset.mode;
+  if (m === S.mode) return;
+  S.autoObject = false; S.waitTap = false;
+  setMode(m);
   if (m === "object") preload("object");
   request("mask");
 }));
