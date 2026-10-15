@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en" data-root="./">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Glaze &amp; Grid: tiles by the square metre (demo store)</title>
+<meta name="description" content="Demo store. Sample products and images. No real orders.">
+<meta name="theme-color" content="#F1F2EF">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26'%3E%3Crect width='12' height='12' fill='%231E4F8F'/%3E%3Crect x='14' width='12' height='12' fill='%23262B2E'/%3E%3Crect y='14' width='12' height='12' fill='%23262B2E'/%3E%3Crect x='14' y='14' width='12' height='12' fill='%23B8BBB5'/%3E%3C/svg%3E">
+<link rel="preload" href="./assets/fonts/Archivo-VF-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="./assets/css/style.css?v=aaf496b3a8">
+
+</head>
+<body class="page-home">
+<script>try{if(/[?&]view=trade\b/.test(location.search)||(!/[?&]view=home\b/.test(location.search)&&localStorage.getItem('gg-view')==='"trade"'))document.body.classList.add('trade')}catch(e){}</script>
+<a class="skip" href="#main">Skip to content</a>
+<aside class="demo-bar" aria-label="Demo notice">Demo store. Sample products and images. No real orders.</aside>
+
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="brand" href="./" aria-label="Glaze &amp; Grid, home">
+      <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="m1" x="0" y="0" width="12" height="12"/><rect class="m2" x="14" y="0" width="12" height="12"/><rect class="m2" x="0" y="14" width="12" height="12"/><rect class="m3" x="14" y="14" width="12" height="12"/></svg>
+      <span class="brand-name">Glaze &amp; Grid</span>
+    </a>
+    <nav class="main-nav" aria-label="Main">
+      <a href="./shop/?use=wall">Wall</a>
+      <a href="./shop/?use=floor">Floor</a>
+      <a href="./shop/?use=outdoor">Outdoor</a>
+      <a href="./shop/?group=stone">Stone</a>
+      <a href="./shop/?group=fixing">Fixing</a>
+      <a href="./p/sample-box/">Samples</a>
+    </nav>
+    <form class="search" role="search" action="./shop/">
+      <label class="sr" for="q">Search tiles</label>
+      <input id="q" name="q" type="search" data-search placeholder="Search tiles" autocomplete="off">
+    </form>
+    <div class="viewas" role="group" aria-label="Show prices for">
+      <span class="viewas-label">View as</span>
+      <button type="button" data-view="home" aria-pressed="true">Home<span class="long"> buyer</span></button>
+      <button type="button" data-view="trade" aria-pressed="false">Trade<span class="long"> buyer</span></button>
+    </div>
+    <a class="basket-link" href="./basket/">Basket <span class="num" data-basket-count>0</span></a>
+    <button class="menu-btn" type="button" aria-label="Menu, search and basket" aria-expanded="false" aria-controls="menuPanel"><svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="#262B2E" stroke-width="1.6" aria-hidden="true"><path d="M0 1h18M0 7h18M0 13h18"/></svg><span class="num hide-zero" data-basket-count hidden>0</span></button>
+  </div>
+  <div class="menu-panel" id="menuPanel">
+    <form class="search" role="search" action="./shop/">
+      <label class="sr" for="q2">Search tiles</label>
+      <input id="q2" name="q" type="search" data-search placeholder="Search zellige, hexagon, 60x120" autocomplete="off">
+    </form>
+    <nav aria-label="Main, small screens">
+      <a href="./shop/">Shop all</a>
+      <a href="./basket/">Basket (<span data-basket-count>0</span>)</a>
+      <a href="./shop/?use=wall">Wall</a>
+      <a href="./shop/?use=floor">Floor</a>
+      <a href="./shop/?use=outdoor">Outdoor</a>
+      <a href="./shop/?group=stone">Stone</a>
+      <a href="./shop/?group=fixing">Fixing</a>
+      <a href="./p/sample-box/">Samples</a>
+    </nav>
+  </div>
+  <div class="trade-strip" role="status">Trade view: one trade price at any quantity. Demo only: no account needed.</div>
+</header>
+
+<main id="main">
+
+  <section class="hero-shell" aria-label="Tile wall">
+    <div class="hero">
+      <canvas id="wall" class="wall-canvas" role="img" aria-label="A wall of tiles drawn to scale"></canvas>
+      <div class="scale-chip" aria-hidden="true">
+        <div class="scale-bar" id="scaleBar" style="width:160px"></div>
+        <div class="scale-ticks"><span>0</span><span>50 cm</span><span><strong>1 m</strong></span></div>
+        Drawn to scale: <span id="wallWidth">3 m</span> of wall across the screen
+      </div>
+    </div>
+    <div class="wrap hero-wrap" id="cardWrap">
+      <div class="hero-card" id="heroCard">
+        <div class="hc-head">
+          <h1>Tiles by the square metre, or by the pallet.</h1>
+          <p>Pick a tile, a pattern and a grout colour. The wall redraws at true size.</p>
+        </div>
+        <div class="hc-row">
+          <span class="lbl" id="lblTile">Tile</span>
+          <div class="chips" id="tileChips" role="group" aria-labelledby="lblTile"></div>
+        </div>
+        <div class="hc-row">
+          <span class="lbl" id="lblPattern">Pattern</span>
+          <div class="seg" id="patternSeg" role="group" aria-labelledby="lblPattern">
+            <button type="button" data-p="straight" aria-pressed="true">Straight</button>
+            <button type="button" data-p="brick" aria-pressed="false">Brick</button>
+            <button type="button" data-p="herringbone" aria-pressed="false">Herringbone</button>
+          </div>
+          <p class="note" id="patternNote" hidden></p>
+        </div>
+        <div class="hc-row">
+          <span class="lbl" id="lblGrout">Grout</span>
+          <div class="grout-line"><div class="grouts" id="groutChips" role="group" aria-labelledby="lblGrout"></div>
+            <span class="grout-name" id="groutName">Bright white</span>
+            <button type="button" class="linklike" id="addGrout" data-add-sku="GG-GRT-5-WH">Add this grout</button></div>
+        </div>
+        <div class="hc-foot">
+          <div>
+            <div class="t-name" id="tName">Zellige-style tile, cobalt glaze</div>
+            <div class="t-spec" id="tSpec">10 × 10 cm, glazed terracotta, handmade</div>
+            <div class="t-price"><strong id="tPrice" class="tnum">€113.90</strong> <span id="tVat">per m²</span></div>
+          </div>
+          <a class="btn" href="p/zellige-style-tile/?sku=GG-ZEL-1010-CO" id="tLink">See this tile</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" id="range" aria-labelledby="h-range">
+    <div class="section-head">
+      <h2 id="h-range">Shop by surface</h2>
+      <p>Every tile is priced per m², and every box label says how many m² it covers. Each card is drawn at scale.</p>
+    </div>
+    <ul class="tile-grid"><li class="card" data-pid="slate-look-porcelain"><a href="./p/slate-look-porcelain/"><canvas data-wall-tile="card:GG-SLT-6060-MT" data-pattern="straight" data-grout="#5B5E5F" data-width="1.68" role="img" aria-label="Slate-look porcelain laid at scale"></canvas><span class="card-text"><span class="card-name">Slate-look porcelain</span><span class="card-meta">3 sizes, 2 finishes</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €29.90 per m²</span><span class="only-trade">from €24.50 per m², trade</span></span></span></a></li><li class="card" data-pid="limestone-look-porcelain"><a href="./p/limestone-look-porcelain/"><canvas data-wall-tile="card:GG-LMS-4590-HN" data-pattern="straight" data-grout="#E2DCCF" data-width="2.52" role="img" aria-label="Limestone-look porcelain laid at scale"></canvas><span class="card-text"><span class="card-name">Limestone-look porcelain</span><span class="card-meta">2 sizes, 2 finishes</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €33.90 per m²</span><span class="only-trade">from €27.80 per m², trade</span></span></span></a></li><li class="card" data-pid="black-marble-look-porcelain"><a href="./p/black-marble-look-porcelain/"><canvas data-wall-tile="card:GG-MBN-60120-PL" data-pattern="straight" data-grout="#323334" data-width="2.6" role="img" aria-label="Black marble-look porcelain laid at scale"></canvas><span class="card-text"><span class="card-name">Black marble-look porcelain</span><span class="card-meta">2 sizes, polished</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €46.90 per m²</span><span class="only-trade">from €38.50 per m², trade</span></span></span></a></li><li class="card" data-pid="concrete-look-porcelain"><a href="./p/concrete-look-porcelain/"><canvas data-wall-tile="card:GG-CON-3060-LG" data-pattern="straight" data-grout="#9A9B97" data-width="1.68" role="img" aria-label="Concrete-look porcelain laid at scale"></canvas><span class="card-text"><span class="card-name">Concrete-look porcelain</span><span class="card-meta">3 sizes, 3 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €23.90 per m²</span><span class="only-trade">from €19.60 per m², trade</span></span></span></a></li><li class="card" data-pid="terrazzo-look-porcelain"><a href="./p/terrazzo-look-porcelain/"><canvas data-wall-tile="card:GG-TRZ-6060-MO" data-pattern="straight" data-grout="#C3C4BF" data-width="1.68" role="img" aria-label="Terrazzo-look porcelain laid at scale"></canvas><span class="card-text"><span class="card-name">Terrazzo-look porcelain</span><span class="card-meta">60 × 60 cm, 3 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €39.90 per m²</span><span class="only-trade">from €32.70 per m², trade</span></span></span></a></li><li class="card" data-pid="oak-look-plank"><a href="./p/oak-look-plank/"><canvas data-wall-tile="card:GG-OAK-20120-NA" data-pattern="straight" data-grout="#CDBFA5" data-width="1.2" role="img" aria-label="Oak-look porcelain plank laid at scale"></canvas><span class="card-text"><span class="card-name">Oak-look porcelain plank</span><span class="card-meta">2 sizes, 3 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €32.90 per m²</span><span class="only-trade">from €27.00 per m², trade</span></span></span></a></li><li class="card" data-pid="outdoor-paver-20mm"><a href="./p/outdoor-paver-20mm/"><canvas data-wall-tile="card:GG-PAV-6060-SD" data-pattern="straight" data-grout="#5B5E5F" data-width="1.68" role="img" aria-label="20 mm outdoor porcelain paver laid at scale"></canvas><span class="card-text"><span class="card-name">20 mm outdoor porcelain paver</span><span class="card-meta">2 sizes, 2 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €44.90 per m²</span><span class="only-trade">from €36.80 per m², trade</span></span></span></a></li><li class="card" data-pid="zellige-style-tile"><a href="./p/zellige-style-tile/"><canvas data-wall-tile="card:GG-ZEL-1010-CO" data-pattern="straight" data-grout="#E2DCCF" data-width="0.45" role="img" aria-label="Zellige-style glazed tile 10 × 10 laid at scale"></canvas><span class="card-text"><span class="card-name">Zellige-style glazed tile 10 × 10</span><span class="card-meta">10 × 10 cm, 6 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €100.90 per m²</span><span class="only-trade">from €82.70 per m², trade</span></span></span></a></li><li class="card" data-pid="gloss-metro-tile"><a href="./p/gloss-metro-tile/"><canvas data-wall-tile="card:GG-MET-7515-WH" data-pattern="brick" data-grout="#EEEDE8" data-width="0.45" role="img" aria-label="Gloss metro tile laid at scale"></canvas><span class="card-text"><span class="card-name">Gloss metro tile</span><span class="card-meta">2 sizes, 3 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €26.90 per m²</span><span class="only-trade">from €22.10 per m², trade</span></span></span></a></li><li class="card" data-pid="hexagon-15"><a href="./p/hexagon-15/"><canvas data-wall-tile="card:GG-HEX-15-BN" data-pattern="straight" data-grout="#C3C4BF" data-width="0.48" role="img" aria-label="Hexagon tile 15 cm laid at scale"></canvas><span class="card-text"><span class="card-name">Hexagon tile 15 cm</span><span class="card-meta">15 cm hexagon, 4 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €42.90 per m²</span><span class="only-trade">from €35.20 per m², trade</span></span></span></a></li><li class="card" data-pid="pattern-tile-20x20"><a href="./p/pattern-tile-20x20/"><canvas data-wall-tile="card:GG-PAT-2020-FS" data-pattern="straight" data-grout="#E2DCCF" data-width="0.56" role="img" aria-label="Pattern tile 20 × 20 laid at scale"></canvas><span class="card-text"><span class="card-name">Pattern tile 20 × 20</span><span class="card-meta">20 × 20 cm, 4 designs</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €49.90 per m²</span><span class="only-trade">from €40.90 per m², trade</span></span></span></a></li><li class="card" data-pid="honed-travertine"><a href="./p/honed-travertine/"><canvas data-wall-tile="card:GG-TRV-4060-UN" data-pattern="straight" data-grout="#CDBFA5" data-width="1.68" role="img" aria-label="Honed travertine laid at scale"></canvas><span class="card-text"><span class="card-name">Honed travertine</span><span class="card-meta">2 sizes, 2 finishes</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €53.90 per m²</span><span class="only-trade">from €44.20 per m², trade</span></span></span></a></li></ul>
+    <p class="more-link"><a href="./shop/">Shop all 17 products, with filters and search</a></p>
+  </section>
+
+  <section class="section wrap rooms" aria-labelledby="h-rooms">
+    <div class="section-head">
+      <h2 id="h-rooms">Laid in a room</h2>
+      <p>Computer renders, made in Blender with each tile's size, joint width and grout colour from the store data.</p>
+    </div>
+    <ul class="room-grid n3"><li class="room big"><figure><div class="room-img"><img src="./assets/img/rooms/room-kitchen-metro-sage-herringbone.webp" srcset="./assets/img/rooms/room-kitchen-metro-sage-herringbone-800.webp 800w, ./assets/img/rooms/room-kitchen-metro-sage-herringbone.webp 1600w" sizes="(max-width: 860px) 100vw, 66vw" width="1600" height="1200" alt="A kitchen with sage gloss metro tiles laid in herringbone above white cabinets, and an oak-look plank floor, in sunlight" loading="lazy" decoding="async"></div><figcaption><strong>Kitchen.</strong> <a href="./p/gloss-metro-tile/?sku=GG-MET-7530-SG">Gloss metro, sage, 7.5 × 30 cm</a> on the splashback, in herringbone, bright white grout; <a href="./p/oak-look-plank/?sku=GG-OAK-20120-NA">Oak-look plank, natural, 20 × 120 cm</a> on the floor, in a third-offset brick bond, sand grout.</figcaption></figure></li><li class="room"><figure><div class="room-img"><img src="./assets/img/rooms/room-living-limestone-look.webp" srcset="./assets/img/rooms/room-living-limestone-look-800.webp 800w, ./assets/img/rooms/room-living-limestone-look.webp 1600w" sizes="(max-width: 860px) 100vw, 33vw" width="1600" height="1200" alt="A living room corner with a pale limestone-look floor in large square tiles, an armchair, a side table and a potted plant, in sunlight" loading="lazy" decoding="async"></div><figcaption><strong>Living room.</strong> <a href="./p/limestone-look-porcelain/?sku=GG-LMS-9090-HN">Limestone-look, honed, 90 × 90 cm</a> on the floor, laid straight, sand grout.</figcaption></figure></li><li class="room"><figure><div class="room-img"><img src="./assets/img/rooms/room-bathroom-zellige-cobalt.webp" srcset="./assets/img/rooms/room-bathroom-zellige-cobalt-800.webp 800w, ./assets/img/rooms/room-bathroom-zellige-cobalt.webp 1600w" sizes="(max-width: 860px) 100vw, 33vw" width="1600" height="1200" alt="A bathroom corner with cobalt zellige-style tiles on the walls, a white freestanding bath and a terrazzo-look floor, in sunlight" loading="lazy" decoding="async"></div><figcaption><strong>Bathroom.</strong> <a href="./p/zellige-style-tile/?sku=GG-ZEL-1010-CO">Zellige-style, cobalt, 10 × 10 cm</a> on the walls, laid straight, ivory grout; <a href="./p/terrazzo-look-porcelain/?sku=GG-TRZ-6060-WM">Terrazzo-look, warm chip, 60 × 60 cm</a> on the floor, laid straight, silver grout.</figcaption></figure></li></ul>
+  </section>
+
+  <section class="steps wrap" aria-labelledby="h-steps">
+    <h2 class="sr" id="h-steps">How buying works</h2>
+    <ol>
+      <li><h3>Measure the room</h3><p>Type the length and width. Feet work too.</p></li>
+      <li><h3>Get whole boxes and the kit</h3><p>The waste your pattern needs, then adhesive, grout, trims and clips in the bags and lengths we sell.</p></li>
+      <li><h3>Keep one shade lot</h3><p>Tiles from different batches can differ in tone. You see whether one lot covers your room before you order.</p></li>
+    </ol>
+  </section>
+
+  <section class="trade-band" aria-labelledby="h-trade">
+    <div class="wrap trade-grid">
+      <div>
+        <h2 id="h-trade">Trade counter</h2>
+        <p>For tilers, builders and designers who buy every week.</p>
+        <ul>
+          <li>One trade price from the first box, about 18% below the 1 to 9 box price</li>
+          <li>Stock per shade lot on every product</li>
+          <li>Sample boxes free in trade view</li>
+        </ul>
+        <button type="button" class="btn btn-light" data-view="trade">Switch to trade view</button>
+      </div>
+      <div class="table-scroll">
+      <table class="tier-dark">
+        <caption>Honed travertine, 40 × 60 cm, Unsealed, price per m²</caption>
+        <thead><tr><th scope="col">Buyer</th><th scope="col">1 to 9 boxes</th><th scope="col">10+ boxes</th><th scope="col">Pallet, 28 boxes</th></tr></thead>
+        <tbody>
+          <tr><td>Home</td><td>€53.90</td><td>€50.70</td><td>€47.40</td></tr>
+          <tr class="trade-row"><td>Trade</td><td colspan="3" class="span">€44.20 at any quantity</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section wrap" aria-labelledby="h-kit" style="padding-bottom:76px">
+    <div class="section-head">
+      <h2 id="h-kit">Fix it with the kit</h2>
+      <p>Adhesive, grout, trims and clips, matched to each tile by the calculator. Or start with cut samples.</p>
+    </div>
+    <ul class="tile-grid cols-5"><li class="card" data-pid="flexible-tile-adhesive"><a href="./p/flexible-tile-adhesive/"><img class="card-img" src="./assets/img/thumbs/adhesive-grey.webp" alt="" width="400" height="400" loading="lazy"><span class="card-text"><span class="card-name">Flexible tile adhesive 20 kg</span><span class="card-meta">20 kg bag, 2 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €19.90 a bag</span><span class="only-trade">from €16.32 a bag, trade</span></span></span></a></li><li class="card" data-pid="tile-grout-5kg"><a href="./p/tile-grout-5kg/"><img class="card-img" src="./assets/img/thumbs/grout-bright-white.webp" alt="" width="400" height="400" loading="lazy"><span class="card-text"><span class="card-name">Tile grout 5 kg</span><span class="card-meta">5 kg bag, 8 colours</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €12.90 a bag</span><span class="only-trade">from €10.58 a bag, trade</span></span></span></a></li><li class="card" data-pid="edge-trim-2-5m"><a href="./p/edge-trim-2-5m/"><img class="card-img" src="./assets/img/thumbs/trim-brushed-steel.webp" alt="" width="400" height="400" loading="lazy"><span class="card-text"><span class="card-name">Edge trim 2.5 m</span><span class="card-meta">3 sizes, 3 heights, 3 finishes</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €9.90 a length</span><span class="only-trade">from €8.12 a length, trade</span></span></span></a></li><li class="card" data-pid="levelling-clips"><a href="./p/levelling-clips/"><img class="card-img" src="./assets/img/thumbs/levelling-clips.webp" alt="" width="400" height="400" loading="lazy"><span class="card-text"><span class="card-name">Tile levelling clips</span><span class="card-meta">Packs of 100 or 500</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">from €9.90 a pack</span><span class="only-trade">from €8.12 a pack, trade</span></span></span></a></li><li class="card" data-pid="sample-box"><a href="./p/sample-box/"><img class="card-img" src="./assets/img/thumbs/sample-box.webp" alt="" width="400" height="400" loading="lazy"><span class="card-text"><span class="card-name">Sample box</span><span class="card-meta">Up to 5 cut samples</span><span class="card-match" hidden></span><span class="card-price"><span class="only-home">€6.00 a box</span><span class="only-trade">€0.00 a box, trade</span></span></span></a></li></ul>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap foot-grid">
+    <div>
+      <a class="brand" href="./" aria-label="Glaze &amp; Grid, home">
+        <svg class="brand-mark" viewBox="0 0 26 26" aria-hidden="true"><rect class="m1" x="0" y="0" width="12" height="12"/><rect class="m2" x="14" y="0" width="12" height="12"/><rect class="m2" x="0" y="14" width="12" height="12"/><rect class="m3" x="14" y="14" width="12" height="12"/></svg>
+        <span class="brand-name">Glaze &amp; Grid</span>
+      </a>
+    </div>
+    <div>
+      <p>Glaze &amp; Grid is a fictional shop built as a demo. Sample products, prices and images. No real orders.</p>
+      <p>Stone, slate, terrazzo, marble, concrete and paver faces: ambientCG materials, CC0. Oak faces: Poly Haven materials, CC0. Glazes, patterns and drawings: drawn by code. Room pictures: Blender renders of our tiles, with CC0 models, materials and light from Poly Haven and ambientCG.</p>
+    </div>
+    <div>
+      <ul class="foot-links" aria-label="Store pages"><li><a href="./shop/">Shop all products</a></li><li><a href="./p/sample-box/">Sample box</a></li><li><a href="./basket/">Basket</a></li><li><a href="./help/delivery-and-pallets/">Delivery and pallets</a></li><li><a href="./help/returns/">Returns</a></li><li><a href="./help/trade-terms/">Trade terms</a></li><li><a href="./help/faq/">FAQ</a></li><li><a href="./help/how-this-store-was-built/">How this store was built</a></li></ul>
+    </div>
+  </div>
+</footer>
+<script type="application/json" id="gg-wall">{"tiles":[{"id":"GG-ZEL-1010-CO","L":10.0,"W":10.0,"shape":"rect","joint":2,"patterns":["straight","brick"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/zellige-cobalt.webp","cols":4,"rows":3,"count":12,"cw":327,"ch":325,"ppcm":30.0},"key":"zellige-cobalt","name":"Zellige-style tile, cobalt glaze","spec":"10 × 10 cm, glazed terracotta, handmade","price":{"home":113.9,"trade":93.4},"url":"p/zellige-style-tile/?sku=GG-ZEL-1010-CO","chipWidthM":0.22,"chipCenter":"joint","patternNote":"Herringbone needs a tile at least twice as long as it is wide."},{"id":"GG-MET-7515-WH","L":15.0,"W":7.5,"shape":"rect","joint":2,"patterns":["straight","brick","herringbone"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/metro-white-7x15.webp","cols":2,"rows":4,"count":8,"cw":377,"ch":197,"ppcm":24.0},"reflect":0.16,"key":"metro-white-7x15","name":"Gloss metro, white","spec":"7.5 × 15 cm, ceramic","price":{"home":28.9,"trade":23.7},"url":"p/gloss-metro-tile/?sku=GG-MET-7515-WH","chipWidthM":0.33,"chipCenter":"joint"},{"id":"GG-HEX-15-TC","L":17.321,"W":15.0,"shape":"hex","joint":3,"patterns":["straight"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/hexagon-terracotta.webp","cols":3,"rows":2,"count":6,"cw":433,"ch":378,"ppcm":24.0},"key":"hexagon-terracotta","name":"Hexagon, terracotta","spec":"15 cm hexagon, porcelain","price":{"home":42.9,"trade":35.2},"url":"p/hexagon-15/?sku=GG-HEX-15-TC","chipWidthM":0.381,"chipCenter":"joint","patternNote":"Hexagons lay in one pattern."},{"id":"GG-PAT-2020-FS","L":20.0,"W":20.0,"shape":"rect","joint":2,"patterns":["straight"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/pattern-fez-star.webp","cols":2,"rows":2,"count":4,"cw":497,"ch":497,"ppcm":24.01},"key":"pattern-fez-star","name":"Pattern tile, Fez star","spec":"20 × 20 cm, porcelain","price":{"home":49.9,"trade":40.9},"url":"p/pattern-tile-20x20/?sku=GG-PAT-2020-FS","chipWidthM":0.44,"chipCenter":"joint","patternNote":"Pattern tiles lay straight, so the motif lines up."},{"id":"GG-TRV-4060-UN","L":60.0,"W":40.0,"shape":"rect","joint":3,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/swatches/travertine-40x60-unsealed.webp","cm":45},"thumbTex":"./assets/img/thumbs/travertine-40x60-unsealed.webp","rot":[0,180],"tone":0.03,"key":"travertine-40x60-unsealed","name":"Honed travertine, unsealed","spec":"40 × 60 cm, natural stone","price":{"home":53.9,"trade":44.2},"url":"p/honed-travertine/?sku=GG-TRV-4060-UN","chipWidthM":0.54,"chipCenter":"tile","patternNote":"Herringbone needs a tile at least twice as long as it is wide."},{"id":"GG-TRZ-6060-WM","L":60.0,"W":60.0,"shape":"rect","joint":2,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/swatches/terrazzo-look-warm.webp","cm":60},"thumbTex":"./assets/img/thumbs/terrazzo-look-warm.webp","rot":[0,90,180,270],"tone":0.03,"key":"terrazzo-look-warm","name":"Terrazzo-look porcelain, warm chip","spec":"60 × 60 cm, porcelain","price":{"home":39.9,"trade":32.7},"url":"p/terrazzo-look-porcelain/?sku=GG-TRZ-6060-WM","chipWidthM":0.54,"chipCenter":"tile","patternNote":"Herringbone needs a tile at least twice as long as it is wide."},{"id":"GG-MBN-60120-PL","L":120.0,"W":60.0,"shape":"rect","joint":2,"patterns":["straight","brick","herringbone"],"kind":"image","tex":{"src":"./assets/img/swatches/black-marble-look-polished.webp","cm":60},"thumbTex":"./assets/img/thumbs/black-marble-look-polished.webp","rot":[0,180],"tone":0.03,"gloss":0.1,"key":"black-marble-look-polished","name":"Black marble-look porcelain, polished","spec":"60 × 120 cm, porcelain","price":{"home":46.9,"trade":38.5},"url":"p/black-marble-look-porcelain/?sku=GG-MBN-60120-PL","chipWidthM":1.08,"chipCenter":"tile"},{"id":"GG-CON-3060-MG","L":60.0,"W":30.0,"shape":"rect","joint":3,"patterns":["straight","brick","herringbone"],"kind":"image","tex":{"src":"./assets/img/swatches/concrete-look-mid.webp","cm":60},"thumbTex":"./assets/img/thumbs/concrete-look-mid.webp","rot":[0,180],"tone":0.03,"key":"concrete-look-mid","name":"Concrete-look porcelain, mid grey","spec":"30 × 60 cm, porcelain","price":{"home":23.9,"trade":19.6},"url":"p/concrete-look-porcelain/?sku=GG-CON-3060-MG","chipWidthM":0.54,"chipCenter":"tile"}],"cards":[{"id":"card:GG-SLT-6060-MT","L":60.0,"W":60.0,"shape":"rect","joint":3,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/thumbs/slate-look-matt.webp","cm":60},"thumbTex":"./assets/img/thumbs/slate-look-matt.webp","rot":[0,90,180,270],"tone":0.03},{"id":"card:GG-LMS-4590-HN","L":90.0,"W":45.0,"shape":"rect","joint":2,"patterns":["straight","brick","herringbone"],"kind":"image","tex":{"src":"./assets/img/thumbs/limestone-look-honed.webp","cm":60},"thumbTex":"./assets/img/thumbs/limestone-look-honed.webp","rot":[0,180],"tone":0.03},{"id":"card:GG-MBN-60120-PL","L":120.0,"W":60.0,"shape":"rect","joint":2,"patterns":["straight","brick","herringbone"],"kind":"image","tex":{"src":"./assets/img/thumbs/black-marble-look-polished.webp","cm":60},"thumbTex":"./assets/img/thumbs/black-marble-look-polished.webp","rot":[0,180],"tone":0.03,"gloss":0.1},{"id":"card:GG-CON-3060-LG","L":60.0,"W":30.0,"shape":"rect","joint":3,"patterns":["straight","brick","herringbone"],"kind":"image","tex":{"src":"./assets/img/thumbs/concrete-look-light.webp","cm":60},"thumbTex":"./assets/img/thumbs/concrete-look-light.webp","rot":[0,180],"tone":0.03},{"id":"card:GG-TRZ-6060-MO","L":60.0,"W":60.0,"shape":"rect","joint":2,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/thumbs/terrazzo-look-mono.webp","cm":60},"thumbTex":"./assets/img/thumbs/terrazzo-look-mono.webp","rot":[0,90,180,270],"tone":0.03},{"id":"card:GG-OAK-20120-NA","L":120.0,"W":20.0,"shape":"rect","joint":3,"patterns":["straight","brick","herringbone"],"kind":"laid","tex":{"src":"./assets/img/thumbs/oak-look-natural.webp","cm":60},"thumbTex":"./assets/img/thumbs/oak-look-natural.webp"},{"id":"card:GG-PAV-6060-SD","L":60.0,"W":60.0,"shape":"rect","joint":5,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/thumbs/paver-20mm-sand.webp","cm":60},"thumbTex":"./assets/img/thumbs/paver-20mm-sand.webp","rot":[0,90,180,270],"tone":0.03},{"id":"card:GG-ZEL-1010-CO","L":10.0,"W":10.0,"shape":"rect","joint":2,"patterns":["straight","brick"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/zellige-cobalt.webp","cols":4,"rows":3,"count":12,"cw":327,"ch":325,"ppcm":30.0}},{"id":"card:GG-MET-7515-WH","L":15.0,"W":7.5,"shape":"rect","joint":2,"patterns":["straight","brick","herringbone"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/metro-white-7x15.webp","cols":2,"rows":4,"count":8,"cw":377,"ch":197,"ppcm":24.0},"reflect":0.16},{"id":"card:GG-HEX-15-BN","L":17.321,"W":15.0,"shape":"hex","joint":3,"patterns":["straight"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/hexagon-bone.webp","cols":3,"rows":2,"count":6,"cw":432,"ch":377,"ppcm":24.0}},{"id":"card:GG-PAT-2020-FS","L":20.0,"W":20.0,"shape":"rect","joint":2,"patterns":["straight"],"kind":"atlas","atlas":{"src":"./assets/img/tiles/pattern-fez-star.webp","cols":2,"rows":2,"count":4,"cw":497,"ch":497,"ppcm":24.01}},{"id":"card:GG-TRV-4060-UN","L":60.0,"W":40.0,"shape":"rect","joint":3,"patterns":["straight","brick"],"kind":"image","tex":{"src":"./assets/img/thumbs/travertine-40x60-unsealed.webp","cm":45},"thumbTex":"./assets/img/thumbs/travertine-40x60-unsealed.webp","rot":[0,180],"tone":0.03}],"grouts":[{"sku":"GG-GRT-5-WH","key":"bright-white","name":"Bright white","hex":"#EEEDE8"},{"sku":"GG-GRT-5-IV","key":"ivory","name":"Ivory","hex":"#E2DCCF"},{"sku":"GG-GRT-5-SV","key":"silver","name":"Silver","hex":"#C3C4BF"},{"sku":"GG-GRT-5-MG","key":"mid-grey","name":"Mid grey","hex":"#9A9B97"},{"sku":"GG-GRT-5-AN","key":"anthracite","name":"Anthracite","hex":"#5B5E5F"},{"sku":"GG-GRT-5-BK","key":"black","name":"Black","hex":"#323334"},{"sku":"GG-GRT-5-SD","key":"sand","name":"Sand","hex":"#CDBFA5"},{"sku":"GG-GRT-5-CR","key":"caramel","name":"Caramel","hex":"#A37A57"}],"defaults":{"tile":"GG-ZEL-1010-CO","pattern":"straight","grout":"GG-GRT-5-WH"}}</script>
+<script src="./assets/js/catalog.js?v=d141fa7e0e" defer></script>
+<script src="./assets/js/search.js?v=4b45204b7b" defer></script>
+<script src="./assets/js/wall.js?v=da1a8790b8" defer></script>
+<script src="./assets/js/app.js?v=300713e9c3" defer></script>
+<script defer src="/hit.js"></script>
+</body>
+</html>

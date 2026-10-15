@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 250" width="960" height="750" role="img"
+     aria-label="Scale drawing: mixed-size set (20x20, 20x40, 40x40, 40x60 cm) next to a door and a 1 m rule">
+  <title>Scale drawing: mixed-size set (20x20, 20x40, 40x40, 40x60 cm) next to a door and a 1 m rule</title>
+  <rect width="320" height="250" fill="#F1F2EF" />
+  <line x1="6" y1="228.0" x2="314.0" y2="228.0" stroke="#262B2E" stroke-width="1.6"
+        vector-effect="non-scaling-stroke" />
+  <g fill="none" stroke="#5C676B" stroke-width="1.4" vector-effect="non-scaling-stroke" stroke-linejoin="round">
+    <path d="M18.0,228.0 V17.0 H115.0 V228.0" />
+    <rect x="25.0" y="24.0" width="83.0" height="204.0" />
+    <line x1="100.0" y1="123.0" x2="88.0" y2="123.0" stroke-width="2.2" stroke-linecap="round" />
+    <circle cx="100.0" cy="123.0" r="2.2" />
+  </g>
+  <text x="66.5" y="38.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="6.2" fill="#5C676B"
+        text-anchor="middle" letter-spacing="0.4">DOOR 83 × 204</text><rect x="133.0" y="208.0" width="20" height="20" fill="#1E4F8F" fill-opacity="0.12" stroke="#1E4F8F" stroke-width="1.6" vector-effect="non-scaling-stroke" /><text x="143.0" y="204.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="5.6" fill="#1E4F8F" text-anchor="middle">20×20</text><rect x="160.0" y="188.0" width="20" height="40" fill="#1E4F8F" fill-opacity="0.12" stroke="#1E4F8F" stroke-width="1.6" vector-effect="non-scaling-stroke" /><text x="170.0" y="184.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="5.6" fill="#1E4F8F" text-anchor="middle">20×40</text><rect x="187.0" y="188.0" width="40" height="40" fill="#1E4F8F" fill-opacity="0.12" stroke="#1E4F8F" stroke-width="1.6" vector-effect="non-scaling-stroke" /><text x="207.0" y="184.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="5.6" fill="#1E4F8F" text-anchor="middle">40×40</text><rect x="234.0" y="168.0" width="40" height="60" fill="#1E4F8F" fill-opacity="0.12" stroke="#1E4F8F" stroke-width="1.6" vector-effect="non-scaling-stroke" /><text x="254.0" y="164.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="5.6" fill="#1E4F8F" text-anchor="middle">40×60</text>
+  <g>
+    <rect x="291.0" y="218.0" width="4.5" height="10" fill="#262B2E" /><rect x="291.0" y="208.0" width="4.5" height="10" fill="#F1F2EF" /><rect x="291.0" y="198.0" width="4.5" height="10" fill="#262B2E" /><rect x="291.0" y="188.0" width="4.5" height="10" fill="#F1F2EF" /><rect x="291.0" y="178.0" width="4.5" height="10" fill="#262B2E" /><rect x="291.0" y="168.0" width="4.5" height="10" fill="#F1F2EF" /><rect x="291.0" y="158.0" width="4.5" height="10" fill="#262B2E" /><rect x="291.0" y="148.0" width="4.5" height="10" fill="#F1F2EF" /><rect x="291.0" y="138.0" width="4.5" height="10" fill="#262B2E" /><rect x="291.0" y="128.0" width="4.5" height="10" fill="#F1F2EF" />
+    <rect x="291.0" y="128.0" width="4.5" height="100" fill="none" stroke="#262B2E" stroke-width="1"
+          vector-effect="non-scaling-stroke" />
+    <g stroke="#262B2E" stroke-width="1" vector-effect="non-scaling-stroke"><line x1="295.5" y1="228.0" x2="298.5" y2="228.0" /><line x1="295.5" y1="218.0" x2="298.5" y2="218.0" /><line x1="295.5" y1="208.0" x2="298.5" y2="208.0" /><line x1="295.5" y1="198.0" x2="298.5" y2="198.0" /><line x1="295.5" y1="188.0" x2="298.5" y2="188.0" /><line x1="295.5" y1="178.0" x2="298.5" y2="178.0" /><line x1="295.5" y1="168.0" x2="298.5" y2="168.0" /><line x1="295.5" y1="158.0" x2="298.5" y2="158.0" /><line x1="295.5" y1="148.0" x2="298.5" y2="148.0" /><line x1="295.5" y1="138.0" x2="298.5" y2="138.0" /><line x1="295.5" y1="128.0" x2="298.5" y2="128.0" /></g>
+    <text x="293.25" y="124.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="7.5" font-weight="600" fill="#262B2E"
+          text-anchor="middle">1 m</text>
+  </g>
+  <text x="133.0" y="242.0" font-family="Archivo, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="700" fill="#262B2E" letter-spacing="0.6">MIXED-SIZE SET</text>
+</svg>
