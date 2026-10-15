@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>Portrait blur test for iPhone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://storage.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script defer src="/hit.js"></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <header class="mast">
+    <p class="eyebrow">iPhone camera test</p>
+    <h1>Portrait-style photo in a web page</h1>
+    <p class="lead">Take a photo with the iPhone camera. The page keeps the person sharp, softens the background and tidies the light.</p>
+  </header>
+
+  <div class="pick">
+    <label class="btn btn-primary" data-track="portrait take">
+      <input class="vh" id="in-camera" type="file" accept="image/*" capture="environment">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
+      <span>Take photo</span>
+    </label>
+    <label class="btn" data-track="portrait library">
+      <input class="vh" id="in-library" type="file" accept="image/*">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v9.6l4.3-4.3 3.2 3.2 4.2-4.2L20 14.6V6H4zm11.5 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg>
+      <span>Choose from library</span>
+    </label>
+  </div>
+
+  <p class="private"><strong>Nothing is uploaded.</strong> The photo stays on this phone; all the work runs in the page. The page only downloads the AI model once (about <span id="dl-size">27 MB</span>).</p>
+
+  <p class="status" id="status" role="status" aria-live="polite">Loading the AI model in the background&hellip;</p>
+  <div class="bar" id="bar" hidden><span></span></div>
+
+  <section class="result" id="result" hidden>
+    <div class="cmp" id="cmp" aria-label="Before and after. Drag sideways to compare.">
+      <div class="cmp-after" id="slot-after"></div>
+      <div class="cmp-before" id="slot-before"></div>
+      <div class="cmp-line" id="cmp-line" aria-hidden="true"><span></span></div>
+      <span class="cmp-tag cmp-tag-l">Before</span>
+      <span class="cmp-tag cmp-tag-r">After</span>
+      <span class="cmp-dot" id="cmp-dot" hidden></span>
+      <div class="cmp-busy" id="cmp-busy" hidden><span>Working&hellip;</span></div>
+    </div>
+    <label class="row-label" for="split"><span>Before</span><span class="muted small">drag to compare</span><span>After</span></label>
+    <input id="split" class="range" type="range" min="0" max="100" value="50" step="1" aria-label="Before and after split">
+
+    <div class="kpis" id="kpis">
+      <div class="kpi"><div class="v num" id="k-time">&ndash;</div><div class="l">processing time</div></div>
+      <div class="kpi"><div class="v num" id="k-out">&ndash;</div><div class="l">result size (px)</div></div>
+      <div class="kpi"><div class="v num" id="k-in">&ndash;</div><div class="l">original size (px)</div></div>
+      <div class="kpi"><div class="v num" id="k-model">&ndash;</div><div class="l">model load (first time)</div></div>
+    </div>
+    <p class="muted small" id="k-steps"></p>
+
+    <div class="ctl">
+      <span class="ctl-name" id="mode-name">Subject</span>
+      <div class="seg" role="group" aria-labelledby="mode-name">
+        <button type="button" data-mode="person" aria-pressed="true" data-track="portrait mode person">Person</button>
+        <button type="button" data-mode="object" aria-pressed="false" data-track="portrait mode object">Object</button>
+      </div>
+      <p class="muted small" id="mode-help">Person mode finds people on its own.</p>
+    </div>
+
+    <div class="ctl">
+      <label class="ctl-name" for="blur">Background blur <span class="num" id="blur-v">60</span></label>
+      <input id="blur" class="range" type="range" min="0" max="100" value="60" step="1">
+    </div>
+
+    <label class="check">
+      <input id="light" type="checkbox" checked>
+      <span>Auto light (levels and exposure, weighted to the subject)</span>
+    </label>
+
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="btn-dl" data-track="portrait download">Download photo</button>
+      <button type="button" class="btn" id="btn-share" hidden data-track="portrait share">Save to Photos</button>
+    </div>
+    <p class="muted small" id="save-note"></p>
+  </section>
+
+  <p class="note"><strong>Honest note.</strong> Real Portrait Mode uses the iPhone's depth data, which a web page cannot read; this test uses an AI cutout, which works best on people.</p>
+
+  <section class="how">
+    <h2>What the page does</h2>
+    <ol>
+      <li>Opens the iPhone's own camera (full resolution, Apple autofocus and exposure). No custom camera.</li>
+      <li>Finds the subject with an on-device AI model (MediaPipe, CPU) and snaps the cutout edges to the photo.</li>
+      <li>Blurs the background more the farther it is from the subject, without a glow around the edges.</li>
+      <li>Lifts the light (levels and exposure) and lightly sharpens the subject.</li>
+    </ol>
+    <p class="muted small" id="tech"></p>
+  </section>
+</main>
+</body>
+</html>
