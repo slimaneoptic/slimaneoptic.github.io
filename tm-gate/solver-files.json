@@ -1,0 +1,36 @@
+{
+ "jspi": [
+  {
+   "name": "cp_sat_runtime-C-yaxgmf.wasm",
+   "raw": 7434975,
+   "gzip": 2627021,
+   "br": 1853250
+  },
+  {
+   "name": "cp_sat_runtime-DbI0Sx8Q.js",
+   "raw": 155176,
+   "gzip": 41339,
+   "br": 35231
+  }
+ ],
+ "asyncify": [
+  {
+   "name": "cp_sat_runtime_asyncify-BbDIArG2.js",
+   "raw": 173207,
+   "gzip": 44226,
+   "br": 37438
+  },
+  {
+   "name": "cp_sat_runtime_asyncify-DsO6wVBK.wasm",
+   "raw": 11887747,
+   "gzip": 3802671,
+   "br": 2581893
+  }
+ ],
+ "worker": {
+  "name": "solver-worker-DHl6spfI.js",
+  "raw": 506190,
+  "gzip": 140572,
+  "br": 115973
+ }
+}
