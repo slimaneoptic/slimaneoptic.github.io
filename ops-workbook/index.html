@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Operations workbook demo: inventory, purchasing, marketing and launch timeline</title>
+<meta name="description" content="Portfolio demonstration with invented sample data: a reconciling stock dashboard, reorder and expiry alerts, worked test cases, a CSV import check with an exceptions report, marketing campaigns and a launch timeline you can search, filter and print.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="/theme.js"></script>
+<script defer src="data.js"></script>
+<script defer src="app.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-ok" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4.8 8.2l2.1 2.1 4.3-4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 16 16"><path d="M8 1.6l6.6 12H1.4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6.2v3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="11.6" r="0.9" fill="currentColor"/></symbol>
+    <symbol id="i-no" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.3 5.3l5.4 5.4M10.7 5.3l-5.4 5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="4.8" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3" y="7" width="10" height="7.4" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 10 10"><path d="M5 1.5l3.6 6H1.4z" fill="currentColor"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M13.3 2.7L7.5 8.5M12 9.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-print" viewBox="0 0 16 16"><path d="M4.5 6V2.5h7V6M4.5 11.5h-2v-5h11v5h-2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M4.5 9.5h7v4h-7z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 16 16"><path d="M8 2.5v8M4.6 7.4L8 10.8l3.4-3.4M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 16 16"><path d="M3 8h9.5M9 4.5L12.5 8 9 11.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3.2 6.2A5.2 5.2 0 1 1 3 9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2.6 2.8v3.6h3.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="mast-top">
+    <p class="eyebrow">Operations workbook &middot; demo</p>
+    <span data-theme-slot></span>
+  </div>
+  <h1>Operations workbook: inventory, purchasing, marketing and launch timeline</h1>
+  <p class="demo-label" id="demo-label"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span>Portfolio demonstration with invented sample data, not client work.</span></p>
+  <p class="lede">A spreadsheet workbook for a supplement brand, filled with invented records. This page shows its records and what its formulas calculate: a stock dashboard that reconciles, reorder and expiry alerts, a warehouse CSV import with an exceptions report, marketing campaigns and a launch timeline you can search, filter and print. Worked test cases check the numbers, and the workbook file itself is in section <a href="#workbook">The workbook</a>.</p>
+  <div class="facts-row" id="facts-row" role="group" aria-label="About the sample data"></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#dashboard"><span class="n">1</span>Dashboard</a>
+    <a href="#stock"><span class="n">2</span>Stock by SKU</a>
+    <a href="#reconcile"><span class="n">3</span>How one SKU reconciles</a>
+    <a href="#tests"><span class="n">4</span>Worked test cases</a>
+    <a href="#purchasing"><span class="n">5</span>Purchase orders</a>
+    <a href="#expiry"><span class="n">6</span>Batch expiry</a>
+    <a href="#import"><span class="n">7</span>Import check</a>
+    <a href="#marketing"><span class="n">8</span>Marketing</a>
+    <a href="#timeline"><span class="n">9</span>Launch timeline</a>
+    <a href="#tasks"><span class="n">10</span>Action items</a>
+    <a href="#config"><span class="n">11</span>Config</a>
+    <a href="#workbook"><span class="n">12</span>The workbook</a>
+    <a href="#metrics"><span class="n">13</span>Metric definitions</a>
+  </nav>
+</header>
+
+<main id="main" tabindex="-1">
+<noscript><p class="load-error">This page needs JavaScript to show the sample data.</p></noscript>
+<div id="load-error" class="load-error" role="alert" hidden></div>
+
+<!-- 1 -->
+<section id="dashboard" aria-labelledby="h-dashboard">
+  <div class="sec-head"><span class="sec-no">1</span><h2 id="h-dashboard">Dashboard</h2></div>
+  <p class="sec-intro" id="dash-intro">Each tile opens the list behind it.</p>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<!-- 2 -->
+<section id="stock" aria-labelledby="h-stock">
+  <div class="sec-head"><span class="sec-no">2</span><h2 id="h-stock">Stock by SKU</h2></div>
+  <p class="sec-intro" id="stock-intro"></p>
+  <h3 class="sub-head" id="h-recsku">Reconciliation: movements and lot balances</h3>
+  <div class="tbl-head"><p class="note"><svg class="ico ico-ok" aria-hidden="true"><use href="#i-ok"/></svg> next to a recorded number: opening + receipts &minus; shipments &plusmn; adjustments gives exactly that number, recomputed in your browser. Difference = recorded stock &minus; the sum of the SKU&rsquo;s lot balances; anything other than zero shows in red.</p></div>
+  <div class="tbl-box" role="region" aria-labelledby="cap-recsku" tabindex="0">
+    <table class="sticky1" id="recsku-table">
+      <caption class="sr-only" id="cap-recsku">Reconciliation by SKU: opening balance and movements give the recorded stock, compared with the sum of the SKU&rsquo;s lot balances</caption>
+      <thead></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+  <h3 class="sub-head" id="h-reorder">Available stock and reorder alerts</h3>
+  <div class="rules" id="stock-rules"></div>
+  <div class="tbl-head"><p class="note">Select a column heading to sort.</p></div>
+  <div class="tbl-box" role="region" aria-labelledby="cap-stock" tabindex="0">
+    <table class="sticky1" id="stock-table">
+      <caption class="sr-only" id="cap-stock">Available stock by SKU: recorded, reserved, held in lots and available stock, reorder point, reorder quantity and status</caption>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <h3 class="sub-head" id="h-avail">Why available can be lower than recorded</h3>
+  <p class="sec-intro" id="avail-intro"></p>
+  <div class="two-col">
+    <div>
+      <h4 class="mini-head" id="h-res">Reservations</h4>
+      <div class="tbl-box" role="region" aria-labelledby="cap-res" tabindex="0">
+        <table id="res-table">
+          <caption class="sr-only" id="cap-res">Reservations: which ones count against available stock on the as-of date, and why</caption>
+          <thead><tr><th scope="col">ID</th><th scope="col">SKU</th><th scope="col" class="n">Qty</th><th scope="col">Status</th><th scope="col">Start</th><th scope="col">Release</th><th scope="col">Counts now</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <h4 class="mini-head" id="h-held">Units held in lots</h4>
+      <div class="tbl-box" role="region" aria-labelledby="cap-held" tabindex="0">
+        <table id="held-table">
+          <caption class="sr-only" id="cap-held">Lots whose units are held out of available stock, and why</caption>
+          <thead><tr><th scope="col">Lot</th><th scope="col">SKU</th><th scope="col" class="n">Held</th><th scope="col">Why</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="reconcile" aria-labelledby="h-reconcile">
+  <div class="sec-head"><span class="sec-no">3</span><h2 id="h-reconcile">How one SKU reconciles</h2></div>
+  <p class="sec-intro" id="recon-intro"></p>
+  <div class="recon-grid">
+    <div class="tbl-box" role="region" aria-labelledby="recon-cap" tabindex="0">
+      <table class="ledger" id="recon-table">
+        <caption class="sr-only" id="recon-cap">Movements of one SKU in date order, from the opening balance to the recorded stock</caption>
+        <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col" class="n">Change</th><th scope="col" class="n">Running total</th><th scope="col">Reference</th><th scope="col">Batch</th><th scope="col">Note</th></tr></thead>
+        <tbody></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div class="sumcard" id="recon-sum">
+      <h3 id="h-recon-sum">The reconciliation rule, checked</h3>
+      <dl class="eq" id="recon-eq"></dl>
+      <p class="match" id="recon-match"></p>
+      <div id="recon-vs"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="tests" aria-labelledby="h-tests">
+  <div class="sec-head"><span class="sec-no">4</span><h2 id="h-tests">Worked test cases</h2></div>
+  <p class="sec-intro" id="tc-intro"></p>
+  <div class="tc-grid" id="tc-grid"></div>
+</section>
+
+<!-- 5 -->
+<section id="purchasing" aria-labelledby="h-purchasing">
+  <div class="sec-head"><span class="sec-no">5</span><h2 id="h-purchasing">Purchase orders: outstanding and overdue</h2></div>
+  <p class="sec-intro" id="po-intro"></p>
+  <div class="tbl-box" role="region" aria-labelledby="cap-po" tabindex="0">
+    <table id="po-table">
+      <caption class="sr-only" id="cap-po">Purchase orders: outstanding first, overdue at the top, then by expected date</caption>
+      <thead><tr><th scope="col">PO</th><th scope="col">Expected</th><th scope="col">Days late</th><th scope="col">Status</th><th scope="col">SKU</th><th scope="col" class="n">Qty</th><th scope="col">Supplier</th><th scope="col">Ordered</th></tr></thead>
+    </table>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="expiry" aria-labelledby="h-expiry">
+  <div class="sec-head"><span class="sec-no">6</span><h2 id="h-expiry">Batch expiry</h2></div>
+  <p class="sec-intro" id="exp-intro"></p>
+  <p class="rule-box note-box" id="exp-note"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span>Expiration dates are supplied by the company; the workbook tracks them and does not judge product safety.</span></p>
+  <div class="windows" id="windows"></div>
+  <div class="tbl-box" role="region" aria-labelledby="cap-batch" tabindex="0">
+    <table id="batch-table">
+      <caption class="sr-only" id="cap-batch">Batches with stock on hand, grouped by days left until their expiry date</caption>
+      <thead><tr><th scope="col">Lot</th><th scope="col">Expiry date</th><th scope="col" class="n">Days left</th><th scope="col">SKU</th><th scope="col">Product</th><th scope="col" class="n">Qty</th></tr></thead>
+    </table>
+  </div>
+</section>
+
+<!-- 7 -->
+<section id="import" aria-labelledby="h-import">
+  <div class="sec-head"><span class="sec-no">7</span><h2 id="h-import">Import check: a warehouse CSV, staged and checked</h2></div>
+  <p class="sec-intro" id="imp-intro"></p>
+  <ol class="flow" id="imp-flow" aria-label="How an import moves through the workbook">
+    <li><strong>Import</strong><span>The warehouse CSV is pasted as values into the <code>Import_Staging</code> tab. Nothing else changes.</span></li>
+    <li><strong>Staging</strong><span>Every staged row gets a Result: Ready or Rejected.</span></li>
+    <li><strong>Checks</strong><span id="flow-checks">Formulas run the import checks from the Config tab on every row. Rejected rows are listed in the <code>Exceptions</code> tab in plain words.</span></li>
+    <li><strong>Append</strong><span>Ready rows appear in <code>Ready_To_Post</code> in ledger column order, with new lots from receipts in <code>Batches</code> order. A person pastes them as values into the next empty rows of <code>Inventory_Ledger</code> and <code>Batches</code>. Existing rows are never edited.</span></li>
+  </ol>
+  <p class="rule-box"><svg class="ico" aria-hidden="true"><use href="#i-lock"/></svg><span>Nothing is overwritten: rejected rows stay out of the ledger and wait in the exceptions report with what to fix, and a movement ID that is already in the ledger is always rejected.</span></p>
+  <div class="imp-top" id="imp-top"></div>
+
+  <h3 class="sub-head" id="h-seven">The seven import checks</h3>
+  <p class="sec-intro" id="seven-intro"></p>
+  <div class="tbl-box seven-box" role="region" aria-labelledby="cap-seven" tabindex="0">
+    <table id="seven-table" role="table">
+      <caption class="sr-only" id="cap-seven">The seven import checks, the rows of the sample file each one caught, and the workbook checks behind each one</caption>
+      <thead role="rowgroup"><tr role="row"><th scope="col" class="n" role="columnheader">#</th><th scope="col" role="columnheader">Check</th><th scope="col" role="columnheader">Caught in the sample file</th><th scope="col" role="columnheader">Workbook checks (Config)</th></tr></thead>
+      <tbody role="rowgroup"></tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-head" id="h-exc">Exceptions report</h3>
+  <div class="issues" id="imp-issues" role="group" aria-label="Exceptions by check"></div>
+  <ol class="exc-list" id="exc-list" aria-labelledby="h-exc"></ol>
+
+  <div class="dup" id="dup-panel"></div>
+
+  <h3 class="sub-head" id="h-imp-file">The staged rows</h3>
+  <div class="tbl-box" role="region" aria-labelledby="h-imp-rows" tabindex="0">
+    <table class="imp-table" id="imp-table">
+      <caption class="sr-only" id="h-imp-rows">Sample import rows; cells with a problem are marked</caption>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 8 -->
+<section id="marketing" aria-labelledby="h-marketing">
+  <div class="sec-head"><span class="sec-no">8</span><h2 id="h-marketing">Marketing campaigns</h2></div>
+  <p class="sec-intro">Platform-attributed revenue and company sales stay in separate columns and are never added together. A value that was not supplied shows as <span class="ns">not supplied</span>, never as zero. Each money figure is defined under <a href="#metrics">Metric definitions</a>.</p>
+  <div class="tbl-box" role="region" aria-labelledby="cap-mkt" tabindex="0">
+    <table class="mkt-table" id="mkt-table">
+      <caption class="sr-only" id="cap-mkt">Campaign tracker: products, channel, owner, launch date, status, planned and actual spend, platform-attributed revenue and company sales</caption>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="timeline" aria-labelledby="h-timeline">
+  <div class="sec-head"><span class="sec-no">9</span><h2 id="h-timeline">Launch timeline</h2></div>
+  <p class="sec-intro">Product and campaign milestones in date order, from the <code>Milestones</code> tab. Search and filter the list, then print it: the printout keeps only this list, with the filters you set.</p>
+
+  <div class="print-only print-head" id="print-head">
+    <h2>Launch timeline</h2>
+    <p class="demo">Portfolio demonstration with invented sample data, not client work.</p>
+    <p id="ph-meta"></p>
+    <p id="ph-filters"></p>
+    <p id="ph-count"></p>
+  </div>
+
+  <form class="tl-controls" id="tl-form" role="search" aria-label="Filter the launch timeline" novalidate>
+    <div class="field wide full-sm"><label for="tl-q">Search</label><input type="search" id="tl-q" name="q" autocomplete="off" spellcheck="false" placeholder="Milestone, owner, SKU, campaign"></div>
+    <div class="field full-sm"><label for="tl-product">Product</label><select id="tl-product" name="product"><option value="">All products</option></select></div>
+    <div class="field full-sm"><label for="tl-campaign">Campaign</label><select id="tl-campaign" name="campaign"><option value="">All campaigns</option></select></div>
+    <div class="field"><label for="tl-type">Type</label><select id="tl-type" name="type"><option value="">All types</option><option value="Product">Products only</option><option value="Campaign">Campaigns only</option></select></div>
+    <div class="field"><label for="tl-status">Status</label><select id="tl-status" name="status"><option value="">All statuses</option></select></div>
+    <div class="field"><label for="tl-from">From</label><input type="date" id="tl-from" name="from"></div>
+    <div class="field"><label for="tl-to">To</label><input type="date" id="tl-to" name="to"></div>
+    <div class="tl-actions">
+      <p class="tl-count" id="tl-count" role="status" aria-live="polite"></p>
+      <button type="button" class="btn" id="tl-reset"><svg class="ico" aria-hidden="true"><use href="#i-reset"/></svg>Reset filters</button>
+      <button type="button" class="btn primary" id="tl-print"><svg class="ico" aria-hidden="true"><use href="#i-print"/></svg>Print this list</button>
+    </div>
+  </form>
+  <p class="tl-help">A product filter also keeps the campaigns that feature that product. A campaign filter also keeps the milestones of the products it features. Use Type to keep one kind only. Dates are inclusive. The sample links open example.com, a domain reserved for examples; in a real workbook the Link column holds the link to the brief, asset or document.</p>
+
+  <div class="tbl-box tl-box">
+    <table class="tl-table" id="tl-table" role="table">
+      <caption class="sr-only">Launch timeline: product and campaign milestones in date order</caption>
+      <colgroup><col class="c-date"><col class="c-item"><col class="c-ms"><col class="c-owner"><col class="c-status"><col class="c-link"></colgroup>
+      <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Date</th><th scope="col" role="columnheader">Product or campaign</th><th scope="col" role="columnheader">Milestone</th><th scope="col" role="columnheader">Responsible</th><th scope="col" role="columnheader">Status</th><th scope="col" role="columnheader">Link</th></tr></thead>
+    </table>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="tasks" aria-labelledby="h-tasks">
+  <div class="sec-head"><span class="sec-no">10</span><h2 id="h-tasks">Action items</h2></div>
+  <p class="sec-intro" id="task-intro"></p>
+  <div class="tbl-box" role="region" aria-labelledby="cap-task" tabindex="0">
+    <table id="task-table">
+      <caption class="sr-only" id="cap-task">Action items with owners, due dates and status, by due date</caption>
+      <thead><tr><th scope="col">ID</th><th scope="col">Task</th><th scope="col">Due</th><th scope="col">Status</th><th scope="col">Owner</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="config" aria-labelledby="h-config">
+  <div class="sec-head"><span class="sec-no">11</span><h2 id="h-config">Config: the rules and lists in one tab</h2></div>
+  <p class="sec-intro" id="cfg-intro">The workbook&rsquo;s formulas read these settings and lists from the <code>Config</code> tab, so changing a value there changes the alerts everywhere without editing a formula. Reorder points are set per SKU on the <code>Products</code> tab.</p>
+  <div class="cfg-grid">
+    <div>
+      <h3 class="mini-head" id="h-cfg-set">Settings</h3>
+      <div class="tbl-box" role="region" aria-labelledby="cap-cfg-set" tabindex="0">
+        <table id="cfg-settings">
+          <caption class="sr-only" id="cap-cfg-set">Config settings: as-of date, opening balance date, expiry windows, reorder test and expired-lot rule</caption>
+          <thead><tr><th scope="col">Setting</th><th scope="col">Value</th><th scope="col">What it does</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="cfg-rules"></div>
+  </div>
+  <h3 class="mini-head" id="h-cfg-lists">Dropdown lists</h3>
+  <dl class="cfg-lists" id="cfg-lists"></dl>
+</section>
+
+<!-- 12 -->
+<section id="workbook" aria-labelledby="h-workbook">
+  <div class="sec-head"><span class="sec-no">12</span><h2 id="h-workbook">The workbook: tabs, IDs and columns</h2></div>
+  <div class="dl-row" id="dl-row"></div>
+
+  <h3 class="sub-head" id="h-tabs">One tab per record type, linked by stable IDs</h3>
+  <p class="sec-intro" id="tabs-intro"></p>
+  <div class="tbl-box" role="region" aria-labelledby="cap-tabs" tabindex="0">
+    <table class="sticky1" id="tab-table">
+      <caption class="sr-only" id="cap-tabs">Record tabs: what each covers, its ID column with an example, the tabs that point to it, records and room for rows</caption>
+      <thead><tr><th scope="col">Tab</th><th scope="col">Covers</th><th scope="col">Stable ID</th><th scope="col">Used in</th><th scope="col" class="n">Records</th><th scope="col" class="n">Room for</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h3 class="sub-head" id="h-cols">Input columns and locked formula columns</h3>
+  <p class="sec-intro" id="cols-intro"></p>
+  <ul class="legend" id="legend" aria-label="Column colour key used in the workbook"></ul>
+  <div class="cols-list" id="cols-list"></div>
+
+  <h3 class="sub-head" id="h-rc">Record checks</h3>
+  <p class="sec-intro" id="rc-intro"></p>
+  <div class="tbl-box narrow" role="region" aria-labelledby="cap-rc" tabindex="0">
+    <table id="rc-table">
+      <caption class="sr-only" id="cap-rc">Record checks by tab: rows checked and rows with a problem</caption>
+      <thead><tr><th scope="col">Tab</th><th scope="col" class="n">Rows checked</th><th scope="col" class="n">Rows with a problem</th></tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+
+  <h3 class="sub-head" id="h-sheets">Every tab</h3>
+  <div class="tbl-box" role="region" aria-labelledby="cap-sheet" tabindex="0">
+    <table id="sheet-table">
+      <caption class="sr-only" id="cap-sheet">Sheets in the workbook and what each one is for</caption>
+      <thead><tr><th scope="col" class="n">#</th><th scope="col">Sheet</th><th scope="col">Purpose</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 13 -->
+<section id="metrics" aria-labelledby="h-metrics">
+  <div class="sec-head"><span class="sec-no">13</span><h2 id="h-metrics">Metric definitions</h2></div>
+  <p class="sec-intro" id="metrics-intro">Definitions from the data file.</p>
+  <dl class="glossary" id="glossary"></dl>
+</section>
+</main>
+
+<footer class="foot">
+  <p>Portfolio demonstration with invented sample data, not client work. Northfield Nutrition is a fictional brand, and every record on this page is invented.</p>
+  <p>Every number on this page comes from one data file (data.js). That file is exported from the workbook after LibreOffice recalculates it, and the export is compared with an independent recomputation from the raw sample records. In your browser the page only counts rows, re-adds the reconciliation and test-case sums, compares dates with the as-of date, sorts and filters.</p>
+</footer>
+
+</div>
+</body>
+</html>
