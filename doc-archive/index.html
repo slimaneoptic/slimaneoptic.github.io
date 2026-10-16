@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Page images to a searchable archive: OCR, folders, duplicates and cited answers</title>
+<meta name="description" content="Portfolio demonstration on invented sample documents: OCR, AI folders, duplicate detection and answers that cite the exact page.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M10 7h9l5 5v13H10z' fill='none' stroke='%232A78D6' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M13.5 16h7M13.5 20h7' stroke='%23E6EBF2' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script src="/theme.js"></script>
+<script defer src="data.js"></script>
+<script defer src="app.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<a class="skip" href="#archive">Skip to the archive</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.2v4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="4.8" r="1" fill="currentColor"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1.8 4.2a1 1 0 0 1 1-1h3.3l1.5 1.6h5.6a1 1 0 0 1 1 1v6.9a1 1 0 0 1-1 1H2.8a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5l3.6 3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 16 16"><path d="M9.5 2.5h4v4M13.3 2.7L9.4 6.6M6.5 13.5h-4v-4M2.7 13.3l3.9-3.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 16 16"><path d="M10 3.5L5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-next" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 16 16"><rect x="5" y="5" width="8.5" height="8.5" rx="1.4" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M3.8 11H3a.8.8 0 0 1-.8-.8V3a.8.8 0 0 1 .8-.8h7.2a.8.8 0 0 1 .8.8v.8" fill="none" stroke="currentColor" stroke-width="1.4"/></symbol>
+    <symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="mast-top">
+    <p class="eyebrow">Document AI &middot; demo</p>
+    <span data-theme-slot></span>
+  </div>
+  <h1>Page images to a searchable archive: OCR, folders, duplicates and cited answers</h1>
+  <p class="demo-label"><svg class="ico" aria-hidden="true"><use href="#i-info"/></svg><span><span>Portfolio demonstration on invented sample documents, not client work.</span> <span class="demo-sub">All people, places, record numbers and organisations in it are invented.</span></span></p>
+  <p class="lede">Page images go in. Out comes an archive you can browse by AI folder and read page by page next to the OCR text, with duplicates flagged and answers that cite the exact page.</p>
+  <div class="tiles" id="tiles" role="group" aria-label="This run in numbers"></div>
+  <div class="stack" role="region" aria-labelledby="h-stack">
+    <h2 class="stack-h" id="h-stack">What runs in this demo</h2>
+    <dl class="facts" id="facts"></dl>
+  </div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#archive"><span class="n">1</span>The archive</a>
+    <a href="#duplicates"><span class="n">2</span>Duplicates</a>
+    <a href="#measured"><span class="n">3</span>Measured in this run</a>
+    <a href="#scale"><span class="n">4</span>How it scales (plan)</a>
+  </nav>
+</header>
+
+<main id="main">
+<noscript><p class="load-error">This page needs JavaScript to show the archive.</p></noscript>
+<div id="load-error" class="load-error" role="alert" hidden></div>
+
+<!-- 1 -->
+<section id="archive" aria-labelledby="h-archive">
+  <div class="sec-head"><span class="sec-no">1</span><h2 id="h-archive">The archive</h2></div>
+  <p class="sec-intro">Pick a folder, open a document, search the OCR text or ask a prepared question. Each citation opens the page it quotes and highlights the words. Each page says how it was read and, if it was read, how it scored against the known text; words Tesseract was unsure of are marked.</p>
+
+  <div class="app">
+    <div class="askbar">
+      <div class="search">
+        <label class="lab" for="q">Search the archive</label>
+        <div class="search-row">
+          <svg class="ico s-ico" aria-hidden="true"><use href="#i-search"/></svg>
+          <input type="search" id="q" autocomplete="off" spellcheck="false" placeholder="A name, a place or a year" aria-describedby="q-note q-status">
+          <button type="button" class="btn-ghost" id="q-clear" hidden>Clear</button>
+        </div>
+        <p class="q-status" id="q-status" aria-live="polite"></p>
+        <p class="ask-note" id="q-note">Keyword search in your browser on titles, names and the OCR text.</p>
+      </div>
+      <div class="ask">
+        <p class="lab" id="ask-lab">Ask the archive</p>
+        <div class="qlist" id="qlist" role="group" aria-labelledby="ask-lab"></div>
+        <p class="ask-note">Prepared questions: the answers were stored by the pipeline run, and this page makes no AI calls. Cited pages open next to the answer.</p>
+      </div>
+    </div>
+
+    <div class="panes">
+      <div class="pane folders" role="region" aria-labelledby="h-folders">
+        <div class="pane-h"><h3 id="h-folders"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>AI folders</h3></div>
+        <ul class="folder-list" id="folder-list"></ul>
+        <p class="why-box" id="why-box" hidden></p>
+      </div>
+      <div class="pane docs" id="docs-pane" role="region" aria-labelledby="h-docs">
+        <div class="pane-h"><h3 id="h-docs">Documents</h3><span class="pane-count" id="doc-count"></span></div>
+        <ul class="doc-list" id="doc-list" aria-labelledby="h-docs"></ul>
+        <div class="answer" id="answer" hidden></div>
+      </div>
+      <div class="pane viewer" id="viewer" role="region" aria-labelledby="h-viewer">
+        <div class="pane-h"><h3 id="h-viewer">Page viewer</h3></div>
+        <div class="v-wrap" id="v-wrap"></div>
+      </div>
+    </div>
+  </div>
+  <p class="sr-only" id="live" aria-live="polite"></p>
+</section>
+
+<!-- 2 -->
+<section id="duplicates" aria-labelledby="h-dups">
+  <div class="sec-head"><span class="sec-no">2</span><h2 id="h-dups">Duplicates</h2></div>
+  <p class="sec-intro">Pairs the pipeline flagged, side by side with the method, score and evidence, and below them the closest pair of different records, which stayed unflagged. Open any document to compare the pages.</p>
+  <div class="tbl-box">
+    <table class="dups" id="dups">
+      <caption class="sr-only">Duplicate pairs found by the pipeline</caption>
+      <thead><tr><th scope="col">Document</th><th scope="col">Flagged with</th><th scope="col">Kind</th><th scope="col" class="n">Score</th><th scope="col">Evidence</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="lookalike" id="lookalike" role="region" aria-labelledby="h-lookalike" hidden></div>
+</section>
+
+<!-- 3 -->
+<section id="measured" aria-labelledby="h-measured">
+  <div class="sec-head"><span class="sec-no">3</span><h2 id="h-measured">Measured in this run</h2></div>
+  <p class="sec-intro">The batch run that built this archive. Accuracy is scored against the text the generator drew on each page, and every page that was read is counted, errors included.</p>
+  <div class="tbl-box">
+    <table class="stats" id="stats">
+      <caption class="sr-only">Measurements from the pipeline run</caption>
+      <thead><tr><th scope="col">Measure</th><th scope="col" class="n">Value</th><th scope="col">Note</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="scale" aria-labelledby="h-scale">
+  <div class="sec-head"><span class="sec-no">4</span><h2 id="h-scale">How it scales on your platform</h2></div>
+  <div class="plan">
+    <p class="plan-head"><span class="tag plan-tag">Plan</span><span>This section is the build plan for a production platform. Nothing in it was run or measured in this demo.</span></p>
+    <ol class="steps">
+      <li><strong>Batch queue</strong><span>Uploads land in S3 and every page becomes a task on a queue (SQS). Workers take tasks in parallel, retry failures and report progress per batch, so a large job runs as many small tasks instead of one long one.</span></li>
+      <li><strong>Production OCR</strong><span>Amazon Textract reads printed text and handwriting and returns a confidence score for each word. Pages with low confidence go to a review list instead of being trusted as they are.</span></li>
+      <li><strong>Models on Bedrock</strong><span>Folder suggestions, summaries and answers run on Amazon Bedrock models inside your AWS account. Each AI result is stored with its page, so a re-run skips work that is already done.</span></li>
+      <li><strong>Cited search</strong><span>Page text and embeddings go into one search index (keyword plus vector). Answers quote the page they come from, and say so when no page supports an answer.</span></li>
+      <li><strong>Duplicates at volume</strong><span>Exact copies are caught by hashing. Near copies are compared by text fingerprints, only inside groups of likely matches, so the check stays fast as the archive grows.</span></li>
+      <li><strong>Configurable verticals</strong><span>Document types, fields and folder rules live in a configuration per vertical, so a new vertical is a configuration change, not new code.</span></li>
+      <li><strong>Later phases</strong><span>Document markup and forms; a secure API and an MCP server on top of the same search, with access control per customer; subscription billing with Stripe.</span></li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <p>Portfolio demonstration on invented sample documents, not client work. The documents, names and records in it are invented.</p>
+  <p id="foot-run">Every number, document and answer outside section 4 comes from one data file written by the pipeline run and its evaluation against the known text. Search runs in your browser on the stored OCR text; the page makes no AI calls.</p>
+</footer>
+
+</div>
+
+<dialog class="zoom" id="zoom" aria-labelledby="zoom-title">
+  <div class="zoom-bar">
+    <p id="zoom-title"></p>
+    <button type="button" class="btn-ghost" id="zoom-close"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg>Close</button>
+  </div>
+  <div class="zoom-body"><img id="zoom-img" alt=""></div>
+</dialog>
+</body>
+</html>
