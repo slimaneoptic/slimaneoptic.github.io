@@ -28,9 +28,9 @@
   }
  ],
  "worker": {
-  "name": "solver-worker-DHl6spfI.js",
-  "raw": 506190,
-  "gzip": 140572,
-  "br": 115973
+  "name": "solver-worker-DPhCYv-V.js + cp-sat-DaG9Diwp.js",
+  "raw": 515449,
+  "gzip": 143532,
+  "br": 118332
  }
 }
