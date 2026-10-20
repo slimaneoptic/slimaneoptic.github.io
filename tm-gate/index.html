@@ -11,7 +11,7 @@
 <script>window.coi={coepCredentialless:function(){return false},quiet:true};</script>
 <script src="./coi-serviceworker.js"></script>
 <script defer src="/hit.js"></script>
-  <script type="module" crossorigin src="./assets/index-D9o6mxkT.js"></script>
+  <script type="module" crossorigin src="./assets/index-CaIJtupq.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-D-xA3Lgp.css">
 </head>
 <body>
@@ -33,16 +33,18 @@
   </section>
   <p class="tip">Before you start, turn off Low Power Mode or battery saver: they cap the frame rate.</p>
   <button id="run" class="btn primary" type="button" disabled>Run the test</button>
+  <p class="tip">When the test runs, its results are sent to us automatically: device type, browser and test numbers (and the phone model if you type it). Nothing else.</p>
   <ol id="steps" class="steps" aria-live="polite"></ol>
   <section id="results" class="card results" aria-labelledby="h-results" hidden>
     <h2 id="h-results">Done</h2>
     <div id="verdicts" class="verdicts"></div>
+    <p id="sendnote" class="copynote" role="status"></p>
     <button id="copy" class="btn tape" type="button">Copy results</button>
     <p id="copynote" class="copynote" role="status"></p>
     <figure id="shotwrap" class="shot" hidden><img id="shot" alt="The 3D room this phone drew in the test"><figcaption>The 3D room drawn in the test.</figcaption></figure>
     <details id="textbox"><summary>Show the text</summary><pre id="text"></pre></details>
   </section>
-  <footer class="foot"><p>The results stay on this phone until you copy them.</p></footer>
+  <footer class="foot"><p>Results are sent to us automatically when the test runs. Copy results still works.</p></footer>
 </main>
 <div id="overlay" class="overlay" hidden><div id="stage" class="stage"></div><p id="hud" class="hud" role="status"></p></div>
 </body>
