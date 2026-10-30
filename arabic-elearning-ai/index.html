@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>سيناريو تفاعلي: موظف يتأخر في التسليم</title>
+<meta name="description" content="نشاط تعليمي تفاعلي بالعربية: سيناريو قيادي متفرع بثلاثة قرارات، تغذية راجعة لكل خيار، ونتيجة نهائية. عرض توضيحي بمحتوى متخيل.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#14202B; --paper:#F6F8FA; --card:#fff; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --good:#1B7F4B; --mid:#B26A00; --bad:#B3261E; --goodbg:#E8F5EE; --midbg:#FFF4E0; --badbg:#FDECEA; }
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans Arabic", system-ui, sans-serif; line-height:1.8; }
+.bar { height:3.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); }
+.bar a { color:var(--ink); text-decoration:none; font-weight:700; }
+.bar span { color:var(--slate); font-size:.95rem; }
+.bar a, .bar span { white-space:nowrap; }
+@media (max-width:560px) { .bar span { display:none; } }
+main { max-width:760px; margin:0 auto; padding:1.5rem 1rem 3rem; }
+h1 { font-size:clamp(1.4rem,4.5vw,2rem); line-height:1.4; margin:0 0 .4rem; }
+.lead { color:var(--slate); margin:0 0 1.2rem; }
+.progress { display:flex; gap:.4rem; margin:0 0 1rem; }
+.progress i { flex:1; height:6px; border-radius:3px; background:var(--rule); }
+.progress i.on { background:var(--blue); }
+.card { background:var(--card); border:1px solid var(--rule); border-radius:12px; padding:1.25rem; }
+.who { display:flex; align-items:center; gap:.75rem; margin:0 0 .8rem; }
+.avatar { width:2.6rem; height:2.6rem; border-radius:50%; display:grid; place-items:center; font-weight:700; color:#fff; flex-shrink:0; }
+.say { background:var(--paper); border-radius:10px; padding:.7rem .9rem; margin:0 0 1rem; }
+.q { font-weight:700; margin:0 0 .7rem; }
+.choices { display:grid; gap:.6rem; }
+.choices button { text-align:right; font:inherit; color:var(--ink); background:var(--card); border:2px solid var(--rule); border-radius:10px; padding:.75rem .9rem; cursor:pointer; line-height:1.6; }
+.choices button:hover, .choices button:focus-visible { border-color:var(--blue); outline:none; }
+.choices button[disabled] { cursor:default; opacity:.55; }
+.choices button.picked { opacity:1; border-color:var(--ink); }
+.fb { margin-top:1rem; border-radius:10px; padding:.8rem .95rem; display:none; }
+.fb.show { display:block; }
+.fb.good { background:var(--goodbg); border-right:4px solid var(--good); }
+.fb.mid { background:var(--midbg); border-right:4px solid var(--mid); }
+.fb.bad { background:var(--badbg); border-right:4px solid var(--bad); }
+.fb b { display:block; margin-bottom:.2rem; }
+.next { margin-top:1rem; font:inherit; font-weight:700; background:var(--ink); color:#fff; border:0; border-radius:8px; padding:.55rem 1.2rem; cursor:pointer; display:none; }
+.next.show { display:inline-block; }
+.next:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
+.score { font-size:2.6rem; font-weight:700; margin:.2rem 0; }
+.meter { height:10px; background:var(--rule); border-radius:5px; overflow:hidden; margin:.4rem 0 1rem; }
+.meter i { display:block; height:100%; background:var(--blue); }
+.path { margin:0; padding:0 1.2rem 0 0; }
+.path li { margin:.3rem 0; }
+.note { color:var(--slate); font-size:.92rem; margin-top:1.6rem; border-top:1px solid var(--rule); padding-top:1rem; }
+.note p { margin:.3rem 0; }
+.ltr { direction:ltr; unicode-bidi:isolate; }
+</style>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <a href="/">S'limane Chanchoul</a><span>عرض توضيحي: نشاط تعليمي تفاعلي بالعربية</span>
+</header>
+<main>
+  <h1>سيناريو قيادي: موظف يتأخر في التسليم</h1>
+  <p class="lead">أنت مشرف فريق. اتخذ ثلاثة قرارات، وكل اختيار يغيّر ما يحدث بعده. ستحصل على تغذية راجعة فورية ونتيجة في النهاية.</p>
+  <div class="progress" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <section class="card" id="stage" aria-live="polite"></section>
+  <div class="note">
+    <p><b>عن هذا العرض:</b> محتوى متخيَّل لغرض العرض فقط. صفحة HTML5 وJavaScript واحدة، من اليمين إلى اليسار، تعمل على الجوال، ويمكن تغليفها بصيغة SCORM لأي منصة تعلّم.</p>
+    <p>السيناريو مكتوب كبيانات منفصلة عن الواجهة، لذلك يمكن تحويل ملف تدريبي (PowerPoint أو PDF) إلى سيناريو جديد بمساعدة الذكاء الاصطناعي ثم مراجعته سطرًا بسطر بالعربية.</p>
+  </div>
+</main>
+<script>
+const S = {
+  start: {
+    step: 1, who: "سارة", color: "#2A78D6",
+    say: "سارة من أكفأ أعضاء فريقك، لكنها تأخرت في تسليم تقريرين خلال هذا الشهر. اليوم صباحًا لم يصل التقرير الأسبوعي في موعده، والمدير ينتظره قبل الظهر.",
+    q: "ما أول خطوة تقوم بها؟",
+    c: [
+      { t: "أرسل لها رسالة أمام الفريق: «التقرير متأخر للمرة الثالثة، أرسليه الآن».", p: 0, k: "bad",
+        f: "اللوم العلني يحرج الموظف ويضعه في موقف دفاعي، ولا يكشف سبب التأخر. قد يصل التقرير، لكن الثقة تتراجع.", n: "defensive" },
+      { t: "أطلب منها حديثًا قصيرًا على انفراد لأفهم ما الذي يحدث.", p: 2, k: "good",
+        f: "الحديث الخاص يحفظ كرامة الموظف ويفتح الباب لمعرفة السبب الحقيقي قبل الحكم. هذه بداية المشرف الفعّال.", n: "talk" },
+      { t: "أكتب التقرير بنفسي هذه المرة حتى لا يتأخر على المدير.", p: 1, k: "mid",
+        f: "حللت مشكلة اليوم، لكن السبب ما زال قائمًا، وقد تتكرر المشكلة الأسبوع القادم وأنت تتحمل عملًا ليس لك.", n: "cover" }
+    ]
+  },
+  talk: {
+    step: 2, who: "سارة", color: "#2A78D6",
+    say: "«آسفة، أعرف أنني تأخرت. أصبحت أتولى طلبات العملاء الجديدة منذ بداية الشهر، ولم يعد لدي وقت كافٍ للتقارير.»",
+    q: "كيف تردّ؟",
+    c: [
+      { t: "«هذا ليس عذرًا، التقارير جزء من عملك.»", p: 0, k: "bad",
+        f: "تجاهلت سببًا حقيقيًا يتعلق بتوزيع العمل. ستلتزم سارة شكليًا، لكن الضغط سيستمر وقد تفقد حماسها.", n: "plan_weak" },
+      { t: "«شكرًا لصراحتك. لنراجع معًا مهامك هذا الشهر ونحدد الأولويات.»", p: 2, k: "good",
+        f: "استمعت ثم انتقلت إلى الحل. مراجعة عبء العمل مع الموظف تجعله شريكًا في الحل لا متهمًا.", n: "plan_good" },
+      { t: "«سأخبر المدير أن عليك ضغطًا، وهو يقرر.»", p: 1, k: "mid",
+        f: "رفع الأمر قد يكون مفيدًا لاحقًا، لكن توزيع العمل داخل فريقك من مسؤوليتك أنت أولًا.", n: "plan_weak" }
+    ]
+  },
+  defensive: {
+    step: 2, who: "سارة", color: "#2A78D6",
+    say: "أرسلت سارة التقرير بعد نصف ساعة، ثم كتبت لك: «كان بإمكانك أن تكلمني على انفراد.» وبقية الفريق لاحظ الموقف.",
+    q: "ماذا تفعل الآن؟",
+    c: [
+      { t: "أعتذر لها على انفراد، وأطلب حديثًا لأفهم سبب التأخر.", p: 1, k: "mid",
+        f: "الاعتذار يصلح جزءًا من الضرر ويعيد فتح الحوار. كان أفضل لو بدأت بالحديث الخاص من البداية.", n: "plan_good" },
+      { t: "لا أعلّق. التقرير وصل، وهذا ما يهم.", p: 0, k: "bad",
+        f: "تجاهل رد الفعل يترك أثرًا سلبيًا على الثقة داخل الفريق كله، لا على سارة وحدها.", n: "plan_weak" }
+    ]
+  },
+  cover: {
+    step: 2, who: "أنت", color: "#5B6B7A",
+    say: "وصل التقرير في موعده. في نهاية اليوم لاحظت أن سارة غادرت متأخرة وتبدو مرهقة.",
+    q: "ما خطوتك التالية؟",
+    c: [
+      { t: "أطلب منها حديثًا قصيرًا غدًا لأفهم ما الذي يضغط عليها.", p: 2, k: "good",
+        f: "ممتاز: حوّلت الحل المؤقت إلى فرصة لمعرفة السبب. الملاحظة قبل الحكم من مهارات القيادة المهمة.", n: "plan_good" },
+      { t: "أستمر في كتابة التقارير بنفسي حتى تهدأ الأمور.", p: 0, k: "bad",
+        f: "ستصبح هذه عادة: عبء إضافي عليك، ولا تتعلم سارة ولا تُحل المشكلة.", n: "plan_weak" }
+    ]
+  },
+  plan_good: {
+    step: 3, who: "سارة", color: "#2A78D6",
+    say: "اتفقتما أن طلبات العملاء الجديدة تأخذ نحو نصف وقتها. بقي أن تقررا كيف يُنجز التقرير الأسبوعي في موعده.",
+    q: "أي اتفاق تختار؟",
+    c: [
+      { t: "ننقل نصف طلبات العملاء إلى زميل لديه وقت، وتسلّم سارة التقرير كل أربعاء، ونراجع الوضع بعد أسبوعين.", p: 2, k: "good",
+        f: "اتفاق واضح: إعادة توزيع، وموعد محدد، ونقطة متابعة. هذا ما يحوّل الحديث إلى نتيجة.", n: "end" },
+      { t: "«حاولي أن تنظمي وقتك أفضل.»", p: 0, k: "bad",
+        f: "نصيحة عامة بلا تغيير حقيقي. المشكلة كانت في حجم العمل، لا في تنظيم الوقت فقط.", n: "end" },
+      { t: "نؤجل موعد التقرير إلى نهاية الأسبوع دون تغيير في المهام.", p: 1, k: "mid",
+        f: "حل جزئي يخفف الضغط، لكنه يؤخر المعلومة على المدير ولا يعالج حجم العمل.", n: "end" }
+    ]
+  },
+  plan_weak: {
+    step: 3, who: "أنت", color: "#5B6B7A",
+    say: "بعد أسبوع تأخر التقرير مرة أخرى، وبدأ المدير يسألك عن السبب.",
+    q: "ماذا تقول للمدير؟",
+    c: [
+      { t: "«سأجلس مع سارة اليوم لنراجع حجم عملها، وأعود إليك بخطة قبل نهاية الأسبوع.»", p: 2, k: "good",
+        f: "تحمّلت المسؤولية ووعدت بخطوة محددة وموعد. تأخر الحل، لكنك عدت إلى الطريق الصحيح.", n: "end" },
+      { t: "«سارة لا تلتزم بالمواعيد.»", p: 0, k: "bad",
+        f: "إلقاء اللوم على الموظف أمام الإدارة يضعف صورتك كمشرف، ولا يحل المشكلة.", n: "end" }
+    ]
+  }
+};
+const MAX = 6;
+let score = 0, trail = [];
+const stage = document.getElementById("stage");
+const bars = document.querySelectorAll(".progress i");
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+function setProgress(n) { bars.forEach((b, i) => b.classList.toggle("on", i < n)); }
+function show(id) {
+  if (id === "end") return finish();
+  const s = S[id]; setProgress(s.step);
+  stage.replaceChildren();
+  const who = el("div", "who"); const av = el("div", "avatar", s.who.charAt(0)); av.style.background = s.color;
+  who.append(av, el("b", "", s.who)); stage.append(who, el("p", "say", s.say), el("p", "q", s.q));
+  const box = el("div", "choices"); const fb = el("div", "fb"); const nx = el("button", "next", "التالي ←");
+  s.c.forEach(c => {
+    const b = el("button", "", c.t); b.type = "button";
+    b.onclick = () => {
+      box.querySelectorAll("button").forEach(x => x.disabled = true); b.classList.add("picked");
+      score += c.p; trail.push({ t: c.t, k: c.k });
+      fb.className = "fb show " + c.k; fb.replaceChildren(el("b", "", c.k === "good" ? "قرار موفق" : c.k === "mid" ? "قرار مقبول جزئيًا" : "قرار يحتاج مراجعة"), document.createTextNode(c.f));
+      nx.classList.add("show"); nx.onclick = () => show(c.n); nx.focus();
+    };
+    box.append(b);
+  });
+  stage.append(box, fb, nx);
+  box.querySelector("button").focus();
+}
+function finish() {
+  setProgress(4); stage.replaceChildren();
+  const pct = Math.round(score / MAX * 100);
+  const msg = pct >= 80 ? "أسلوب قيادي متوازن: استمعت، وفهمت السبب، وخرجت باتفاق واضح." : pct >= 50 ? "بداية جيدة، مع قرارات تحتاج إلى مزيد من الحوار قبل الحكم." : "راجع خطواتك: ابدأ بالحديث الخاص، وافهم السبب، ثم اتفق على خطة واضحة.";
+  stage.append(el("p", "q", "نتيجتك"));
+  const sc = el("div", "score"); sc.append(el("span", "ltr", score + " / " + MAX)); stage.append(sc);
+  const m = el("div", "meter"); const i = el("i"); i.style.width = pct + "%"; m.append(i); stage.append(m, el("p", "", msg), el("p", "q", "مسارك:"));
+  const ol = el("ol", "path"); trail.forEach(x => ol.append(el("li", "", (x.k === "good" ? "✔ " : x.k === "mid" ? "◐ " : "✘ ") + x.t))); stage.append(ol);
+  const again = el("button", "next show", "أعد المحاولة"); again.onclick = () => { score = 0; trail = []; show("start"); }; stage.append(again);
+}
+show("start");
+</script>
+</body>
+</html>
