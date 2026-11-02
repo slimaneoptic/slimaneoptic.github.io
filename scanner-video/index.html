@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tutorial video from a script: Playwright + Remotion demo</title>
+<meta name="description" content="A tutorial video generated from a script: Playwright drives the app, Remotion adds captions and click highlights.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+video { display: block; width: 100%; height: auto; border-radius: 10px; background: #14202B; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+ol { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.45rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.kpi div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+code { font-size: .9em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+pre { background: var(--codebg); border: 1px solid var(--rule); border-radius: 8px; padding: .9rem 1rem; overflow-x: auto; font-size: .84rem; line-height: 1.45; margin: 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Tutorial video from a script</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Tutorial videos from a script: Playwright + Remotion</h1>
+  <p class="lead">A tutorial video generated from a script: Playwright drives the app, Remotion adds captions and click highlights.</p>
+  <p class="status"><b>Status:</b> Demo on our own public <a href="/screener-demo/">stock screener page</a>, standing in for your app. Captions only, no voiceover. The video below is the real render from the script shown on this page.</p>
+
+  <figure><video src="tutorial.mp4" poster="poster.jpg" width="1280" height="720" controls muted playsinline preload="metadata"
+    aria-label="Tutorial video: screening stocks by ROIC on the stock screener, with captions, click highlights and zoom"></video>
+  <figcaption>Rendered by Remotion from a Playwright recording of the 6-step script below. No editing by hand.</figcaption></figure>
+
+  <div class="kpi"><div>Video length<b>38.8 s</b></div><div>Steps in the script<b>6</b></div>
+  <div>Playwright recording<b>41.2 s</b></div><div>Remotion render<b>18.2 s</b></div></div>
+
+  <h2>How it works</h2>
+  <ol>
+    <li><b>Write the script.</b> Each step is an action (go to a page, click, type, hover) on a CSS selector, plus one caption sentence. A caption can pull live text from the page, like the match count.</li>
+    <li><b>Playwright plays it.</b> Headless Chromium at 1280x720 runs the steps, records the screen, and saves a timeline: when each step happened and where each click landed on screen.</li>
+    <li><b>Remotion renders the video.</b> It reads the recording and the timeline and adds a title card, a caption for each step, a highlight, click ring and zoom on each target, and an outro. One command, <code>npm run build-video</code>, redoes it all.</li>
+  </ol>
+
+  <h2>The script behind this video</h2>
+  <pre><code>{
+  &quot;title&quot;: &quot;Stock Screener: screening by ROIC&quot;,
+  &quot;subtitle&quot;: &quot;Find large companies with high returns on capital&quot;,
+  &quot;url&quot;: &quot;https://slimanechanchoul.com/screener-demo/&quot;,
+  &quot;viewport&quot;: {
+    &quot;width&quot;: 1280,
+    &quot;height&quot;: 720
+  },
+  &quot;steps&quot;: [
+    {
+      &quot;action&quot;: &quot;goto&quot;,
+      &quot;waitFor&quot;: &quot;#count&quot;,
+      &quot;hold&quot;: 3500,
+      &quot;caption&quot;: &quot;This screener covers every US-listed stock. You build a screen from conditions.&quot;
+    },
+    {
+      &quot;action&quot;: &quot;click&quot;,
+      &quot;selector&quot;: &quot;[data-preset=\&quot;roic\&quot;]&quot;,
+      &quot;hold&quot;: 4000,
+      &quot;caption&quot;: &quot;Start from a preset: ROIC 15%+, revenue up 10%+, market cap above $1B. {{#count}}.&quot;
+    },
+    {
+      &quot;action&quot;: &quot;type&quot;,
+      &quot;selector&quot;: &quot;#conds .cond:nth-child(1) input&quot;,
+      &quot;text&quot;: &quot;20&quot;,
+      &quot;hold&quot;: 2500,
+      &quot;caption&quot;: &quot;Raise the first condition: ROIC of at least 20%.&quot;
+    },
+    {
+      &quot;action&quot;: &quot;click&quot;,
+      &quot;selector&quot;: &quot;#run&quot;,
+      &quot;hold&quot;: 3500,
+      &quot;caption&quot;: &quot;Click Run screen. Now {{#count}} pass all three conditions.&quot;
+    },
+    {
+      &quot;action&quot;: &quot;click&quot;,
+      &quot;selector&quot;: &quot;#out th[data-k=\&quot;roic\&quot;]&quot;,
+      &quot;hold&quot;: 4000,
+      &quot;caption&quot;: &quot;Click the ROIC column to sort: the highest returns on capital come first.&quot;
+    },
+    {
+      &quot;action&quot;: &quot;hover&quot;,
+      &quot;selector&quot;: &quot;#out tbody tr:first-child td.sym&quot;,
+      &quot;hold&quot;: 4500,
+      &quot;caption&quot;: &quot;Scroll back to the name: {{#out tbody tr:first-child td.sym}} leads with a ROIC of {{#out tbody tr:first-child td:nth-child(7)}}%.&quot;
+    }
+  ]
+}</code></pre>
+
+  <p class="small">Run on 2026-11-02: one <code>npm run build-video</code> recorded the steps in 41.2 s and rendered the 38.8 s MP4 (H.264, 2.9 MB) in 18.2 s. Numbers in the captions (182 and 134 matches, ANET's ROIC) were read from the page during that run.</p>
+</main>
+</body></html>
