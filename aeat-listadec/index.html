@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AEAT ListaDecV4 test interface</title>
+<meta name="description" content="A test interface for AEAT's Bandeja de Entrada list service (ListaDecV4), built from AEAT's public WSDL and XSD: endpoints, request builder, schema validation and diagnostics.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=Overpass+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #067647; --okbg: #ECFDF3; --bad: #B42318; --badbg: #FEF3F2; --warn: #B54708; --warnbg: #FFFAEB; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.25rem; margin: 2.6rem 0 0.7rem; padding-top: .4rem; border-top: 1px solid var(--rule); }
+h3 { font-size: 1rem; margin: 1.6rem 0 .5rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 48rem; }
+p { max-width: 48rem; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+.kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; margin: 1rem 0; }
+.kpi div { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .7rem; font-size: .88rem; color: var(--slate); }
+.kpi b { display: block; font-size: 1.35rem; color: var(--ink); }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; max-width: none; }
+.callout { background: var(--warnbg); border: 1px solid var(--rule); border-left: 4px solid var(--warn); border-radius: 8px; padding: .7rem .9rem; margin: 1rem 0; font-size: .95rem; max-width: none; }
+code, pre, textarea, .mono { font-family: "Overpass Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--codebg); border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; overflow-x: auto; font-size: .8rem; line-height: 1.45; margin: .4rem 0 0; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+ul.src { padding-left: 1.1rem; margin: .4rem 0; font-size: .92rem; }
+ul.src li { margin: .25rem 0; }
+.tw { overflow-x: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; vertical-align: top; padding: .5rem .65rem; border-bottom: 1px solid var(--rule); }
+tr:last-child th, tr:last-child td { border-bottom: 0; }
+thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--slate); background: var(--paper); }
+tbody th { font-weight: 600; white-space: nowrap; }
+code.url { white-space: nowrap; }
+.tw td:first-child code, table.fields td:nth-child(2) code { white-space: nowrap; overflow-wrap: normal; }
+.diag td:first-child { font-weight: 600; min-width: 9rem; }
+.diag td { min-width: 12rem; }
+.tag { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; border-radius: 4px; padding: .05rem .35rem; margin: .1rem .2rem .1rem 0; white-space: nowrap; }
+.tag.fact { background: var(--okbg); color: var(--ok); }
+.tag.exp { background: var(--warnbg); color: var(--warn); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 19rem) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+form.builder { display: grid; gap: .7rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .9rem; }
+label { display: grid; gap: .2rem; font-size: .85rem; font-weight: 600; }
+label span { font-weight: 400; color: var(--slate); font-size: .78rem; }
+input, select, textarea { font: inherit; font-size: .92rem; color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: .45rem .55rem; min-width: 0; width: 100%; box-sizing: border-box; }
+textarea { font-size: .8rem; line-height: 1.45; resize: vertical; white-space: pre; overflow: auto; }
+.out { min-width: 0; }
+.outhead { display: flex; justify-content: space-between; align-items: center; gap: .6rem; flex-wrap: wrap; margin: .2rem 0 .3rem; font-size: .85rem; color: var(--slate); }
+.btn { font: inherit; font-size: .85rem; font-weight: 600; border-radius: 6px; padding: .4rem .75rem; border: 1px solid var(--btnbg); background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.btns { display: flex; flex-wrap: wrap; gap: .45rem; margin: .5rem 0; }
+.check { border-radius: 8px; padding: .6rem .8rem; margin-top: .6rem; font-size: .88rem; border: 1px solid var(--rule); }
+.check.ok { background: var(--okbg); }
+.check.bad { background: var(--badbg); }
+.check.warn { background: var(--warnbg); }
+.check b { display: block; margin-bottom: .15rem; }
+.check ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: .8rem .9rem; min-width: 0; }
+.card h3 { margin: 0 0 .3rem; font-size: .98rem; }
+.card .note { color: var(--slate); font-size: .85rem; margin: 0 0 .5rem; }
+.card details { margin: .5rem 0; font-size: .85rem; }
+.card summary { cursor: pointer; color: var(--blue); }
+.pill { display: inline-block; font-size: .8rem; font-weight: 600; border-radius: 999px; padding: .1rem .6rem; }
+.pill.ok { background: var(--okbg); color: var(--ok); }
+.pill.bad { background: var(--badbg); color: var(--bad); }
+ul.errs { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .82rem; }
+ul.errs code { background: none; padding: 0; }
+.keys td, .keys th { font-size: .8rem; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .cards { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .kpi { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; }
+  table.stack thead { display: none; }
+  table.stack tr { display: block; padding: .55rem .65rem; border-bottom: 1px solid var(--rule); }
+  table.stack tr:last-child { border-bottom: 0; }
+  table.stack td { display: block; border: 0; padding: .15rem 0; min-width: 0; }
+  table.stack td[data-l]::before { content: attr(data-l) ": "; color: var(--slate); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  table.stack td code { white-space: normal; overflow-wrap: anywhere; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">AEAT ListaDecV4 test interface</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>AEAT inbox list service (ListaDecV4): a test interface</h1>
+  <p class="lead">For the Agencia Tributaria "Bandeja de Entrada" list service: the service and endpoints read from AEAT's own WSDL, a SOAP request builder, validation against AEAT's XSD, and the failure modes a test run must name.</p>
+  <p class="status"><b>Status:</b> Built from AEAT's public WSDL and XSD files (downloaded 2026-11-02, links below). No live call to AEAT: that needs your client certificate. Responses on this page are samples in the schema's format; two of them are AEAT's own printed samples.</p>
+
+  <div class="kpi"><div>Endpoints in the WSDL<b>5</b></div><div>Operations<b>1</b></div>
+  <div>Example requests checked<b>6</b></div><div>Passed the XSD<b>2 of 6</b></div></div>
+
+  <h2 id="service">1. Service read from AEAT's public WSDL</h2>
+  <p>Everything in this section is generated by a script from the files AEAT publishes on its customs web services index (<a href="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/ws.html">ws.html</a>, section "Bandeja de Entrada", row "Lista de Declaraciones"):</p>
+  <ul class="src">
+    <li>WSDL: <a href="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4.wsdl">ListaDecV4.wsdl</a></li>
+    <li>Request schema: <a href="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd">ListaDecV4Ent.xsd</a></li>
+    <li>Response schema: <a href="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd">ListaDecV4Sal.xsd</a></li>
+    <li>AEAT's guide: <a href="https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/dit/adu/adht/banent/BandejaEntrada.pdf">BandejaEntrada.pdf</a> (v0.14, 2023-02-01)</li>
+  </ul>
+
+  <h3>Operation and binding</h3>
+  <div class="tw"><table><tbody><tr><th scope="row">Service</th><td><code>ListaDecV4Service</code></td></tr><tr><th scope="row">Port type / operation</th><td><code>ListaDecV4 / ListaDecV4</code></td></tr><tr><th scope="row">Binding</th><td><code>ListaDecV4SoapBinding: SOAP 1.1, style=document, use=literal (in) / literal (out)</code></td></tr><tr><th scope="row">SOAPAction</th><td><code>&quot;&quot; (empty string)</code></td></tr><tr><th scope="row">Input message</th><td><code>Entrada, part ListaDecV4Ent = element ListaDecV4Ent:ListaDecV4Ent</code></td></tr><tr><th scope="row">Output message</th><td><code>Salida, part ListaDecV4Sal = element ListaDecV4Sal:ListaDecV4Sal</code></td></tr><tr><th scope="row">Schemas imported</th><td><code>ListaDecV4Ent.xsd, ListaDecV4Sal.xsd</code></td></tr></tbody></table></div>
+
+  <h3>Endpoints (one per WSDL port)</h3>
+  <div class="tw"><table class="stack"><thead><tr><th>Port</th><th>Environment</th><th>Network</th><th>Address</th></tr></thead><tbody><tr><td><code>ListaDecV4Internet</code></td><td data-l="Environment">Production</td><td data-l="Network">Internet</td><td><code class="url">https://www1.agenciatributaria.gob.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP</code></td></tr><tr><td><code>ListaDecV4Intranet</code></td><td data-l="Environment">Production</td><td data-l="Network">Administration intranet; no public DNS answer (checked 2026-11-02)</td><td><code class="url">https://ws.ia.aeat.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP</code></td></tr><tr><td><code>ListaDecV4PruebasInternet</code></td><td data-l="Environment">Test (pre-production)</td><td data-l="Network">Internet</td><td><code class="url">https://prewww1.aeat.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP</code></td></tr><tr><td><code>ListaDecV4PruebasIntranet</code></td><td data-l="Environment">Test (pre-production)</td><td data-l="Network">Administration intranet; no public DNS answer (checked 2026-11-02)</td><td><code class="url">https://ws.iax.aeat.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP</code></td></tr><tr><td><code>ListaDecV4CertificadoSello</code></td><td data-l="Environment">Production, seal certificate</td><td data-l="Network">Internet</td><td><code class="url">https://www10.agenciatributaria.gob.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP</code></td></tr></tbody></table></div>
+  <p class="small" style="margin-top:.5rem">The WSDL names environments only through port names ("Pruebas" = test, "CertificadoSello" = seal certificate). AEAT's guide (section 4.2) calls the <code>prewww1.aeat.es</code> host "preproducción".</p>
+
+  <h3>Request: ListaDecV4Ent</h3>
+  <p class="small" style="margin-top:0">XSD note: "Esquema para solicitar a la Bandeja de Entrada la LISTA DE LAS RESPUESTAS pendientes de leer."</p>
+  <div class="tw"><table class="fields stack"><thead><tr><th>Field</th><th>Type</th><th>Occurs</th><th>XSD note</th></tr></thead><tbody><tr><td><code>ListaDecV4Ent/@tipoRespuesta</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">optional</td><td></td></tr><tr><td><code>ListaDecV4Ent/declarante</code></td><td data-l="Type"><code>declaranteType (complex)</code></td><td data-l="Occurs">1..1</td><td>declaranteType: Información del declarante, de la persona en cuyo nombre se presenta la declaración. NifDeclarante: Nif del declarante NombreDeclarante: Nombre del declarante</td></tr><tr><td><code>ListaDecV4Ent/declarante/NifDeclarante</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">1..1</td><td></td></tr><tr><td><code>ListaDecV4Ent/declarante/NombreDeclarante</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">1..1</td><td></td></tr><tr><td><code>ListaDecV4Ent/declarante/Inicio</code></td><td data-l="Type"><code>xs:dateTime</code></td><td data-l="Occurs">0..1</td><td></td></tr><tr><td><code>ListaDecV4Ent/declarante/Fin</code></td><td data-l="Type"><code>xs:dateTime</code></td><td data-l="Occurs">0..1</td><td></td></tr></tbody></table></div>
+
+  <h3>Response: ListaDecV4Sal</h3>
+  <div class="tw"><table class="fields stack"><thead><tr><th>Field</th><th>Type</th><th>Occurs</th><th>XSD note</th></tr></thead><tbody><tr><td><code>ListaDecV4Sal/declaracion</code></td><td data-l="Type"><code>declaracionType (complex)</code></td><td data-l="Occurs">0..n</td><td>Información necesaria para recuperar una declaración pendiente de leer de la Bandeja de Entrada. clave: Clave que identifica univocamente cada respuesta. referencia: Referencia del mensaje. Coincide con el valor del campo ID del mensaje de petición. tipoRespuesta: Tipo de respuesta. Está en función del tipo de Servicio Web utilizado.</td></tr><tr><td><code>ListaDecV4Sal/declaracion/clave</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">1..1</td><td></td></tr><tr><td><code>ListaDecV4Sal/declaracion/referencia</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">1..1</td><td></td></tr><tr><td><code>ListaDecV4Sal/declaracion/tipoRespuesta</code></td><td data-l="Type"><code>xs:string</code></td><td data-l="Occurs">1..1</td><td></td></tr></tbody></table></div>
+
+  <h3>What AEAT's guide adds</h3>
+  <ul class="src">
+    <li>Each call returns at most 1000 keys, the oldest first, in ascending order of creation date (section 4.1).</li>
+    <li>Each <code>clave</code> is then used with the second service, DetalleV5SOAP, to download that message (section 4.2).</li>
+    <li>The declarant can be someone other than the signer, under a power of representation (apoderamiento). Asking for a type you are not authorised for returns an error (sections 4.1 and 7).</li>
+    <li>SOAP 1.1, document/literal; errors come back as a SOAP <code>Fault</code> (sections 2 and 6.3).</li>
+  </ul>
+
+  <h2 id="builder">2. Request builder</h2>
+  <p>Fill the fields; the SOAP envelope below updates as you type. The XML box can also be edited by hand, and the check runs on whatever is in it.</p>
+  <div class="grid2">
+    <form class="builder" id="form" autocomplete="off" onsubmit="return false">
+      <label>Endpoint<select id="f-endpoint"></select></label>
+      <label>NifDeclarante <span>required, xs:string</span><input id="f-nif" value="89890001K"></label>
+      <label>NombreDeclarante <span>required, xs:string</span><input id="f-name" value="CERTUNOT"></label>
+      <label>Inicio <span>optional, xs:dateTime, e.g. 2026-10-01T00:00:00</span><input id="f-ini" placeholder="leave empty to omit"></label>
+      <label>Fin <span>optional, xs:dateTime</span><input id="f-fin" placeholder="leave empty to omit"></label>
+      <label>tipoRespuesta <span>optional attribute, filters by response type</span><input id="f-tipo" placeholder="leave empty to omit"></label>
+      <div class="btns"><button type="button" class="btn ghost" id="b-reset">Reset to AEAT test values</button></div>
+    </form>
+    <div class="out">
+      <div class="outhead"><span>HTTP request line and headers</span></div>
+      <pre id="http" aria-label="HTTP request preview"></pre>
+      <div class="outhead"><span>SOAP envelope (editable)</span><button type="button" class="btn ghost" id="b-copy">Copy XML</button></div>
+      <textarea id="reqxml" rows="16" spellcheck="false" aria-label="SOAP envelope XML"></textarea>
+      <div id="reqcheck" class="check" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:.6rem">The live check is a small validator generated from ListaDecV4Ent.xsd (element names, namespace, order, required fields, allowed attributes, the xs:dateTime format). Its valid/invalid verdict was tested against lxml on the 9 examples in section 3 plus 20 edge cases (time zones, leap days, field order, extra attributes) and agrees on all 29. Like libxml2, it rejects spaces around a date. The reference check is lxml, below.</p>
+
+  <h2 id="validation">3. Validation against AEAT's XSD</h2>
+  <p>Each message was checked with lxml (libxml2) against the real ListaDecV4Ent.xsd or ListaDecV4Sal.xsd. The verdict and the error text are the real output; only the long namespace is shortened to <code>{…Ent.xsd}</code>.</p>
+  <h3>Requests</h3>
+  <div class="cards"><article class="card" id="ex-r1"><h3>Minimal request</h3><p class="note">Only the two required fields. NIF and name are the test values printed in AEAT&#x27;s guide.</p><span class="pill ok">Valid against ListaDecV4Ent.xsd</span><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd&quot;&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+        &lt;NombreDeclarante&gt;CERTUNOT&lt;/NombreDeclarante&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r1">Open in the builder</button></article><article class="card" id="ex-r2"><h3>Filter by response type and date range</h3><p class="note">The optional tipoRespuesta attribute (value taken from AEAT&#x27;s guide, section 4.1.1) plus the optional Inicio and Fin dates.</p><span class="pill ok">Valid against ListaDecV4Ent.xsd</span><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd&quot; tipoRespuesta=&quot;https://www2.agenciatributaria.gob.es/ADUA/internet/es/aeat/advu/jdit/ws/VUAinfoDesdeAduanasV1.wsdl&quot;&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+        &lt;NombreDeclarante&gt;CERTUNOT&lt;/NombreDeclarante&gt;
+        &lt;Inicio&gt;2026-10-01T00:00:00&lt;/Inicio&gt;
+        &lt;Fin&gt;2026-11-01T00:00:00&lt;/Fin&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r2">Open in the builder</button></article><article class="card" id="ex-r3"><h3>AEAT&#x27;s printed example, copied as printed</h3><p class="note">Guide v0.14, section 4.1. It carries Id, NifDeclarante and NombreDeclarante as attributes on the root, which the XSD does not declare. The guide says the example is for requests sent through AEAT&#x27;s Aduanet client.</p><span class="pill bad">Rejected by ListaDecV4Ent.xsd</span><ul class="errs"><li><code>Element &#x27;{…Ent.xsd}ListaDecV4Ent&#x27;, attribute &#x27;Id&#x27;: The attribute &#x27;Id&#x27; is not allowed.</code></li><li><code>Element &#x27;{…Ent.xsd}ListaDecV4Ent&#x27;, attribute &#x27;NifDeclarante&#x27;: The attribute &#x27;NifDeclarante&#x27; is not allowed.</code></li><li><code>Element &#x27;{…Ent.xsd}ListaDecV4Ent&#x27;, attribute &#x27;NombreDeclarante&#x27;: The attribute &#x27;NombreDeclarante&#x27; is not allowed.</code></li></ul><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd&quot; Id=&quot;ban0021&quot; NifDeclarante=&quot;89890001K&quot; NombreDeclarante=&quot;CERTUNOT&quot;&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+        &lt;NombreDeclarante&gt;CERTUNOT&lt;/NombreDeclarante&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r3">Open in the builder</button></article><article class="card" id="ex-r4"><h3>Broken: required name missing</h3><p class="note">NombreDeclarante is minOccurs=1.</p><span class="pill bad">Rejected by ListaDecV4Ent.xsd</span><ul class="errs"><li><code>Element &#x27;{…Ent.xsd}declarante&#x27;: Missing child element(s). Expected is ( {…Ent.xsd}NombreDeclarante ).</code></li></ul><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd&quot;&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r4">Open in the builder</button></article><article class="card" id="ex-r5"><h3>Broken: date without a time</h3><p class="note">Inicio is xs:dateTime, so a plain date is rejected.</p><span class="pill bad">Rejected by ListaDecV4Ent.xsd</span><ul class="errs"><li><code>Element &#x27;{…Ent.xsd}Inicio&#x27;: &#x27;2026-10-01&#x27; is not a valid value of the atomic type &#x27;xs:dateTime&#x27;.</code></li></ul><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd&quot;&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+        &lt;NombreDeclarante&gt;CERTUNOT&lt;/NombreDeclarante&gt;
+        &lt;Inicio&gt;2026-10-01&lt;/Inicio&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r5">Open in the builder</button></article><article class="card" id="ex-r6"><h3>Broken: namespace left out</h3><p class="note">A common slip when the XML is built by hand: same tags, no xmlns.</p><span class="pill bad">Rejected by ListaDecV4Ent.xsd</span><ul class="errs"><li><code>Element &#x27;ListaDecV4Ent&#x27;: No matching global declaration available for the validation root.</code></li></ul><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Ent&gt;
+      &lt;declarante&gt;
+        &lt;NifDeclarante&gt;89890001K&lt;/NifDeclarante&gt;
+        &lt;NombreDeclarante&gt;CERTUNOT&lt;/NombreDeclarante&gt;
+      &lt;/declarante&gt;
+    &lt;/ListaDecV4Ent&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="r6">Open in the builder</button></article></div>
+  <p class="callout"><b>Worth knowing:</b> AEAT's own printed request example fails strict validation against AEAT's own XSD, because of the three extra attributes on the root. Whether AEAT's server rejects it was not tested (that needs a certificate). The builder follows the XSD.</p>
+  <h3>Responses</h3>
+  <div class="cards"><article class="card" id="ex-s1"><h3>AEAT&#x27;s printed sample response</h3><p class="note">Guide v0.14, section 4.1: two pending messages.</p><span class="pill ok">Valid against ListaDecV4Sal.xsd</span><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Sal xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd&quot;&gt;
+      &lt;declaracion&gt;
+        &lt;clave&gt;20140711105307692046&lt;/clave&gt;
+        &lt;referencia&gt;14071110530765195ES00028A1034S&lt;/referencia&gt;
+        &lt;tipoRespuesta&gt;https://www2.agenciatributaria.gob.es/ADUA/internet/es/aeat/dit/adu/adi1/emcssw/Ie813RsV3.wsdl&lt;/tipoRespuesta&gt;
+      &lt;/declaracion&gt;
+      &lt;declaracion&gt;
+        &lt;clave&gt;20140715112822653968&lt;/clave&gt;
+        &lt;referencia&gt;14071511282261621ES00028H1004T&lt;/referencia&gt;
+        &lt;tipoRespuesta&gt;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/dit/adu/adi0/emcs/sw/Ie118RsV1.wsdl&lt;/tipoRespuesta&gt;
+      &lt;/declaracion&gt;
+    &lt;/ListaDecV4Sal&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="s1">Open in the response checker</button></article><article class="card" id="ex-s2"><h3>Empty list</h3><p class="note">Zero declaracion elements. The XSD allows it (minOccurs=0): nothing pending, not an error.</p><span class="pill ok">Valid against ListaDecV4Sal.xsd</span><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Sal xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd&quot;/&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="s2">Open in the response checker</button></article><article class="card" id="ex-s3"><h3>Broken sample: tipoRespuesta missing</h3><p class="note">Made up to show response validation: each declaracion needs clave, referencia and tipoRespuesta.</p><span class="pill bad">Rejected by ListaDecV4Sal.xsd</span><ul class="errs"><li><code>Element &#x27;{…Sal.xsd}declaracion&#x27;: Missing child element(s). Expected is ( {…Sal.xsd}tipoRespuesta ).</code></li></ul><details><summary>Show the XML</summary><pre><code>&lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
+  &lt;soapenv:Body&gt;
+    &lt;ListaDecV4Sal xmlns=&quot;https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd&quot;&gt;
+      &lt;declaracion&gt;
+        &lt;clave&gt;20140711105307692046&lt;/clave&gt;
+        &lt;referencia&gt;14071110530765195ES00028A1034S&lt;/referencia&gt;
+      &lt;/declaracion&gt;
+    &lt;/ListaDecV4Sal&gt;
+  &lt;/soapenv:Body&gt;
+&lt;/soapenv:Envelope&gt;</code></pre></details><button type="button" class="btn ghost" data-load="s3">Open in the response checker</button></article></div>
+
+  <h2 id="diagnostics">4. Diagnostics a test run must name</h2>
+  <p><span class="tag fact">Fact</span> = read in AEAT's WSDL, XSD or guide, or checked on 2026-11-02. <span class="tag exp">Expected</span> = general SOAP/TLS behaviour, not seen on AEAT yet.</p>
+  <div class="tw"><table class="diag stack"><thead><tr><th>Failure</th><th>What is known</th><th>How the test interface detects it</th></tr></thead><tbody>
+    <tr><td>No client certificate / TLS handshake refused</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> The three internet hosts all ask for a client certificate in the TLS 1.2 handshake. www1 (production) and prewww1 (pre-production) list the same 100 accepted CAs, among them FNMT-RCM "AC Representación" and Camerfirma; www10 (seal certificate) lists 55. Checked with <code>openssl s_client</code>; no request was sent.<br><span class="tag exp">Expected</span> Without a certificate: a handshake error or an HTML error page, not SOAP.</td>
+        <td data-l="Detect">Connection-level error before any HTTP status (the cURL error number in PHP), or a body that is not XML. Log the certificate subject, issuer and expiry before each call.</td></tr>
+    <tr><td>Certificate expired or from an unlisted CA</td>
+        <td data-l="Known"><span class="tag exp">Expected</span> The handshake fails the same way.</td>
+        <td data-l="Detect">Before calling: check the validity dates, and that the issuer is in the CA list the server sends during the handshake.</td></tr>
+    <tr><td>Wrong endpoint</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> The WSDL lists 5 addresses; the 2 intranet hosts do not resolve in public DNS. <code>prewww1.aeat.es</code> is pre-production.<br><span class="tag exp">Expected</span> Production messages are not visible in pre-production, so a test run there can return an empty list.</td>
+        <td data-l="Detect">The configured URL must equal one of the WSDL port addresses. Then DNS error vs HTTP 404 vs non-XML body, each named separately. The test page shows which environment it called.</td></tr>
+    <tr><td>Schema error in the request</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> See section 3: lxml names the exact element or attribute.</td>
+        <td data-l="Detect">Validate the Body against ListaDecV4Ent.xsd before sending, and refuse to send on error.</td></tr>
+    <tr><td>SOAP Fault from AEAT</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> Guide 6.3: faultcode <code>soapenv:Server</code> means resend; <code>soapenv:Client</code> means the request is formally wrong or reuses a reference with different content, so do not resend.<br><span class="tag exp">Expected</span> AEAT's own error code sits in faultstring or detail; the files do not define its format.</td>
+        <td data-l="Detect">Parse Body/Fault, show faultcode, faultstring and detail verbatim, and mark it "retry" or "do not retry" from the faultcode.</td></tr>
+    <tr><td>No answer, or not the expected XML</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> Guide 6.3: if the transmission does not complete or the reply is not the expected XML, resend.</td>
+        <td data-l="Detect">Timeout, unparseable body, or a body that fails ListaDecV4Sal.xsd.</td></tr>
+    <tr><td>Empty list</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> A ListaDecV4Sal with zero <code>declaracion</code> is valid (minOccurs=0): nothing pending, not an error.</td>
+        <td data-l="Detect">After the schema check, count = 0 shows "no pending messages", in a different colour from errors.</td></tr>
+    <tr><td>List cut at 1000</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> Guide 4.1: at most 1000 keys per call, oldest first.</td>
+        <td data-l="Detect">Count = 1000 shows "more may be waiting: read these, then call again".</td></tr>
+    <tr><td>Not authorised for this declarant or type</td>
+        <td data-l="Known"><span class="tag fact">Fact</span> Guide 7: filtering by a type you are not authorised for returns an error.<br><span class="tag exp">Expected</span> It arrives as a SOAP Fault.</td>
+        <td data-l="Detect">Show the certificate holder next to NifDeclarante so a representation problem is visible at once.</td></tr>
+  </tbody></table></div>
+
+  <h3>Response checker</h3>
+  <p>Paste a response body (or load a sample). It is classified with the rules above. The Fault and HTML samples are written by me in standard SOAP 1.1 form; their text is not an AEAT message.</p>
+  <div class="btns" id="resbtns"></div>
+  <textarea id="resxml" rows="12" spellcheck="false" aria-label="Response XML"></textarea>
+  <div id="rescheck" class="check" role="status" aria-live="polite"></div>
+
+  <h2 id="laravel">5. In a Laravel app</h2>
+  <p>Plan for the client's stack, not built here:</p>
+  <ul class="src">
+    <li>One service class behind the middleware: load the certificate and key (PEM), build this envelope, validate it with <code>DOMDocument::schemaValidate()</code> against the same ListaDecV4Ent.xsd, then POST it to the chosen endpoint with the certificate on the TLS connection.</li>
+    <li>Each call logs the endpoint, certificate subject and expiry, HTTP status or cURL error, faultcode, and the number of keys returned.</li>
+    <li>The test interface (this page, inside the app) runs against pre-production first, then production, and shows each failure by its name from section 4.</li>
+  </ul>
+
+  <p class="small">Built on 2026-11-02 by a Python script from the downloaded WSDL and XSD (SHA-256 recorded). Validation: lxml 6.1.3 (libxml2 2.14.6). TLS check: openssl s_client handshake only, no HTTP request.</p>
+</main>
+<script type="application/json" id="data">{"nsEnt": "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd", "nsSal": "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd", "ent": {"tns": "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd", "root": "ListaDecV4Ent", "doc": "Esquema para solicitar a la Bandeja de Entrada la LISTA DE LAS RESPUESTAS pendientes de leer.", "model": {"ctype": "ListaDecV4Ent", "doc": "", "seq": [{"name": "declarante", "min": 1, "max": "1", "type": "declaranteType", "complex": {"ctype": "declaranteType", "doc": "declaranteType: Información del declarante, de la persona en cuyo nombre se presenta la declaración. NifDeclarante: Nif del declarante NombreDeclarante: Nombre del declarante", "seq": [{"name": "NifDeclarante", "min": 1, "max": "1", "type": "string"}, {"name": "NombreDeclarante", "min": 1, "max": "1", "type": "string"}, {"name": "Inicio", "min": 0, "max": "1", "type": "dateTime"}, {"name": "Fin", "min": 0, "max": "1", "type": "dateTime"}], "attrs": []}}], "attrs": [{"name": "tipoRespuesta", "type": "string", "use": "optional"}]}}, "sal": {"tns": "https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd", "root": "ListaDecV4Sal", "doc": "Esquema del mensaje de respuesta al solicitar a la Bandeja de Entrada la LISTA DE LAS RESPUESTAS pendientes de leer. Este mensaje proporciona información de cada una de las declaraciones pendientes de leer en la Bandeja de Entrada.", "model": {"ctype": "ListaDecV4Sal", "doc": "", "seq": [{"name": "declaracion", "min": 0, "max": "unbounded", "type": "declaracionType", "complex": {"ctype": "declaracionType", "doc": "Información necesaria para recuperar una declaración pendiente de leer de la Bandeja de Entrada. clave: Clave que identifica univocamente cada respuesta. referencia: Referencia del mensaje. Coincide con el valor del campo ID del mensaje de petición. tipoRespuesta: Tipo de respuesta. Está en función del tipo de Servicio Web utilizado.", "seq": [{"name": "clave", "min": 1, "max": "1", "type": "string"}, {"name": "referencia", "min": 1, "max": "1", "type": "string"}, {"name": "tipoRespuesta", "min": 1, "max": "1", "type": "string"}], "attrs": []}}], "attrs": []}}, "ports": [{"name": "ListaDecV4Internet", "binding": "ListaDecV4SoapBinding", "address": "https://www1.agenciatributaria.gob.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP"}, {"name": "ListaDecV4PruebasInternet", "binding": "ListaDecV4SoapBinding", "address": "https://prewww1.aeat.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP"}, {"name": "ListaDecV4CertificadoSello", "binding": "ListaDecV4SoapBinding", "address": "https://www10.agenciatributaria.gob.es/wlpl/ADHT-BAND/ws/li/ListaDecV4SOAP"}], "soapAction": "", "examples": [{"id": "r1", "kind": "request", "title": "Minimal request", "note": "Only the two required fields. NIF and name are the test values printed in AEAT's guide.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd\">\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n        <NombreDeclarante>CERTUNOT<\/NombreDeclarante>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": true, "lxml_errors": []}, {"id": "r2", "kind": "request", "title": "Filter by response type and date range", "note": "The optional tipoRespuesta attribute (value taken from AEAT's guide, section 4.1.1) plus the optional Inicio and Fin dates.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd\" tipoRespuesta=\"https://www2.agenciatributaria.gob.es/ADUA/internet/es/aeat/advu/jdit/ws/VUAinfoDesdeAduanasV1.wsdl\">\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n        <NombreDeclarante>CERTUNOT<\/NombreDeclarante>\n        <Inicio>2026-10-01T00:00:00<\/Inicio>\n        <Fin>2026-11-01T00:00:00<\/Fin>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": true, "lxml_errors": []}, {"id": "r3", "kind": "request", "title": "AEAT's printed example, copied as printed", "note": "Guide v0.14, section 4.1. It carries Id, NifDeclarante and NombreDeclarante as attributes on the root, which the XSD does not declare. The guide says the example is for requests sent through AEAT's Aduanet client.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd\" Id=\"ban0021\" NifDeclarante=\"89890001K\" NombreDeclarante=\"CERTUNOT\">\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n        <NombreDeclarante>CERTUNOT<\/NombreDeclarante>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": false, "lxml_errors": ["Element '{…Ent.xsd}ListaDecV4Ent', attribute 'Id': The attribute 'Id' is not allowed.", "Element '{…Ent.xsd}ListaDecV4Ent', attribute 'NifDeclarante': The attribute 'NifDeclarante' is not allowed.", "Element '{…Ent.xsd}ListaDecV4Ent', attribute 'NombreDeclarante': The attribute 'NombreDeclarante' is not allowed."]}, {"id": "r4", "kind": "request", "title": "Broken: required name missing", "note": "NombreDeclarante is minOccurs=1.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd\">\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": false, "lxml_errors": ["Element '{…Ent.xsd}declarante': Missing child element(s). Expected is ( {…Ent.xsd}NombreDeclarante )."]}, {"id": "r5", "kind": "request", "title": "Broken: date without a time", "note": "Inicio is xs:dateTime, so a plain date is rejected.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Ent.xsd\">\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n        <NombreDeclarante>CERTUNOT<\/NombreDeclarante>\n        <Inicio>2026-10-01<\/Inicio>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": false, "lxml_errors": ["Element '{…Ent.xsd}Inicio': '2026-10-01' is not a valid value of the atomic type 'xs:dateTime'."]}, {"id": "r6", "kind": "request", "title": "Broken: namespace left out", "note": "A common slip when the XML is built by hand: same tags, no xmlns.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Ent>\n      <declarante>\n        <NifDeclarante>89890001K<\/NifDeclarante>\n        <NombreDeclarante>CERTUNOT<\/NombreDeclarante>\n      <\/declarante>\n    <\/ListaDecV4Ent>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": false, "lxml_errors": ["Element 'ListaDecV4Ent': No matching global declaration available for the validation root."]}, {"id": "s1", "kind": "response", "title": "AEAT's printed sample response", "note": "Guide v0.14, section 4.1: two pending messages.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Sal xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd\">\n      <declaracion>\n        <clave>20140711105307692046<\/clave>\n        <referencia>14071110530765195ES00028A1034S<\/referencia>\n        <tipoRespuesta>https://www2.agenciatributaria.gob.es/ADUA/internet/es/aeat/dit/adu/adi1/emcssw/Ie813RsV3.wsdl<\/tipoRespuesta>\n      <\/declaracion>\n      <declaracion>\n        <clave>20140715112822653968<\/clave>\n        <referencia>14071511282261621ES00028H1004T<\/referencia>\n        <tipoRespuesta>https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/dit/adu/adi0/emcs/sw/Ie118RsV1.wsdl<\/tipoRespuesta>\n      <\/declaracion>\n    <\/ListaDecV4Sal>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": true, "lxml_errors": []}, {"id": "s2", "kind": "response", "title": "Empty list", "note": "Zero declaracion elements. The XSD allows it (minOccurs=0): nothing pending, not an error.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Sal xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd\"/>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": true, "lxml_errors": []}, {"id": "s3", "kind": "response", "title": "Broken sample: tipoRespuesta missing", "note": "Made up to show response validation: each declaracion needs clave, referencia and tipoRespuesta.", "xml": "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">\n  <soapenv:Body>\n    <ListaDecV4Sal xmlns=\"https://www2.agenciatributaria.gob.es/static_files/common/internet/dep/aduanas/es/aeat/adht/band/ws/li/ListaDecV4Sal.xsd\">\n      <declaracion>\n        <clave>20140711105307692046<\/clave>\n        <referencia>14071110530765195ES00028A1034S<\/referencia>\n      <\/declaracion>\n    <\/ListaDecV4Sal>\n  <\/soapenv:Body>\n<\/soapenv:Envelope>", "lxml_valid": false, "lxml_errors": ["Element '{…Sal.xsd}declaracion': Missing child element(s). Expected is ( {…Sal.xsd}tipoRespuesta )."]}]}</script>
+<script>
+(function () {
+  "use strict";
+  var D = JSON.parse(document.getElementById("data").textContent);
+  var ENV = "http://schemas.xmlsoap.org/soap/envelope/";
+  var $ = function (id) { return document.getElementById(id); };
+
+  function escText(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function escAttr(s) { return escText(s).replace(/"/g, "&quot;"); }
+  function shortNs(s) { return s.split(D.nsEnt).join("…Ent.xsd").split(D.nsSal).join("…Sal.xsd"); }
+
+  // ---- xs:dateTime (XSD 1.0 lexical form)
+  function isDateTime(v) {
+    var m = /^(-?)(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-](\d{2}):(\d{2}))?$/.exec(v);
+    if (!m) return false;
+    var y = parseInt(m[2], 10), mo = +m[3], d = +m[4], h = +m[5], mi = +m[6], s = +m[7];
+    if ((m[2].length > 4 && m[2][0] === "0") || (y === 0 && m[2].length === 4)) return false;
+    if (mo < 1 || mo > 12 || d < 1) return false;
+    var leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+    if (m[1] === "-") leap = ((y - 1) % 4 === 0 && (y - 1) % 100 !== 0) || (y - 1) % 400 === 0;
+    var dim = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1];
+    if (d > dim) return false;
+    if (h === 24) { if (mi !== 0 || s !== 0 || (m[8] && /[1-9]/.test(m[8]))) return false; }
+    else if (h > 23) return false;
+    if (mi > 59 || s > 59) return false;
+    if (m[9] && m[9] !== "Z") { var th = +m[10], tm = +m[11]; if (tm > 59 || th > 14 || (th === 14 && tm !== 0)) return false; }
+    return true;
+  }
+
+  // ---- validator driven by the content model extracted from the XSD
+  function kids(el) { var a = []; for (var c = el.firstElementChild; c; c = c.nextElementSibling) a.push(c); return a; }
+  function nm(el) { return (el.namespaceURI ? "{" + el.namespaceURI + "}" : "") + el.localName; }
+  function hasText(el) { for (var n = el.firstChild; n; n = n.nextSibling) if ((n.nodeType === 3 || n.nodeType === 4) && n.nodeValue.trim()) return true; return false; }
+  function checkAttrs(el, m, errs) {
+    var allowed = {}; m.attrs.forEach(function (a) { allowed[a.name] = a; });
+    for (var i = 0; i < el.attributes.length; i++) {
+      var a = el.attributes[i];
+      if (a.name === "xmlns" || a.name.indexOf("xmlns:") === 0) continue;
+      if (a.namespaceURI || !allowed[a.localName]) errs.push("Element " + nm(el) + ", attribute '" + a.name + "': not allowed.");
+    }
+    m.attrs.forEach(function (a) { if (a.use === "required" && !el.hasAttribute(a.name)) errs.push("Element " + nm(el) + ": attribute '" + a.name + "' is required."); });
+  }
+  function checkComplex(el, m, ns, errs) {
+    checkAttrs(el, m, errs);
+    if (hasText(el)) errs.push("Element " + nm(el) + ": text content is not allowed here.");
+    var k = kids(el), i = 0;
+    m.seq.forEach(function (item) {
+      var count = 0, max = item.max === "unbounded" ? Infinity : +item.max;
+      while (i < k.length && count < max && k[i].namespaceURI === ns && k[i].localName === item.name) {
+        checkItem(k[i], item, ns, errs); count++; i++;
+      }
+      if (count < item.min) errs.push("Element " + nm(el) + ": missing child {" + ns + "}" + item.name + (i < k.length ? " (found " + nm(k[i]) + " instead)" : "") + ".");
+    });
+    if (i < k.length) errs.push("Element " + nm(k[i]) + ": this element is not expected here.");
+  }
+  function checkItem(el, item, ns, errs) {
+    if (item.complex) return checkComplex(el, item.complex, ns, errs);
+    if (el.firstElementChild) errs.push("Element " + nm(el) + ": child elements are not allowed (simple type).");
+    var v = el.textContent;
+    if (el.attributes.length) for (var j = 0; j < el.attributes.length; j++) { var a = el.attributes[j]; if (a.name !== "xmlns" && a.name.indexOf("xmlns:") !== 0) errs.push("Element " + nm(el) + ", attribute '" + a.name + "': not allowed."); }
+    if (item.type === "dateTime" && !isDateTime(v)) errs.push("Element " + nm(el) + ": '" + v + "' is not a valid xs:dateTime.");
+  }
+  function parse(text) {
+    var doc = new DOMParser().parseFromString(text, "application/xml");
+    var pe = doc.getElementsByTagName("parsererror");
+    if (pe.length || !doc.documentElement) return { error: "Not well-formed XML" + (pe.length ? ": " + pe[0].textContent.split("\n").filter(Boolean)[0] : "") };
+    return { doc: doc };
+  }
+  function payloadOf(doc) {
+    var r = doc.documentElement;
+    if (r.namespaceURI === ENV && r.localName === "Envelope") {
+      var body = kids(r).filter(function (c) { return c.namespaceURI === ENV && c.localName === "Body"; })[0];
+      if (!body) return { error: "SOAP Envelope without a Body." };
+      var p = kids(body)[0];
+      if (!p) return { error: "SOAP Body is empty." };
+      return { el: p, envelope: true };
+    }
+    return { el: r, envelope: false };
+  }
+  // returns {ok, errs}
+  function validate(text, schema) {
+    var p = parse(text); if (p.error) return { ok: false, errs: [p.error] };
+    var b = payloadOf(p.doc); if (b.error) return { ok: false, errs: [b.error] };
+    var el = b.el, errs = [];
+    if (el.namespaceURI !== schema.tns || el.localName !== schema.root) {
+      errs.push("Element " + nm(el) + ": no matching global declaration (expected {" + schema.tns + "}" + schema.root + ").");
+    } else checkComplex(el, schema.model, schema.tns, errs);
+    return { ok: errs.length === 0, errs: errs, el: el };
+  }
+  window.__aeat = { validate: validate, D: D };
+
+  // ---- builder
+  var sel = $("f-endpoint");
+  D.ports.forEach(function (p) {
+    var o = document.createElement("option");
+    var env = /Pruebas/.test(p.name) ? "Test (pre-production)" : /Sello/.test(p.name) ? "Production, seal certificate" : "Production";
+    o.value = p.address; o.textContent = env + ": " + p.address.split("/")[2];
+    if (/Pruebas/.test(p.name)) o.selected = true;
+    sel.appendChild(o);
+  });
+  function buildXml() {
+    var tipo = $("f-tipo").value.trim(), ini = $("f-ini").value.trim(), fin = $("f-fin").value.trim();
+    var l = [];
+    l.push('<soapenv:Envelope xmlns:soapenv="' + ENV + '">');
+    l.push("  <soapenv:Body>");
+    l.push('    <ListaDecV4Ent xmlns="' + D.nsEnt + '"' + (tipo ? ' tipoRespuesta="' + escAttr(tipo) + '"' : "") + ">");
+    l.push("      <declarante>");
+    l.push("        <NifDeclarante>" + escText($("f-nif").value) + "</NifDeclarante>");
+    l.push("        <NombreDeclarante>" + escText($("f-name").value) + "</NombreDeclarante>");
+    if (ini) l.push("        <Inicio>" + escText(ini) + "</Inicio>");
+    if (fin) l.push("        <Fin>" + escText(fin) + "</Fin>");
+    l.push("      </declarante>");
+    l.push("    </ListaDecV4Ent>");
+    l.push("  </soapenv:Body>");
+    l.push("</soapenv:Envelope>");
+    return l.join("\n");
+  }
+  function renderHttp() {
+    var u = sel.value.split("/"), host = u[2], path = "/" + u.slice(3).join("/");
+    var len = new TextEncoder().encode($("reqxml").value).length;
+    $("http").textContent = "POST " + path + " HTTP/1.1\nHost: " + host + "\nContent-Type: text/xml; charset=utf-8\nSOAPAction: \"" + D.soapAction + "\"\nContent-Length: " + len +
+      "\n\n# client certificate: presented in the TLS handshake, not in the XML";
+  }
+  function box(target, cls, title, items) {
+    target.className = "check " + cls;
+    target.innerHTML = "";
+    var b = document.createElement("b"); b.textContent = title; target.appendChild(b);
+    if (items && items.length) {
+      var ul = document.createElement("ul");
+      items.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; ul.appendChild(li); });
+      target.appendChild(ul);
+    }
+  }
+  function checkReq() {
+    var r = validate($("reqxml").value, D.ent);
+    if (!r.ok) return box($("reqcheck"), "bad", "Rejected by the ListaDecV4Ent.xsd rules", r.errs.map(shortNs));
+    var warn = [];
+    var nif = r.el.getElementsByTagNameNS(D.nsEnt, "NifDeclarante")[0], name = r.el.getElementsByTagNameNS(D.nsEnt, "NombreDeclarante")[0];
+    if (nif && !nif.textContent.trim()) warn.push("NifDeclarante is empty: the XSD allows an empty xs:string, but expect AEAT to refuse it.");
+    if (name && !name.textContent.trim()) warn.push("NombreDeclarante is empty: same as above.");
+    box($("reqcheck"), warn.length ? "warn" : "ok", "Valid against the ListaDecV4Ent.xsd rules", warn);
+    renderHttp();
+  }
+  function rebuild() { $("reqxml").value = buildXml(); renderHttp(); checkReq(); }
+  ["f-nif", "f-name", "f-ini", "f-fin", "f-tipo"].forEach(function (id) { $(id).addEventListener("input", rebuild); });
+  sel.addEventListener("change", renderHttp);
+  $("reqxml").addEventListener("input", function () { renderHttp(); checkReq(); });
+  $("b-reset").addEventListener("click", function () { $("f-nif").value = "89890001K"; $("f-name").value = "CERTUNOT"; $("f-ini").value = ""; $("f-fin").value = ""; $("f-tipo").value = ""; for (var i = 0; i < sel.options.length; i++) if (/prewww1/.test(sel.options[i].value)) sel.selectedIndex = i; rebuild(); });
+  $("b-copy").addEventListener("click", function () {
+    var b = this, t = $("reqxml").value;
+    var done = function () { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy XML"; }, 1400); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { $("reqxml").select(); });
+    else { $("reqxml").select(); }
+  });
+
+  // ---- response checker
+  var SAMPLES = [];
+  D.examples.filter(function (e) { return e.kind === "response"; }).forEach(function (e) { SAMPLES.push({ id: e.id, label: e.title, xml: e.xml }); });
+  function fault(code, text) {
+    return '<soapenv:Envelope xmlns:soapenv="' + ENV + '">\n  <soapenv:Body>\n    <soapenv:Fault>\n      <faultcode>' + code + '</faultcode>\n      <faultstring>' + text + '</faultstring>\n    </soapenv:Fault>\n  </soapenv:Body>\n</soapenv:Envelope>';
+  }
+  SAMPLES.push({ id: "f1", label: "Sample Fault: soapenv:Client", xml: fault("soapenv:Client", "Sample text, not an AEAT message") });
+  SAMPLES.push({ id: "f2", label: "Sample Fault: soapenv:Server", xml: fault("soapenv:Server", "Sample text, not an AEAT message") });
+  SAMPLES.push({ id: "h1", label: "Sample: HTML error page", xml: "<!DOCTYPE html>\n<html><head><title>403 Forbidden</title></head><body><h1>Forbidden</h1></body></html>" });
+  SAMPLES.forEach(function (s) {
+    var b = document.createElement("button"); b.type = "button"; b.className = "btn ghost"; b.textContent = s.label; b.dataset.sample = s.id;
+    b.addEventListener("click", function () { $("resxml").value = s.xml; classify(); });
+    $("resbtns").appendChild(b);
+  });
+  function classify() {
+    var t = $("resxml").value.trim(), out = $("rescheck");
+    if (!t) return box(out, "warn", "Empty body", ["Guide 6.3: not the expected XML, resend after checking endpoint and certificate."]);
+    if (/^<!doctype html|^<html/i.test(t)) return box(out, "bad", "HTML page, not SOAP", ["Usually a gateway or certificate error page. Guide 6.3: not the expected XML, so resend once the cause is fixed.", "Log the HTTP status and page title."]);
+    var p = parse(t);
+    if (p.error) return box(out, "bad", "Not XML", [p.error, "Guide 6.3: not the expected XML, resend."]);
+    var b = payloadOf(p.doc);
+    if (b.error) return box(out, "bad", b.error, ["Guide 6.3: not the expected XML, resend."]);
+    var el = b.el;
+    if (el.namespaceURI === ENV && el.localName === "Fault") {
+      var g = function (n) { var x = kids(el).filter(function (c) { return c.localName === n; })[0]; return x ? x.textContent.trim() : "(none)"; };
+      var code = g("faultcode"), local = code.split(":").pop();
+      var rule = /^Server/.test(local) ? "Server fault: guide 6.3 says resend." : /^Client/.test(local) ? "Client fault: guide 6.3 says the request is formally wrong or reuses a reference; do NOT resend, fix the request." : "Faultcode not covered by the guide: log it and stop.";
+      return box(out, /^Server/.test(local) ? "warn" : "bad", "SOAP Fault " + code, [rule, "faultstring: " + g("faultstring"), "detail: " + g("detail")]);
+    }
+    var r = validate(t, D.sal);
+    if (!r.ok) return box(out, "bad", "Does not match ListaDecV4Sal.xsd", r.errs.map(shortNs).concat(["Guide 6.3: not the expected XML, resend and log the body."]));
+    var decs = kids(r.el);
+    if (decs.length === 0) return box(out, "ok", "Valid, empty list: no pending messages", ["Not an error. In pre-production, production messages are not expected to appear."]);
+    var items = decs.map(function (d) { var k = kids(d); return "clave " + k[0].textContent.trim() + ", referencia " + k[1].textContent.trim() + ", tipoRespuesta …/" + k[2].textContent.trim().split("/").pop(); });
+    if (decs.length >= 1000) items.unshift("1000 keys: the list is cut, more may be waiting. Read these with DetalleV5, then call again.");
+    box(out, "ok", "Valid: " + decs.length + " pending message" + (decs.length > 1 ? "s" : ""), items);
+  }
+  $("resxml").addEventListener("input", classify);
+
+  // ---- "open in builder/checker" buttons on example cards
+  document.querySelectorAll("[data-load]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var ex = D.examples.filter(function (e) { return e.id === btn.dataset.load; })[0];
+      if (ex.kind === "request") { $("reqxml").value = ex.xml; renderHttp(); checkReq(); $("builder").scrollIntoView({ behavior: "smooth" }); }
+      else { $("resxml").value = ex.xml; classify(); $("resxml").scrollIntoView({ behavior: "smooth", block: "center" }); }
+    });
+  });
+
+  rebuild();
+  $("resxml").value = SAMPLES[0].xml; classify();
+})();
+</script>
+</body></html>
