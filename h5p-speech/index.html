@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speak your answer: voice input for existing H5P activities</title>
+<meta name="description" content="A live H5P Fill in the Blanks activity with an add-on that lets students speak their answers. The H5P content is unchanged; xAPI events are shown as they happen.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1120px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+code { font-size: .9em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.45rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; min-width: 0; }
+.card h2 { margin: 0 0 .6rem; font-size: 1.05rem; }
+.hint { color: var(--slate); font-size: .9rem; margin: 0 0 .7rem; }
+#h5p-container { min-height: 260px; background: #fff; border-radius: 8px; }
+#h5p-container .h5p-iframe-wrapper { background: transparent !important; }
+#h5p-container iframe { width: 100%; border: 0; display: block; }
+.support { font-size: .88rem; margin: .7rem 0 0; color: var(--slate); }
+.support b { color: var(--ink); }
+
+#xapi-log { list-style: none; padding: 0; margin: 0; max-height: 420px; overflow-y: auto; font-size: .88rem; }
+#xapi-log li { border-top: 1px solid var(--rule); padding: .45rem 0; margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .6rem; }
+#xapi-log li:first-child { border-top: 0; }
+#xapi-log .t { color: var(--slate); font-variant-numeric: tabular-nums; }
+#xapi-log .v { font-weight: 600; }
+#xapi-log .v.answered, #xapi-log .v.completed { color: #1F7A3A; }
+#xapi-log .d { grid-column: 2; color: var(--slate); overflow-wrap: anywhere; }
+#xapi-empty { color: var(--slate); font-size: .9rem; margin: 0; }
+.score { font-size: .95rem; margin: 0 0 .6rem; }
+.score b { font-size: 1.25rem; }
+
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; } #xapi-log { max-height: 300px; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } .card { padding: .8rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Voice input for H5P</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Speak your answer: voice input for existing H5P activities</h1>
+  <p class="lead">A real H5P Fill in the Blanks activity with a small add-on: students click the mic, say the word, and H5P checks it the same way it checks a typed answer.</p>
+  <p class="status"><b>Status:</b> H5P.Blanks 1.14 running in the open-source h5p-standalone player with sample content. Speech uses the browser's Web Speech API (Chrome and Edge). The feedback line is rule-based here; an LLM step is planned. No Moodle in this demo.</p>
+
+  <div class="grid">
+    <section class="card" aria-labelledby="act-h">
+      <h2 id="act-h">The live activity</h2>
+      <p class="hint">Click the mic next to a blank and say one word. Typing in the blank still works as normal.</p>
+      <div id="h5p-container"></div>
+      <p class="support" id="support"></p>
+    </section>
+
+    <section class="card" aria-labelledby="xapi-h">
+      <h2 id="xapi-h">xAPI events, as they happen</h2>
+      <p class="hint">What H5P sends out. Moodle's H5P activity records these statements as the attempt and the grade.</p>
+      <p class="score" id="score" hidden></p>
+      <p id="xapi-empty">No events yet. Answer a blank.</p>
+      <ul id="xapi-log" aria-live="polite"></ul>
+    </section>
+  </div>
+
+  <h2>How it works</h2>
+  <ul>
+    <li><b>The H5P content is untouched.</b> Same content.json, same H5P.Blanks library. No rebuild of the activity.</li>
+    <li><b>An add-on script reads the answers and adds the mic.</b> <code>speech-layer.js</code> loads next to the content, reads the accepted answers from the H5P content, puts a mic button after each blank, and passes the spoken word into the blank so H5P runs its own check.</li>
+    <li><b>xAPI events go to Moodle as usual.</b> Because H5P does the checking, it sends its normal xAPI statements (interacted, answered with the score). Nothing changes on the Moodle side.</li>
+  </ul>
+
+  <p class="small">Player: h5p-standalone 3.8.2 (MIT). H5P libraries: H5P.Blanks 1.14.13, H5P.Question 1.5.15, H5P.JoubelUI 1.3.19, H5P.TextUtilities 1.3.0, H5P.Transition 1.0.4, H5P.FontIcons 1.0.6, FontAwesome 4.5.4, from the public H5P example export on h5p.org. All served from this site, no CDN. Sources and licenses: <a href="NOTICE.txt">NOTICE.txt</a>. The sentences are our own sample content.</p>
+</main>
+
+<script src="player/main.bundle.js" charset="UTF-8"></script>
+<script>
+(function () {
+  var supportEl = document.getElementById('support');
+  var hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  supportEl.innerHTML = hasSR
+    ? '<b>Speech input:</b> available in this browser. It asks for the microphone on the first click.'
+    : '<b>Speech input:</b> not available in this browser (it needs Chrome or Edge). The mic opens a "type what you\'d say" box that runs the same check.';
+
+  var log = document.getElementById('xapi-log'), empty = document.getElementById('xapi-empty'), scoreEl = document.getElementById('score');
+  var events = [];
+  window.__xapiEvents = events;
+
+  function verbOf(st) {
+    var v = st && st.verb;
+    if (!v) { return '?'; }
+    return (v.display && (v.display['en-US'] || v.display.en)) || String(v.id || '').split('/').pop();
+  }
+
+  function onXAPI(event) {
+    var st = event && event.data && event.data.statement;
+    if (!st) { return; }
+    var verb = verbOf(st), r = st.result || {}, sc = r.score;
+    var parts = [];
+    if (sc && typeof sc.raw === 'number') { parts.push('score ' + sc.raw + '/' + sc.max); }
+    if (typeof r.success === 'boolean') { parts.push(r.success ? 'success' : 'not passed yet'); }
+    if (r.response !== undefined && r.response !== '') { parts.push('response: ' + String(r.response).split('[,]').join(', ')); }
+    events.push({ verb: verb, score: sc ? { raw: sc.raw, max: sc.max } : null, response: r.response });
+
+    var li = document.createElement('li');
+    var t = document.createElement('span'); t.className = 't'; t.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    var v = document.createElement('span'); v.className = 'v ' + verb; v.textContent = verb;
+    li.appendChild(t); li.appendChild(v);
+    if (parts.length) { var d = document.createElement('span'); d.className = 'd'; d.textContent = parts.join(' · '); li.appendChild(d); }
+    log.insertBefore(li, log.firstChild);
+    empty.hidden = true;
+    if (sc && typeof sc.raw === 'number') {
+      scoreEl.hidden = false;
+      scoreEl.innerHTML = 'Latest score sent: <b>' + sc.raw + ' / ' + sc.max + '</b>';
+    }
+  }
+
+  var el = document.getElementById('h5p-container');
+  new H5PStandalone.H5P(el, {
+    id: 'speak-blanks',
+    h5pJsonPath: './blanks',
+    frameJs: './player/frame.bundle.js',
+    frameCss: './player/styles/h5p.css',
+    customJs: './speech-layer.js',
+    customCss: './speech-layer.css',
+    frame: false,
+    icon: false
+  }).then(function () {
+    var frame = el.querySelector('iframe');
+    var fw = frame && frame.contentWindow;
+    var dispatcher = (window.H5P && window.H5P.externalDispatcher) || (fw && fw.H5P && fw.H5P.externalDispatcher);
+    if (dispatcher) { dispatcher.on('xAPI', onXAPI); }
+    // Test hook forwarded from the H5P frame (used by the automated test).
+    window.__speechTest = function (text, index) { return fw && fw.__speechTest ? fw.__speechTest(text, index) : null; };
+  });
+})();
+</script>
+</body></html>

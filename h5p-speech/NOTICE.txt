@@ -1,0 +1,43 @@
+h5p-speech demo: third-party code and sources
+=============================================
+
+Everything below is served from this folder at runtime (no CDN).
+
+1. Player: h5p-standalone 3.8.2
+   Source: npm package "h5p-standalone" (https://www.npmjs.com/package/h5p-standalone),
+           https://github.com/tunapanda/h5p-standalone
+   License: MIT, Copyright (c) 2015 Tunapanda (full text: player/LICENSE-h5p-standalone.txt,
+            bundled third-party notices: player/main.bundle.js.LICENSE.txt)
+   Files: player/ = the package's dist/ folder, unchanged (h5p.d.ts left out).
+   Fonts in player/fonts: Inter (SIL OFL, player/fonts/inter/LICENSE.txt),
+            Open Sans (SIL OFL, player/fonts/open-sans/OFL.txt), as shipped in the package.
+
+2. H5P libraries (folder blanks/)
+   Source: the public "Fill in the Blanks" example export on h5p.org
+           (https://h5p.org/sites/default/files/h5p/exports/fill-in-the-blanks-837.h5p),
+           downloaded 2026-11-02. Only the library folders were kept; the example's text and image were not used.
+   Upstream code: https://github.com/h5p (h5p-blanks, h5p-question, h5p-joubel-ui, h5p-transition,
+                  h5p-font-icons, font-awesome).
+
+   Library            Version   License
+   H5P.Blanks         1.14.13   MIT (library.json)
+   H5P.Question       1.5.15    MIT (library.json)
+   H5P.JoubelUI       1.3.19    MIT (README.md in the library folder)
+   H5P.Transition     1.0.4     MIT (library.json)
+   H5P.FontIcons      1.0.6     MIT (README of github.com/h5p/h5p-font-icons)
+   H5P.TextUtilities  1.3.0     "pd" (public domain) in library.json; author Oliver Tacke
+   FontAwesome        4.5.4     MIT (library.json); Font Awesome by Dave Gandy
+
+   Changes: removed the language/ (editor translation) folders, and the unused FontAwesome
+   .eot/.svg/.ttf/.otf font files (browsers load the .woff2/.woff files that are kept).
+   No code was changed.
+
+3. Our own files
+   blanks/h5p.json, blanks/content/content.json: our own sample sentences and settings
+     (UI strings copied from the H5P.Blanks defaults in the example).
+   index.html, speech-layer.js, speech-layer.css: written for this demo.
+
+Notes
+   - Speech recognition is the browser's Web Speech API (Chrome and Edge). In Chrome the audio is
+     sent to the browser vendor's speech service; nothing is sent to this site.
+   - The feedback line is rule-based (edit distance and letter hints). No AI model is called from this page.

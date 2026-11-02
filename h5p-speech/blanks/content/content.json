@@ -1,0 +1,60 @@
+{
+ "showSolutions": "Show solutions",
+ "tryAgain": "Try again",
+ "checkAnswer": "Check",
+ "notFilledOut": "Please fill in all blanks",
+ "behaviour": {
+  "enableSolutionsButton": true,
+  "autoCheck": true,
+  "caseSensitive": false,
+  "showSolutionsRequiresInput": true,
+  "separateLines": false,
+  "enableRetry": true,
+  "confirmCheckDialog": false,
+  "confirmRetryDialog": false,
+  "acceptSpellingErrors": false,
+  "enableCheckButton": true
+ },
+ "answerIsCorrect": "&#039;:ans&#039; is correct",
+ "answerIsWrong": "&#039;:ans&#039; is wrong",
+ "answeredCorrectly": "Answered correctly",
+ "answeredIncorrectly": "Answered incorrectly",
+ "solutionLabel": "Correct answer:",
+ "inputLabel": "Blank input @num of @total",
+ "inputHasTipLabel": "Tip available",
+ "tipLabel": "Tip",
+ "confirmCheck": {
+  "header": "Finish ?",
+  "body": "Are you sure you wish to finish ?",
+  "cancelLabel": "Cancel",
+  "confirmLabel": "Finish"
+ },
+ "confirmRetry": {
+  "header": "Retry ?",
+  "body": "Are you sure you wish to retry ?",
+  "cancelLabel": "Cancel",
+  "confirmLabel": "Confirm"
+ },
+ "overallFeedback": [
+  {
+   "from": 0,
+   "to": 100,
+   "feedback": "You got @score of @total blanks correct."
+  }
+ ],
+ "scoreBarLabel": "You got :num out of :total points",
+ "submitAnswer": "Submit",
+ "a11yCheck": "Check the answers. The responses will be marked as correct, incorrect, or unanswered.",
+ "a11yShowSolution": "Show the solution. The task will be marked with its correct solution.",
+ "a11yRetry": "Retry the task. Reset all responses and start the task over again.",
+ "a11yCheckingModeHeader": "Checking mode",
+ "text": "<p>Everyday English. Fill in the missing word in each sentence.</p>\n",
+ "questions": [
+  "<p>The capital of France is *Paris*.</p>\n",
+  "<p>There are seven days in a *week*.</p>\n",
+  "<p>We drink *water* when we are thirsty.</p>\n",
+  "<p>The sun rises in the *east*.</p>\n",
+  "<p>We use an *umbrella* when it rains.</p>\n",
+  "<p>The opposite of hot is *cold*.</p>\n"
+ ]
+}
