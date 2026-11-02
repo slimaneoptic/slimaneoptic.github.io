@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Excel model comparison: what changed and what it did to the answer</title>
+<meta name="description" content="Compare two versions of an Excel financial model in the browser: input, formula and row changes, key variances, a heatmap per sheet and a CSV of every change.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --c-input: #2a78d6; --c-formula: #eb6834; --c-calc: #1baf7a; --g-input: #fff; --g-formula: #fff; --g-calc: #06281b;
+        --same: #E3E8ED; --hatch: #7A8896; --pos: #1F5FAE; --neg: #B4322F; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --c-input: #3987e5; --c-formula: #d95926; --c-calc: #199e70; --g-calc: #fff; --same: #26323D; --hatch: #8796A4; --pos: #7DB5F2; --neg: #F28B85; }
+}
+:root[data-theme="dark"] { --c-input: #3987e5; --c-formula: #d95926; --c-calc: #199e70; --g-calc: #fff; --same: #26323D; --hatch: #8796A4; --pos: #7DB5F2; --neg: #F28B85; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, label.zone:focus-within { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+h3 { font-size: 1rem; margin: 1.2rem 0 .5rem; }
+h3 small, .al small { color: var(--slate); font-weight: 400; font-size: .85rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; word-break: break-all; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
+/* loading */
+.load { display: grid; grid-template-columns: 1fr 1fr auto; gap: .8rem; align-items: stretch; }
+label.zone { position: relative; display: block; border: 2px dashed var(--rule); border-radius: 10px; padding: .8rem .9rem; background: var(--surface); cursor: pointer; min-width: 0; }
+label.zone.over { border-color: var(--blue); }
+label.zone b { display: block; }
+label.zone .fn { display: block; color: var(--slate); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+label.zone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .55rem .9rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.private { font-size: .88rem; color: var(--slate); margin: .5rem 0 0; }
+#names { font-size: .92rem; margin: .8rem 0 0; }
+#err { color: var(--neg); font-weight: 600; }
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin: .4rem 0 .4rem; }
+.tile { font: inherit; text-align: left; background: var(--surface); color: var(--slate); border: 1px solid var(--rule); border-radius: 8px; padding: .6rem .7rem; cursor: pointer; font-size: .85rem; line-height: 1.3; }
+.tile b { display: block; font-size: 1.6rem; color: var(--ink); margin-top: .2rem; }
+.tile.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.tile .tl { display: inline; }
+.sw { display: inline-flex; align-items: center; justify-content: center; width: 1.15rem; height: 1.15rem; border-radius: 3px; font-size: .72rem; font-weight: 800; font-style: normal; vertical-align: -0.15rem; margin-right: .3rem; }
+.sw-input { background: var(--c-input); color: var(--g-input); }
+.sw-formula { background: var(--c-formula); color: var(--g-formula); }
+.sw-calc { background: var(--c-calc); color: var(--g-calc); }
+.sw-added { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); color: var(--ink); border: 1px solid var(--hatch); box-sizing: border-box; }
+.sw-removed { background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 5px); color: var(--ink); border: 1px solid var(--hatch); box-sizing: border-box; }
+#runline { font-size: .9rem; color: var(--slate); margin: .2rem 0 0; }
+/* answer box */
+.answer { border-left: 4px solid var(--ink); }
+.ans { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem 1rem; padding: .55rem 0; border-bottom: 1px solid var(--rule); }
+.ans:first-child { padding-top: 0; }
+.al { font-weight: 800; }
+.av { display: flex; flex-wrap: wrap; gap: .2rem 1.2rem; font-variant-numeric: tabular-nums; color: var(--slate); font-size: .92rem; }
+.av b { color: var(--ink); font-size: 1.05rem; }
+.dl.neg b { color: var(--neg); } .dl.pos b { color: var(--pos); }
+ul.roots { list-style: none; padding: 0; margin: .3rem 0 .6rem; }
+ul.roots li { margin: .35rem 0; font-size: .92rem; }
+ul.roots .lt { color: var(--slate); }
+/* chart */
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; margin-bottom: .7rem; }
+.seg button { font: inherit; font-size: .88rem; border: 0; background: var(--surface); color: var(--ink); padding: .35rem .8rem; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--btnbg); color: var(--btnfg); }
+#chart svg { display: block; max-width: 100%; }
+#chart .axis { stroke: var(--rule); stroke-width: 1; }
+#chart .hit { fill: transparent; }
+#chart .bar:hover .hit { fill: var(--codebg); }
+#chart .bl { font-size: 12px; fill: var(--ink); }
+#chart .bv { font-size: 12px; fill: var(--slate); font-variant-numeric: tabular-nums; }
+.fill-calc { fill: var(--c-calc); } .fill-formula { fill: var(--c-formula); }
+.legend { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .85rem; color: var(--slate); margin-top: .5rem; }
+/* heatmap */
+.scroll { overflow: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table.heat { border-collapse: separate; border-spacing: 2px; font-size: .75rem; }
+table.heat th { font-weight: 600; color: var(--slate); padding: 0 .2rem; }
+table.heat th.rl { text-align: left; white-space: nowrap; position: sticky; left: 0; background: var(--surface); padding-right: .5rem; font-weight: 400; color: var(--ink); max-width: 15rem; overflow: hidden; text-overflow: ellipsis; }
+table.heat .rn { color: var(--slate); display: inline-block; min-width: 2.6em; font-variant-numeric: tabular-nums; }
+table.heat tr.r-removed th.rl { text-decoration: line-through; color: var(--slate); }
+table.heat td { width: 1.6rem; min-width: 1.6rem; height: 1.35rem; text-align: center; border-radius: 3px; font-weight: 800; font-size: .7rem; padding: 0; }
+td.x-same { background: var(--same); }
+td.x-input { background: var(--c-input); color: var(--g-input); }
+td.x-formula { background: var(--c-formula); color: var(--g-formula); }
+td.x-calc { background: var(--c-calc); color: var(--g-calc); }
+td.x-added { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px var(--hatch); }
+td.x-removed { background: repeating-linear-gradient(-45deg, var(--hatch) 0 2px, transparent 2px 5px); box-shadow: inset 0 0 0 1px var(--hatch); }
+.hkey { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .85rem; color: var(--slate); }
+.hkey .sw-same { background: var(--same); }
+/* list */
+.filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .6rem; }
+.filters select, .filters input { font: inherit; font-size: .9rem; padding: .35rem .5rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--ink); min-width: 0; }
+.filters input { flex: 1 1 10rem; }
+#f-count { color: var(--slate); font-size: .88rem; }
+.listbox { max-height: 34rem; }
+table.list { border-collapse: collapse; width: 100%; font-size: .85rem; min-width: 46rem; }
+table.list th { position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .5rem; }
+table.list td { border-bottom: 1px solid var(--rule); padding: .4rem .5rem; vertical-align: top; }
+table.list td.num { font-variant-numeric: tabular-nums; }
+table.list .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .8rem; white-space: nowrap; }
+table.list code { word-break: normal; white-space: nowrap; }
+ol.how { padding-left: 1.2rem; margin: 0; } ol.how li { margin: .45rem 0; }
+#tip { position: fixed; z-index: 60; max-width: 22rem; background: var(--btnbg); color: var(--btnfg); font-size: .8rem; line-height: 1.4; padding: .45rem .6rem; border-radius: 6px; pointer-events: none; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+#tip code { background: transparent; color: inherit; padding: 0; }
+@media (max-width: 760px) {
+  .load { grid-template-columns: 1fr 1fr; } .load .btn { grid-column: 1 / -1; }
+  .tiles { grid-template-columns: repeat(2, 1fr); } .tiles .tile:last-child { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="xlsx.mini.min.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Excel model comparison</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Excel model comparison: what changed and what it did to the answer</h1>
+  <p class="lead">Two versions of a financial model go in. Out come the edited inputs, the changed formulas, the added and removed rows, the values that moved because of them, and the effect on the headline output.</p>
+  <p class="status"><b>Status:</b> The files below are two sample DCF models of a fictional company, not client data. All comparison runs in your browser. A full input-to-output bridge (how much of the change in value each edit explains) is a delivery step, not part of this demo.</p>
+
+  <h2>1. Load two versions</h2>
+  <div class="load">
+    <label class="zone" id="z-old"><b>Old version</b><span class="fn">No file yet</span><span class="note">Drop an .xlsx here or click</span>
+      <input type="file" accept=".xlsx,.xlsm" multiple aria-label="Old version file"></label>
+    <label class="zone" id="z-new"><b>New version</b><span class="fn">No file yet</span><span class="note">Drop an .xlsx here or click</span>
+      <input type="file" accept=".xlsx,.xlsm" aria-label="New version file"></label>
+    <button type="button" class="btn ghost" id="samples">Use the sample models</button>
+  </div>
+  <p class="private">Your files are read by this page in your browser and never uploaded. Sample files: <a href="model_v1.xlsx" download>model_v1.xlsx</a> and <a href="model_v2.xlsx" download>model_v2.xlsx</a>.</p>
+  <p id="names" aria-live="polite">Loading the sample models&hellip;</p>
+  <p id="err" hidden></p>
+
+  <h2>2. What changed</h2>
+  <div class="tiles" id="tiles"></div>
+  <p id="runline"></p>
+
+  <h2>3. What moved the answer</h2>
+  <div class="card answer" id="answer"></div>
+
+  <h2>4. Key variances</h2>
+  <p class="note" style="margin-top:0">The 10 calculated cells that moved most. Bars right of the line went up, left went down.</p>
+  <div class="seg" role="group" aria-label="Rank by"><button type="button" data-mode="abs" aria-pressed="true">By absolute change</button><button type="button" data-mode="pct" aria-pressed="false">By % change</button></div>
+  <div class="card"><div id="chart"></div></div>
+
+  <h2>5. Heatmap by sheet</h2>
+  <div class="hkey"><span><i class="sw sw-input">I</i>Input value changed</span><span><i class="sw sw-formula">F</i>Formula changed</span><span><i class="sw sw-calc">C</i>Calculated value changed</span><span><i class="sw sw-added">+</i>Row added</span><span><i class="sw sw-removed">&minus;</i>Row removed</span><span><i class="sw sw-same"></i>Unchanged</span></div>
+  <div id="heat"></div>
+
+  <h2>6. Every change</h2>
+  <div class="filters">
+    <select id="f-sheet" aria-label="Sheet"><option value="">All sheets</option></select>
+    <select id="f-type" aria-label="Change type"><option value="">All change types</option><option value="input">Input value changed</option><option value="formula">Formula changed</option><option value="calc">Calculated value changed</option><option value="added">Row added</option><option value="removed">Row removed</option></select>
+    <input id="f-q" type="search" placeholder="Search label or cell" aria-label="Search label or cell">
+    <button type="button" class="btn" id="csv">Export CSV</button>
+    <span id="f-count"></span>
+  </div>
+  <div class="scroll listbox"><table class="list" id="list"><thead><tr><th>Sheet</th><th>Cell</th><th>Label</th><th>Old</th><th>New</th><th>% change</th><th>Type</th></tr></thead><tbody></tbody></table></div>
+  <p class="note">The CSV holds the rows shown, with the raw old and new values and both formulas.</p>
+
+  <h2>How it works</h2>
+  <ol class="how">
+    <li><b>Read.</b> SheetJS reads each workbook in the page: every cell's formula and the value Excel saved with it.</li>
+    <li><b>Match.</b> Sheets are matched by name and rows by their label in column A, so an inserted or deleted row does not flag the rows below it. Columns are matched by position.</li>
+    <li><b>Compare formulas fairly.</b> Before two formulas are compared, the old one's cell references are moved through the row matching. A total that went from <code>SUM(B6:B8)</code> to <code>SUM(B6:B9)</code> because a row was inserted inside it counts as the same formula.</li>
+    <li><b>Classify.</b> A hard-coded value that differs is an input change. A formula that differs (or a formula replaced by a typed number) is a formula change. Same formula, different value means something upstream moved.</li>
+    <li><b>Trace.</b> From the headline output, the formulas are walked back to list which edits feed it.</li>
+  </ol>
+
+  <details class="card" style="margin-top:1.2rem">
+    <summary><b>The edits made to the sample, so you can check the tool</b></summary>
+    <ol class="how" style="margin-top:.6rem">
+      <li>Inputs: revenue growth 12.0% to 14.0%.</li>
+      <li>Inputs: WACC (discount rate) 10.0% to 11.0%.</li>
+      <li>Cash Flow, FY2028 taxes (cell D5): <code>=-D4*Inputs!$B$10</code> became <code>=-D4*0.25</code>, a tax rate typed into the formula instead of linked to Inputs.</li>
+      <li>Revenue: a new cost line, "Cloud hosting (new contract)", inserted below Sales and marketing.</li>
+      <li>Cash Flow: the "Other non-cash items" line deleted.</li>
+    </ol>
+  </details>
+
+  <p class="small" id="foot">Sample models built with Python (openpyxl) and recalculated in LibreOffice, so each file holds real formulas and the values they compute. The values were checked against a separate Python copy of the model. Reading uses SheetJS Community Edition 0.20.3 (Apache 2.0), served from this site; see <a href="NOTICE.txt">NOTICE.txt</a>.</p>
+</main>
+<div id="tip" hidden></div>
+</body></html>

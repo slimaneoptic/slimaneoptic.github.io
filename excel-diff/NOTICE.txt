@@ -1,0 +1,10 @@
+Third-party software on this page
+
+xlsx.mini.min.js
+  SheetJS Community Edition, version 0.20.3 (mini build), from https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+  Copyright (C) 2012-present SheetJS LLC
+  Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+  The full license text is in LICENSE-sheetjs.txt next to this file.
+
+model_v1.xlsx, model_v2.xlsx
+  Sample DCF models of a fictional company, made for this demo. Not real data.
