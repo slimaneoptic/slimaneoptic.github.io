@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Music catalog vs DISCO inventory: matches, gaps, duplicates and versions</title>
+<meta name="description" content="Reconcile a music master catalog spreadsheet with a DISCO-style track export in the browser: matched tracks with DISCO IDs written back, missing recordings, duplicates, alternate versions, WAV/MP3 pairs and uncertain matches.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%232A78D6' stroke-width='3'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #1A7F55; --warn: #B4322F; --amber: #9A6400; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ok: #5FD3A0; --warn: #F28B85; --amber: #F0B95A; }
+}
+:root[data-theme="dark"] { --ok: #5FD3A0; --warn: #F28B85; --amber: #F0B95A; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, label.zone:focus-within, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.55rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
+/* rule box */
+.rule { border-left: 4px solid var(--ink); }
+.rule h2 { margin-top: 0; }
+.rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem; }
+.rgrid div { min-width: 0; }
+.rgrid b { display: block; margin-bottom: .2rem; }
+.rgrid p { margin: 0; font-size: .93rem; }
+.tag { display: inline-block; font-size: .75rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; border-radius: 4px; padding: .05rem .4rem; margin-bottom: .3rem; }
+.t-same { background: var(--codebg); color: var(--ok); }
+.t-ver { background: var(--codebg); color: var(--blue); }
+.t-unc { background: var(--codebg); color: var(--amber); }
+/* loading */
+.load { display: grid; grid-template-columns: 1fr 1fr auto; gap: .8rem; align-items: stretch; }
+label.zone { position: relative; display: block; border: 2px dashed var(--rule); border-radius: 10px; padding: .8rem .9rem; background: var(--surface); cursor: pointer; min-width: 0; }
+label.zone.over { border-color: var(--blue); }
+label.zone b { display: block; }
+label.zone .fn { display: block; color: var(--slate); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+label.zone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .55rem .9rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.private { font-size: .88rem; color: var(--slate); margin: .5rem 0 0; }
+#names { font-size: .92rem; margin: .8rem 0 0; }
+#err { color: var(--warn); font-weight: 600; }
+details.map { margin-top: .8rem; }
+details.map summary { cursor: pointer; font-weight: 600; }
+.mapgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .7rem; }
+.mapgrid fieldset { border: 1px solid var(--rule); border-radius: 8px; padding: .5rem .8rem .8rem; min-width: 0; margin: 0; }
+.mapgrid legend { font-weight: 600; font-size: .92rem; padding: 0 .3rem; }
+.mapgrid label { display: grid; grid-template-columns: 7rem 1fr; gap: .5rem; align-items: center; font-size: .88rem; margin: .35rem 0; }
+select, input[type=search] { font: inherit; font-size: .9rem; padding: .3rem .45rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--ink); min-width: 0; max-width: 100%; }
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(7, 1fr); gap: .55rem; margin: .4rem 0; }
+.tile { font: inherit; text-align: left; background: var(--surface); color: var(--slate); border: 1px solid var(--rule); border-radius: 8px; padding: .55rem .65rem; cursor: pointer; font-size: .82rem; line-height: 1.25; min-width: 0; }
+.tile b { display: block; font-size: 1.55rem; color: var(--ink); margin-top: .15rem; }
+.tile.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+#runline, #checkline { font-size: .9rem; color: var(--slate); margin: .3rem 0 0; }
+/* tabs + table */
+.tabs { display: flex; gap: .3rem; overflow-x: auto; border-bottom: 1px solid var(--rule); margin-top: 1rem; scrollbar-width: thin; }
+.tabs button { font: inherit; font-size: .9rem; white-space: nowrap; background: transparent; border: 0; border-bottom: 3px solid transparent; color: var(--slate); padding: .45rem .6rem; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); font-weight: 600; }
+.tabs .n { font-variant-numeric: tabular-nums; color: var(--slate); font-weight: 400; }
+.tabhead { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; margin: .7rem 0 .6rem; }
+.tabhead p { margin: 0; flex: 1 1 22rem; font-size: .92rem; }
+.tabhead input { flex: 0 1 14rem; }
+.scroll { overflow: auto; max-width: 100%; max-height: 34rem; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table.list { border-collapse: collapse; width: 100%; font-size: .84rem; min-width: 52rem; }
+table.list th { position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .5rem; white-space: nowrap; }
+table.list td { border-bottom: 1px solid var(--rule); padding: .4rem .5rem; vertical-align: top; }
+table.list .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .78rem; white-space: nowrap; }
+table.list .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.list .why { color: var(--slate); min-width: 14rem; }
+.sc { font-weight: 800; color: var(--amber); }
+.dl { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
+ol.how { padding-left: 1.2rem; margin: 0; } ol.how li { margin: .45rem 0; }
+@media (max-width: 900px) { .tiles { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 760px) {
+  .load { grid-template-columns: 1fr; } .rgrid, .mapgrid { grid-template-columns: 1fr; }
+  .tiles { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="xlsx.mini.min.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Music catalog vs DISCO</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Music catalog vs DISCO inventory: matches, gaps, duplicates and versions</h1>
+  <p class="lead">A master catalog spreadsheet and a DISCO track export go in. Out come the recordings DISCO is missing, the tracks the master does not know, duplicate uploads, alternate versions, WAV/MP3 pairs and the matches a person should check, plus the master sheet with DISCO Track IDs and links written back.</p>
+  <p class="status"><b>Status:</b> The two files below are sample data for a fictional label, made for this demo, not client data. The DISCO file is a <b>DISCO-style sample: column names to be matched to your real export</b>. DISCO's help center says a track metadata export has a column for each standard field (Title, Artist, Album, ISRC, BPM and so on) and can include DISCO track IDs, but it does not publish the exact header (<a href="https://support.disco.ac/home/exporting-and-importing-your-track-metadata" rel="noopener">export guide</a>, <a href="https://support.disco.ac/home/adding-editing-metadata" rel="noopener">standard fields</a>). Everything runs in your browser; nothing is uploaded.</p>
+
+  <section class="card rule" aria-labelledby="rule-h">
+    <h2 id="rule-h">Duplicate or a different version?</h2>
+    <div class="rgrid">
+      <div><span class="tag t-same">Same recording</span><b>Link it, don't delete it</b>
+        <p>Same ISRC. Or, when an ISRC is missing, the same title, the same artists, the same version label and a length within 1 second. Its WAV and MP3 are linked as formats. The same recording uploaded twice in the same format is a possible duplicate and stays until you approve removing it.</p></div>
+      <div><span class="tag t-ver">Different version</span><b>Keep it, link it to the song</b>
+        <p>A different version word (instrumental, clean, remix, radio edit, extended, acoustic, live), a different ISRC, or a length gap of more than 5 seconds. Each is its own recording, kept and grouped under the song.</p></div>
+      <div><span class="tag t-unc">Not sure</span><b>Ask you, with the reason</b>
+        <p>A title that is close but not equal, an artist name spelled differently, or a length gap of 2 to 5 seconds with no ISRC to decide. These come with a score and are never merged on their own.</p></div>
+    </div>
+  </section>
+
+  <h2>1. Load the two files</h2>
+  <div class="load">
+    <label class="zone" id="z-master"><b>Master catalog</b><span class="fn">No file yet</span><span class="note">Drop an .xlsx or .csv here or click</span>
+      <input type="file" accept=".xlsx,.xls,.csv" aria-label="Master catalog file"></label>
+    <label class="zone" id="z-disco"><b>DISCO export</b><span class="fn">No file yet</span><span class="note">Drop a .csv or .xlsx here or click</span>
+      <input type="file" accept=".csv,.xlsx,.xls" aria-label="DISCO export file"></label>
+    <button type="button" class="btn ghost" id="samples">Use the sample files</button>
+  </div>
+  <p class="private">Your files are read by this page in your browser and never uploaded. Sample files: <a href="master_catalog.xlsx" download>master_catalog.xlsx</a> and <a href="disco_inventory.csv" download>disco_inventory.csv</a>.</p>
+  <p id="names" aria-live="polite">Loading the sample files&hellip;</p>
+  <p id="err" hidden></p>
+  <details class="map" id="mapbox">
+    <summary>Column mapping (guessed from the headers; change it if a column was missed)</summary>
+    <div class="mapgrid"><fieldset id="map-m"><legend>Master catalog</legend></fieldset><fieldset id="map-d"><legend>DISCO export</legend></fieldset></div>
+  </details>
+
+  <h2>2. Result</h2>
+  <div class="tiles" id="tiles"></div>
+  <p id="runline"></p>
+  <p id="checkline"></p>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Result lists"></div>
+  <div class="tabhead"><p id="tabnote"></p><input type="search" id="q" placeholder="Filter this list" aria-label="Filter this list"></div>
+  <div class="scroll"><table class="list" id="list"><thead></thead><tbody></tbody></table></div>
+  <p class="note" id="shown"></p>
+
+  <h2>3. Download</h2>
+  <div class="dl">
+    <button type="button" class="btn" id="dl-xlsx">Updated master (.xlsx)</button>
+    <button type="button" class="btn ghost" id="dl-csv">Issues report (.csv)</button>
+  </div>
+  <p class="note">The master keeps every original column and row, with six columns added: DISCO Track ID, DISCO Link, DISCO Formats, DISCO Status, DISCO Match Rule and DISCO Notes. A second sheet lists every issue. The CSV holds the same issues, one row each, with a proposed action.</p>
+
+  <h2>How matching works</h2>
+  <ol class="how">
+    <li><b>Clean the names.</b> Artists are split on <code>feat.</code>, <code>ft.</code>, <code>featuring</code>, <code>&amp;</code>, <code>and</code>, <code>with</code>, <code>x</code> and commas, then compared as a set with case and accents ignored, so <code>Noé Dufresne</code> = <code>NOE DUFRESNE</code> and <code>A feat. B</code> = <code>A &amp; B</code>. A <code>(feat. B)</code> in the title moves to the artists.</li>
+    <li><b>Pull out the version.</b> Version words in brackets or after a dash in the title (<code>(Inst.)</code>, <code>- Radio Edit</code>, <code>(Kito Reyes Remix)</code>) go into a version field together with any Version column, and synonyms are merged (<code>Inst.</code> = <code>Instrumental</code>, <code>Original</code> = no version).</li>
+    <li><b>ISRC first.</b> A DISCO track whose ISRC (dashes and case ignored) is in the master is matched to that row.</li>
+    <li><b>Then title + artists + version + length.</b> When one side has no ISRC: same cleaned title, same artists, same version and length within 1 second is a match. Same song but another version word, another ISRC or a length gap over 5 seconds is an alternate version. A gap of 2 to 5 seconds is uncertain.</li>
+    <li><b>Then a fuzzy title score.</b> If nothing above fits, every master title is scored against the DISCO title (letter-pair similarity, 70% title, 25% artists, 5% version). The best one at 75% or more is listed as uncertain, with its score; below that the track is "not in master".</li>
+    <li><b>Group files of one recording.</b> All DISCO tracks that landed on the same recording are grouped. The WAV (or the first lossless file) is the main one; an MP3 or other format is "formats linked"; a second file in the same format is a possible duplicate.</li>
+  </ol>
+
+  <details class="card" style="margin-top:1.2rem">
+    <summary><b>What was planted in the sample files, so you can check the tool</b></summary>
+    <ol class="how" style="margin-top:.6rem">
+      <li>120 master recordings: 80 songs plus 40 alternate versions (instrumental, clean, remix, radio edit, extended).</li>
+      <li>104 of them are in DISCO. 92 share the ISRC (written with or without dashes, some in lower case; 3 of these have a title typo and 2 use "ft." in DISCO). 12 have no shared ISRC: "ft.", "&amp;", "feat." in the title, all caps, accents dropped, "(Inst.)", or the ISRC only on the DISCO side (3 master rows have no ISRC).</li>
+      <li>10 master recordings are not in DISCO.</li>
+      <li>8 DISCO tracks are not in the master.</li>
+      <li>12 MP3 copies of WAVs already in DISCO (one MP3 listed before its WAV, one without an ISRC).</li>
+      <li>6 duplicate uploads: 5 with the same ISRC as another WAV, 1 with no ISRC but the same title, artists, version and length.</li>
+      <li>10 alternate versions not in the master: acoustic, remix, extended mix, live, instrumental, radio edit and clean versions of known songs, one track with a different ISRC but the same title and length, and two with a 28 s and a 41 s length gap.</li>
+      <li>6 uncertain: 4 title typos and 1 artist typo with no ISRC, and 1 track 3 seconds longer than its master row with no ISRC.</li>
+    </ol>
+  </details>
+  <p class="small">Sample files built with Python (openpyxl and csv). Reading and writing spreadsheets uses SheetJS Community Edition 0.20.3 (Apache 2.0), served from this site; see <a href="NOTICE.txt">NOTICE.txt</a>. Track links in the sample point to <code>disco.example</code>, a placeholder address.</p>
+</main>
+</body></html>
