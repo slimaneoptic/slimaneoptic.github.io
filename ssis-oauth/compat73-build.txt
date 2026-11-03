@@ -1,0 +1,8 @@
+$ dotnet build Compat73.csproj -c Release --no-incremental   # net48 reference assemblies, LangVersion 7.3, warnings as errors
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Compat73 -> ./compat73/bin/Release/net48/Compat73.dll
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:00.68

@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guidewire OAuth for an SSIS Script Task</title>
+<meta name="description" content="C# for an SSIS Script Task: OAuth 2.0 client credentials token for Guidewire Cloud, cached and refreshed, then the existing SOAP call with a Bearer header. Tested against mock token and SOAP servers.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Ccircle cx='12' cy='16' r='5' fill='none' stroke='%23fff' stroke-width='2.6'/%3E%3Cpath d='M17 16h9M23 16v4' stroke='%232A78D6' stroke-width='2.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #146C43; --okbg: #E5F5EC; --bad: #B4322F; --pre: #F9FAFB; --k: #0B57C2; --t: #7A4BB8; --s: #9A3E00; --c: #6A7785; --n: #0E7A6B; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --pre: #111A23; --k: #79B4F7; --t: #C6A3F5; --s: #F2A86A; --c: #7F8D9B; --n: #5FD3C0; --ok: #47CD89; --okbg: #0F2A1C; --bad: #F97066; }
+}
+:root[data-theme="dark"] { --pre: #111A23; --k: #79B4F7; --t: #C6A3F5; --s: #F2A86A; --c: #7F8D9B; --n: #5FD3C0; --ok: #47CD89; --okbg: #0F2A1C; --bad: #F97066; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, pre:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1080px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 48rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note { color: var(--slate); font-size: .88rem; }
+.small { color: var(--slate); font-size: .88rem; margin-top: 2.5rem; }
+code, pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+code { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .84em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .55rem .9rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; text-decoration: none; display: inline-block; line-height: 1.3; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.btn.sm { font-size: .85rem; padding: .3rem .6rem; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; margin: 0 0 .5rem; }
+.fact { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: .75rem .9rem; min-width: 0; }
+.fact b { display: block; font-size: 1.6rem; line-height: 1.2; }
+.fact span { color: var(--slate); font-size: .88rem; }
+ul.changes { padding-left: 1.2rem; margin: 0; max-width: 52rem; } ul.changes li { margin: .4rem 0; }
+.scroll { overflow: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table.t { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 34rem; }
+table.t th { text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .6rem; white-space: nowrap; }
+table.t td { border-bottom: 1px solid var(--rule); padding: .5rem .6rem; vertical-align: top; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.t td.n .note { display: block; white-space: normal; font-size: .78rem; }
+table.t td.id { font-weight: 800; }
+.ok { color: var(--ok); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
+.codebox { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; margin: 0 0 1rem; min-width: 0; overflow: hidden; }
+.codehead { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .7rem; padding: .5rem .7rem; border-bottom: 1px solid var(--rule); }
+.codehead .sp { flex: 1; }
+pre.code { margin: 0; padding: .8rem .9rem; overflow: auto; max-height: 34rem; background: var(--pre); font-family: "JetBrains Mono", ui-monospace, monospace; font-size: .8rem; line-height: 1.5; tab-size: 4; }
+pre.code code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+pre.code.log { max-height: 40rem; }
+pre.code .k { color: var(--k); } pre.code .t { color: var(--t); } pre.code .s { color: var(--s); } pre.code .c { color: var(--c); } pre.code .n { color: var(--n); }
+pre .h { font-weight: 600; color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: .9rem 1rem; min-width: 0; }
+.card h3 { font-size: 1rem; margin: 0 0 .4rem; }
+.card p, .card ol, .card ul { margin: .3rem 0; font-size: .95rem; }
+.card ol, .card ul { padding-left: 1.2rem; }
+.dl { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 0; }
+@media (max-width: 760px) { .facts, .grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Guidewire OAuth for SSIS</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Guidewire OAuth for an SSIS Script Task</h1>
+  <p class="lead">Drop-in C# for the XMLCCXmlLoad Script Task: get a Guidewire Cloud access token with the OAuth 2.0 client credentials flow, keep it until shortly before it expires, and send the existing SOAP claim XML with an <code>Authorization: Bearer</code> header. The client secret comes from a sensitive SSIS parameter, never from the code.</p>
+  <p class="status"><b>Status:</b> tested against mock token and SOAP servers on .NET 8 with C# 7.3-compatible code (the same file also compiles against .NET Framework 4.8 reference assemblies). Not yet run inside SSIS or against Guidewire: that needs your token URL, scope, client id and network access from the SSIS server.</p>
+
+  <div class="facts">
+    <div class="fact"><b>6/6</b><span>scenarios passed against the mock servers</span></div>
+    <div class="fact"><b>0 errors</b><span>build as C# 7.3 on .NET Framework 4.8 reference assemblies, 0 warnings</span></div>
+    <div class="fact"><b>none</b><span>secret or token text in the run log (checked automatically)</span></div>
+  </div>
+
+  <h2>What changes in the Script Task</h2>
+  <ul class="changes">
+    <li><b>Token first.</b> POST <code>grant_type=client_credentials</code> with client id, secret and scope to the token URL (form-encoded; HTTP Basic client auth is one switch). <code>access_token</code> and <code>expires_in</code> are read with <code>DataContractJsonSerializer</code>.</li>
+    <li><b>Token reuse.</b> Cached in memory and refreshed 60 s before it expires, so a Foreach Loop over many claims does not ask for a new token each time.</li>
+    <li><b>Same SOAP call, new header.</b> Your claim XML, <code>Content-Type: text/xml</code> and <code>SOAPAction</code> stay; <code>Authorization: Bearer &lt;token&gt;</code> is added.</li>
+    <li><b>One retry on 401.</b> If Guidewire rejects the token, the task gets a fresh one and retries once. A wrong secret or a second 401 stops with a clear error, no loop.</li>
+    <li><b>SOAP Faults surfaced.</b> <code>faultcode</code>, <code>faultstring</code> and <code>detail</code> go to the SSIS log through <code>FireError</code>; the task fails cleanly.</li>
+    <li><b>TLS 1.2 forced</b> with <code>ServicePointManager.SecurityProtocol</code>, since older .NET Framework tasks can default to TLS 1.0.</li>
+    <li><b>No NuGet packages.</b> Only System, System.Xml and System.Runtime.Serialization from .NET Framework. The core classes have no SSIS dependency, so they are tested outside SSIS.</li>
+  </ul>
+
+  <h2>Test run: 6 scenarios against the mock servers</h2>
+  <p class="note">Run at 2026-11-03 16:19:01 UTC on .NET 8.0.33, Ubuntu 22.04.5 LTS. The mock token server checks client id and secret and issues JWT-shaped tokens with <code>expires_in</code>; the mock SOAP endpoint needs a valid, unexpired Bearer token and returns a SOAP Fault for a bad payload. Times are wall-clock on localhost, including the harness's calls that set up the mock.</p>
+  <div class="scroll"><table class="t">
+    <thead><tr><th>#</th><th>Scenario</th><th>Result</th><th class="n">Time</th></tr></thead>
+    <tbody><tr><td class="id">a</td><td>Normal call: token, then SOAP with Bearer; second claim reuses the cached token</td><td><span class="ok">PASS</span> 2 claims ACCEPTED with 1 token<br><span class="note">token requests 1, SOAP requests 2 (mock counters)</span></td><td class="n">37 ms</td></tr><tr><td class="id">b</td><td>Token close to expiry: refreshed 60 s before it expires (HTTP Basic client auth)</td><td><span class="ok">PASS</span> token refreshed before use, no 401<br><span class="note">token requests 2, SOAP requests 2 (mock counters)</span></td><td class="n">2,554 ms <span class="note">(includes a deliberate 2.5 s wait)</span></td></tr><tr><td class="id">c</td><td>Server rejects the cached token once (HTTP 401): refresh + one retry</td><td><span class="ok">PASS</span> retry with new token succeeded (HTTP 200)<br><span class="note">token requests 2, SOAP requests 3 (mock counters)</span></td><td class="n">58 ms</td></tr><tr><td class="id">d</td><td>Wrong client secret: clear error, no retry loop</td><td><span class="ok">PASS</span> stopped with HTTP 401 invalid_client<br><span class="note">token requests 1, SOAP requests 0 (mock counters)</span></td><td class="n">4 ms</td></tr><tr><td class="id">e</td><td>Bad payload: SOAP Fault surfaced with code, text and detail</td><td><span class="ok">PASS</span> fault soapenv:Client / Invalid claim payload<br><span class="note">token requests 1, SOAP requests 1 (mock counters)</span></td><td class="n">13 ms</td></tr><tr><td class="id">f</td><td>Server keeps answering 401: exactly one retry, then a clear error</td><td><span class="ok">PASS</span> stopped after 2 attempts<br><span class="note">token requests 2, SOAP requests 2 (mock counters)</span></td><td class="n">55 ms</td></tr></tbody>
+  </table></div>
+
+  <h2>Full run log</h2>
+  <div class="codebox">
+    <div class="codehead"><b>run-log.txt</b><span class="note">output of the .NET 8 test harness</span><span class="sp"></span>
+      <button type="button" class="btn ghost sm copy" data-for="pre-log">Copy</button>
+      <a class="btn ghost sm" href="run-log.txt" download>Download</a></div>
+    <pre id="pre-log" class="code log" tabindex="0" aria-label="Run log"><code>GuidewireOAuth.cs test run against mock_guidewire.py (mock token + SOAP servers, not Guidewire)
+Run at 2026-11-03 16:19:01 UTC on .NET 8.0.33, Ubuntu 22.04.5 LTS
+SecurityProtocol after NetSetup.Apply(): Tls12
+
+<span class="h">(a) Normal call: token, then SOAP with Bearer; second claim reuses the cached token</span>
+  <span class="c">[     2 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[    33 ms]</span> Token: #1 received in 29 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[    35 ms]</span> SOAP: HTTP 200 in 33 ms (1 attempt).
+  <span class="c">[    36 ms]</span> Response: ACCEPTED, receipt MOCK-7554B714
+  <span class="c">[    37 ms]</span> SOAP: HTTP 200 in 1 ms (1 attempt).
+  <span class="c">[    37 ms]</span> Response: ACCEPTED, receipt MOCK-EA39D0E7
+  =&gt; <span class="ok">PASS</span> in 37 ms. 2 claims ACCEPTED with 1 token | token requests 1, SOAP requests 2 (mock counters)
+
+<span class="h">(b) Token close to expiry: refreshed 60 s before it expires (HTTP Basic client auth)</span>
+  <span class="c">[    41 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[    45 ms]</span> Token: #1 received in 2 ms, expires_in 62 s, reused until 2 s from now.
+  <span class="c">[    47 ms]</span> SOAP: HTTP 200 in 5 ms (1 attempt).
+  <span class="c">[    47 ms]</span> Waiting 2.5 s so the 62 s token is inside the 60 s refresh margin...
+  <span class="c">[  2548 ms]</span> Token: cached token is within 60 s of expiry, refreshing.
+  <span class="c">[  2551 ms]</span> Token: #2 received in 3 ms, expires_in 62 s, reused until 2 s from now.
+  <span class="c">[  2554 ms]</span> SOAP: HTTP 200 in 5 ms (1 attempt).
+  =&gt; <span class="ok">PASS</span> in 2554 ms. token refreshed before use, no 401 | token requests 2, SOAP requests 2 (mock counters)
+
+<span class="h">(c) Server rejects the cached token once (HTTP 401): refresh + one retry</span>
+  <span class="c">[     0 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[     3 ms]</span> Token: #1 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[     5 ms]</span> SOAP: HTTP 200 in 5 ms (1 attempt).
+  <span class="c">[     5 ms]</span> Mock told to reject the next SOAP call with 401 (token revoked on the server side).
+  <span class="c">[    52 ms]</span> SOAP: HTTP 401 with the cached token, getting a new token and retrying once.
+  <span class="c">[    53 ms]</span> Token: refresh forced.
+  <span class="c">[    55 ms]</span> Token: #2 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[    58 ms]</span> SOAP: HTTP 200 in 11 ms (2 attempts).
+  =&gt; <span class="ok">PASS</span> in 58 ms. retry with new token succeeded (HTTP 200) | token requests 2, SOAP requests 3 (mock counters)
+
+<span class="h">(d) Wrong client secret: clear error, no retry loop</span>
+  <span class="c">[     0 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[     4 ms]</span> Caught TokenRequestException: Token request failed: HTTP 401 invalid_client - Client authentication failed. Check client id, client secret and scope.
+  =&gt; <span class="ok">PASS</span> in 4 ms. stopped with HTTP 401 invalid_client | token requests 1, SOAP requests 0 (mock counters)
+
+<span class="h">(e) Bad payload: SOAP Fault surfaced with code, text and detail</span>
+  <span class="c">[     0 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[     3 ms]</span> Token: #1 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[    13 ms]</span> Caught SoapFaultException (HTTP 500): SOAP Fault soapenv:Client: Invalid claim payload | detail: ClaimNumber is required
+  =&gt; <span class="ok">PASS</span> in 13 ms. fault soapenv:Client / Invalid claim payload | token requests 1, SOAP requests 1 (mock counters)
+
+<span class="h">(f) Server keeps answering 401: exactly one retry, then a clear error</span>
+  <span class="c">[    41 ms]</span> Token: no cached token, requesting one.
+  <span class="c">[    45 ms]</span> Token: #1 received in 3 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[    48 ms]</span> SOAP: HTTP 401 with the cached token, getting a new token and retrying once.
+  <span class="c">[    48 ms]</span> Token: refresh forced.
+  <span class="c">[    51 ms]</span> Token: #2 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  <span class="c">[    55 ms]</span> Caught SoapCallException: SOAP call rejected with HTTP 401 twice (fresh token too). Check that the client has the scope/role for this API.
+  =&gt; <span class="ok">PASS</span> in 55 ms. stopped after 2 attempts | token requests 2, SOAP requests 2 (mock counters)</code></pre>
+  </div>
+
+  <h2>The code</h2>
+  <p class="note">Add <code>GuidewireOAuth.cs</code> to the Script Task project, add a reference to <code>System.Runtime.Serialization</code>, and use the <code>Main()</code> below in your existing <code>ScriptMain</code>. Your own XML-building code stays.</p>
+  <div class="codebox">
+  <div class="codehead"><b>GuidewireOAuth.cs</b><span class="note">356 lines</span><span class="sp"></span>
+    <button type="button" class="btn ghost sm copy" data-for="pre-GuidewireOAuth.cs">Copy</button>
+    <a class="btn ghost sm" href="GuidewireOAuth.cs" download>Download</a></div>
+  <pre id="pre-GuidewireOAuth.cs" class="code" tabindex="0" aria-label="GuidewireOAuth.cs"><code class="cs"><span class="c">// GuidewireOAuth.cs - OAuth 2.0 client credentials + SOAP call with a Bearer token.</span>
+<span class="c">// For an SSIS Script Task: .NET Framework 4.5+ (4.7.2 / 4.8 recommended), C# 7.3, no NuGet packages.</span>
+<span class="c">// Only Framework assemblies: System, System.Xml and System.Runtime.Serialization</span>
+<span class="c">// (in the Script Task project: References &gt; Add Reference &gt; Framework &gt; System.Runtime.Serialization).</span>
+<span class="c">// Nothing in this file depends on SSIS, so it can be tested in a plain console app.</span>
+<span class="c">// Nothing in this file writes the client secret or an access token to the log.</span>
+
+<span class="k">using</span> <span class="t">System</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Collections</span>.<span class="t">Generic</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Diagnostics</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">IO</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Net</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Runtime</span>.<span class="t">Serialization</span>.<span class="t">Json</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Text</span>;
+<span class="k">using</span> <span class="t">System</span>.<span class="t">Xml</span>;
+
+<span class="k">namespace</span> <span class="t">GuidewireAuth</span>
+{
+    <span class="c">/// &lt;summary&gt;Call once before the first request (old Framework tasks may default to TLS 1.0).&lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="t">NetSetup</span>
+    {
+        <span class="k">public</span> <span class="k">static</span> <span class="k">void</span> <span class="t">Apply</span>()
+        {
+            <span class="c">// Keep whatever is already enabled and add TLS 1.2.</span>
+            <span class="t">ServicePointManager</span>.<span class="t">SecurityProtocol</span> |= <span class="t">SecurityProtocolType</span>.<span class="t">Tls12</span>;
+            <span class="c">// Avoid the extra &quot;Expect: 100-continue&quot; round trip on every POST.</span>
+            <span class="t">ServicePointManager</span>.<span class="t">Expect100Continue</span> = <span class="k">false</span>;
+        }
+    }
+
+    <span class="k">public</span> <span class="k">interface</span> <span class="t">IAccessTokenSource</span>
+    {
+        <span class="c">/// &lt;summary&gt;Returns a valid access token; forceRefresh = true drops the cached one first.&lt;/summary&gt;</span>
+        <span class="k">string</span> <span class="t">GetAccessToken</span>(<span class="k">bool</span> forceRefresh);
+    }
+
+    <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">OAuthSettings</span>
+    {
+        <span class="k">public</span> <span class="k">string</span> <span class="t">TokenUrl</span>;
+        <span class="k">public</span> <span class="k">string</span> <span class="t">ClientId</span>;
+        <span class="k">public</span> <span class="k">string</span> <span class="t">ClientSecret</span>;      <span class="c">// comes from a sensitive package parameter, never from code</span>
+        <span class="k">public</span> <span class="k">string</span> <span class="t">Scope</span>;             <span class="c">// optional, space separated</span>
+        <span class="k">public</span> <span class="k">bool</span> <span class="t">UseBasicAuth</span>;        <span class="c">// true: client_id:client_secret in the Authorization header</span>
+        <span class="k">public</span> <span class="k">int</span> <span class="t">RefreshMarginSeconds</span> = <span class="n">60</span>;
+        <span class="k">public</span> <span class="k">int</span> <span class="t">TimeoutMs</span> = <span class="n">30000</span>;
+    }
+
+    <span class="k">public</span> <span class="k">class</span> <span class="t">TokenRequestException</span> : <span class="t">Exception</span>
+    {
+        <span class="k">public</span> <span class="k">int</span> <span class="t">HttpStatus</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="k">string</span> <span class="t">OAuthError</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="t">TokenRequestException</span>(<span class="k">string</span> message, <span class="k">int</span> httpStatus, <span class="k">string</span> oauthError, <span class="t">Exception</span> inner = <span class="k">null</span>)
+            : <span class="k">base</span>(message, inner)
+        {
+            <span class="t">HttpStatus</span> = httpStatus;
+            <span class="t">OAuthError</span> = oauthError;
+        }
+    }
+
+    <span class="c">/// &lt;summary&gt;Client credentials flow with an in-memory cache. Thread safe.&lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">TokenProvider</span> : <span class="t">IAccessTokenSource</span>
+    {
+        <span class="k">private</span> <span class="k">readonly</span> <span class="t">OAuthSettings</span> _s;
+        <span class="k">private</span> <span class="k">readonly</span> <span class="t">Action</span>&lt;<span class="k">string</span>&gt; _log;
+        <span class="k">private</span> <span class="k">readonly</span> <span class="k">object</span> _gate = <span class="k">new</span> <span class="k">object</span>();
+        <span class="k">private</span> <span class="k">string</span> _token;
+        <span class="k">private</span> <span class="t">DateTime</span> _expiresUtc = <span class="t">DateTime</span>.<span class="t">MinValue</span>;
+        <span class="k">private</span> <span class="k">int</span> _issued;
+
+        <span class="k">public</span> <span class="t">TokenProvider</span>(<span class="t">OAuthSettings</span> settings, <span class="t">Action</span>&lt;<span class="k">string</span>&gt; log)
+        {
+            <span class="k">if</span> (settings == <span class="k">null</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentNullException</span>(<span class="s">&quot;settings&quot;</span>);
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(settings.<span class="t">TokenUrl</span>)) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentException</span>(<span class="s">&quot;TokenUrl is empty&quot;</span>);
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(settings.<span class="t">ClientId</span>)) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentException</span>(<span class="s">&quot;ClientId is empty&quot;</span>);
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(settings.<span class="t">ClientSecret</span>)) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentException</span>(<span class="s">&quot;ClientSecret is empty&quot;</span>);
+            _s = settings;
+            _log = log ?? (m =&gt; { });
+        }
+
+        <span class="c">/// &lt;summary&gt;How many tokens this provider has fetched (for logs and tests).&lt;/summary&gt;</span>
+        <span class="k">public</span> <span class="k">int</span> <span class="t">TokensFetched</span> { <span class="k">get</span> { <span class="k">lock</span> (_gate) <span class="k">return</span> _issued; } }
+
+        <span class="k">public</span> <span class="k">string</span> <span class="t">GetAccessToken</span>(<span class="k">bool</span> forceRefresh)
+        {
+            <span class="k">lock</span> (_gate)
+            {
+                <span class="t">DateTime</span> now = <span class="t">DateTime</span>.<span class="t">UtcNow</span>;
+                <span class="k">if</span> (!forceRefresh &amp;&amp; _token != <span class="k">null</span> &amp;&amp; now &lt; _expiresUtc.<span class="t">AddSeconds</span>(-_s.<span class="t">RefreshMarginSeconds</span>))
+                    <span class="k">return</span> _token;
+
+                <span class="k">if</span> (forceRefresh) _log(<span class="s">&quot;Token: refresh forced.&quot;</span>);
+                <span class="k">else</span> <span class="k">if</span> (_token != <span class="k">null</span>) _log(<span class="s">&quot;Token: cached token is within &quot;</span> + _s.<span class="t">RefreshMarginSeconds</span> + <span class="s">&quot; s of expiry, refreshing.&quot;</span>);
+                <span class="k">else</span> _log(<span class="s">&quot;Token: no cached token, requesting one.&quot;</span>);
+
+                <span class="t">FetchLocked</span>();
+                <span class="k">return</span> _token;
+            }
+        }
+
+        <span class="k">private</span> <span class="k">void</span> <span class="t">FetchLocked</span>()
+        {
+            <span class="k">var</span> form = <span class="k">new</span> <span class="t">StringBuilder</span>(<span class="s">&quot;grant_type=client_credentials&quot;</span>);
+            <span class="k">if</span> (!_s.<span class="t">UseBasicAuth</span>)
+            {
+                form.<span class="t">Append</span>(<span class="s">&quot;&amp;client_id=&quot;</span>).<span class="t">Append</span>(<span class="t">Uri</span>.<span class="t">EscapeDataString</span>(_s.<span class="t">ClientId</span>));
+                form.<span class="t">Append</span>(<span class="s">&quot;&amp;client_secret=&quot;</span>).<span class="t">Append</span>(<span class="t">Uri</span>.<span class="t">EscapeDataString</span>(_s.<span class="t">ClientSecret</span>));
+            }
+            <span class="k">if</span> (!<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(_s.<span class="t">Scope</span>))
+                form.<span class="t">Append</span>(<span class="s">&quot;&amp;scope=&quot;</span>).<span class="t">Append</span>(<span class="t">Uri</span>.<span class="t">EscapeDataString</span>(_s.<span class="t">Scope</span>));
+            <span class="k">byte</span>[] body = <span class="t">Encoding</span>.<span class="t">ASCII</span>.<span class="t">GetBytes</span>(form.<span class="t">ToString</span>());
+
+            <span class="k">var</span> req = (<span class="t">HttpWebRequest</span>)<span class="t">WebRequest</span>.<span class="t">Create</span>(_s.<span class="t">TokenUrl</span>);
+            req.<span class="t">Method</span> = <span class="s">&quot;POST&quot;</span>;
+            req.<span class="t">ContentType</span> = <span class="s">&quot;application/x-www-form-urlencoded&quot;</span>;
+            req.<span class="t">Accept</span> = <span class="s">&quot;application/json&quot;</span>;
+            req.<span class="t">Timeout</span> = _s.<span class="t">TimeoutMs</span>;
+            req.<span class="t">ReadWriteTimeout</span> = _s.<span class="t">TimeoutMs</span>;
+            <span class="k">if</span> (_s.<span class="t">UseBasicAuth</span>)
+            {
+                <span class="c">// RFC 6749 2.3.1: id and secret are form-encoded, then joined with &#x27;:&#x27; and Base64 encoded.</span>
+                <span class="k">string</span> pair = <span class="t">Uri</span>.<span class="t">EscapeDataString</span>(_s.<span class="t">ClientId</span>) + <span class="s">&quot;:&quot;</span> + <span class="t">Uri</span>.<span class="t">EscapeDataString</span>(_s.<span class="t">ClientSecret</span>);
+                req.<span class="t">Headers</span>[<span class="t">HttpRequestHeader</span>.<span class="t">Authorization</span>] = <span class="s">&quot;Basic &quot;</span> + <span class="t">Convert</span>.<span class="t">ToBase64String</span>(<span class="t">Encoding</span>.<span class="t">UTF8</span>.<span class="t">GetBytes</span>(pair));
+            }
+            req.<span class="t">ContentLength</span> = body.<span class="t">Length</span>;
+
+            <span class="k">var</span> sw = <span class="t">Stopwatch</span>.<span class="t">StartNew</span>();
+            <span class="k">int</span> status;
+            <span class="k">string</span> json;
+            <span class="k">try</span>
+            {
+                <span class="k">using</span> (<span class="t">Stream</span> rs = req.<span class="t">GetRequestStream</span>()) rs.<span class="t">Write</span>(body, <span class="n">0</span>, body.<span class="t">Length</span>);
+                <span class="k">using</span> (<span class="k">var</span> resp = (<span class="t">HttpWebResponse</span>)req.<span class="t">GetResponse</span>())
+                {
+                    status = (<span class="k">int</span>)resp.<span class="t">StatusCode</span>;
+                    json = <span class="t">ReadAll</span>(resp);
+                }
+            }
+            <span class="k">catch</span> (<span class="t">WebException</span> ex)
+            {
+                <span class="k">var</span> er = ex.<span class="t">Response</span> <span class="k">as</span> <span class="t">HttpWebResponse</span>;
+                <span class="k">if</span> (er == <span class="k">null</span>)
+                    <span class="k">throw</span> <span class="k">new</span> <span class="t">TokenRequestException</span>(<span class="s">&quot;Token endpoint not reachable (&quot;</span> + ex.<span class="t">Status</span> + <span class="s">&quot;): &quot;</span> + ex.<span class="t">Message</span>, <span class="n">0</span>, <span class="k">null</span>, ex);
+                <span class="k">using</span> (er)
+                {
+                    <span class="k">int</span> code = (<span class="k">int</span>)er.<span class="t">StatusCode</span>;
+                    <span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt; err = <span class="t">TryParseJson</span>(<span class="t">ReadAll</span>(er));
+                    <span class="k">string</span> oauthError = <span class="t">Str</span>(err, <span class="s">&quot;error&quot;</span>);
+                    <span class="k">string</span> desc = <span class="t">Str</span>(err, <span class="s">&quot;error_description&quot;</span>);
+                    <span class="k">string</span> msg = <span class="s">&quot;Token request failed: HTTP &quot;</span> + code
+                        + (oauthError != <span class="k">null</span> ? <span class="s">&quot; &quot;</span> + oauthError : <span class="s">&quot;&quot;</span>)
+                        + (desc != <span class="k">null</span> ? <span class="s">&quot; - &quot;</span> + desc : <span class="s">&quot;&quot;</span>)
+                        + (code == <span class="n">400</span> || code == <span class="n">401</span> ? <span class="s">&quot;. Check client id, client secret and scope.&quot;</span> : <span class="s">&quot;.&quot;</span>);
+                    <span class="c">// No retry here: a wrong secret will not fix itself, and retries can lock the client.</span>
+                    <span class="k">throw</span> <span class="k">new</span> <span class="t">TokenRequestException</span>(msg, code, oauthError, ex);
+                }
+            }
+
+            <span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt; t = <span class="t">TryParseJson</span>(json);
+            <span class="k">string</span> token = <span class="t">Str</span>(t, <span class="s">&quot;access_token&quot;</span>);
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(token))
+                <span class="k">throw</span> <span class="k">new</span> <span class="t">TokenRequestException</span>(<span class="s">&quot;Token response has no access_token (HTTP &quot;</span> + status + <span class="s">&quot;).&quot;</span>, status, <span class="k">null</span>);
+            <span class="k">string</span> type = <span class="t">Str</span>(t, <span class="s">&quot;token_type&quot;</span>);
+            <span class="k">if</span> (type != <span class="k">null</span> &amp;&amp; !type.<span class="t">Equals</span>(<span class="s">&quot;Bearer&quot;</span>, <span class="t">StringComparison</span>.<span class="t">OrdinalIgnoreCase</span>))
+                <span class="k">throw</span> <span class="k">new</span> <span class="t">TokenRequestException</span>(<span class="s">&quot;Unexpected token_type &#x27;&quot;</span> + type + <span class="s">&quot;&#x27; (expected Bearer).&quot;</span>, status, <span class="k">null</span>);
+
+            <span class="k">long</span> expiresIn;
+            <span class="k">if</span> (!<span class="k">long</span>.<span class="t">TryParse</span>(<span class="t">Str</span>(t, <span class="s">&quot;expires_in&quot;</span>) ?? <span class="s">&quot;&quot;</span>, <span class="k">out</span> expiresIn) || expiresIn &lt;= <span class="n">0</span>)
+                expiresIn = <span class="n">300</span>; <span class="c">// no expires_in: assume 5 minutes; a 401 still triggers one refresh.</span>
+
+            _token = token;
+            _expiresUtc = <span class="t">DateTime</span>.<span class="t">UtcNow</span>.<span class="t">AddSeconds</span>(expiresIn);
+            _issued++;
+            _log(<span class="s">&quot;Token: #&quot;</span> + _issued + <span class="s">&quot; received in &quot;</span> + sw.<span class="t">ElapsedMilliseconds</span> + <span class="s">&quot; ms, expires_in &quot;</span> + expiresIn
+                 + <span class="s">&quot; s, reused until &quot;</span> + <span class="t">Math</span>.<span class="t">Max</span>(<span class="n">0</span>, expiresIn - _s.<span class="t">RefreshMarginSeconds</span>) + <span class="s">&quot; s from now.&quot;</span>);
+        }
+
+        <span class="k">private</span> <span class="k">static</span> <span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt; <span class="t">TryParseJson</span>(<span class="k">string</span> json)
+        {
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(json)) <span class="k">return</span> <span class="k">null</span>;
+            <span class="k">try</span>
+            {
+                <span class="k">var</span> ser = <span class="k">new</span> <span class="t">DataContractJsonSerializer</span>(<span class="k">typeof</span>(<span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt;),
+                    <span class="k">new</span> <span class="t">DataContractJsonSerializerSettings</span> { <span class="t">UseSimpleDictionaryFormat</span> = <span class="k">true</span> });
+                <span class="k">using</span> (<span class="k">var</span> ms = <span class="k">new</span> <span class="t">MemoryStream</span>(<span class="t">Encoding</span>.<span class="t">UTF8</span>.<span class="t">GetBytes</span>(json)))
+                    <span class="k">return</span> (<span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt;)ser.<span class="t">ReadObject</span>(ms);
+            }
+            <span class="k">catch</span> (<span class="t">Exception</span>) { <span class="k">return</span> <span class="k">null</span>; } <span class="c">// not JSON (an HTML error page, for example)</span>
+        }
+
+        <span class="k">private</span> <span class="k">static</span> <span class="k">string</span> <span class="t">Str</span>(<span class="t">Dictionary</span>&lt;<span class="k">string</span>, <span class="k">object</span>&gt; d, <span class="k">string</span> key)
+        {
+            <span class="k">object</span> v;
+            <span class="k">if</span> (d == <span class="k">null</span> || !d.<span class="t">TryGetValue</span>(key, <span class="k">out</span> v) || v == <span class="k">null</span>) <span class="k">return</span> <span class="k">null</span>;
+            <span class="k">return</span> <span class="t">Convert</span>.<span class="t">ToString</span>(v, <span class="t">System</span>.<span class="t">Globalization</span>.<span class="t">CultureInfo</span>.<span class="t">InvariantCulture</span>);
+        }
+
+        <span class="k">internal</span> <span class="k">static</span> <span class="k">string</span> <span class="t">ReadAll</span>(<span class="t">WebResponse</span> r)
+        {
+            <span class="k">using</span> (<span class="t">Stream</span> s = r.<span class="t">GetResponseStream</span>())
+            <span class="k">using</span> (<span class="k">var</span> sr = <span class="k">new</span> <span class="t">StreamReader</span>(s, <span class="t">Encoding</span>.<span class="t">UTF8</span>))
+                <span class="k">return</span> sr.<span class="t">ReadToEnd</span>();
+        }
+    }
+
+    <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">SoapResult</span>
+    {
+        <span class="k">public</span> <span class="k">int</span> <span class="t">HttpStatus</span>;
+        <span class="k">public</span> <span class="k">string</span> <span class="t">Body</span>;
+        <span class="k">public</span> <span class="k">long</span> <span class="t">ElapsedMs</span>;
+        <span class="k">public</span> <span class="k">int</span> <span class="t">Attempts</span>;
+    }
+
+    <span class="k">public</span> <span class="k">class</span> <span class="t">SoapCallException</span> : <span class="t">Exception</span>
+    {
+        <span class="k">public</span> <span class="k">int</span> <span class="t">HttpStatus</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="k">string</span> <span class="t">ResponseBody</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="t">SoapCallException</span>(<span class="k">string</span> message, <span class="k">int</span> httpStatus, <span class="k">string</span> body, <span class="t">Exception</span> inner = <span class="k">null</span>)
+            : <span class="k">base</span>(message, inner)
+        {
+            <span class="t">HttpStatus</span> = httpStatus;
+            <span class="t">ResponseBody</span> = body;
+        }
+    }
+
+    <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">SoapFaultException</span> : <span class="t">SoapCallException</span>
+    {
+        <span class="k">public</span> <span class="k">string</span> <span class="t">FaultCode</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="k">string</span> <span class="t">FaultString</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="k">string</span> <span class="t">Detail</span> { <span class="k">get</span>; <span class="k">private</span> <span class="k">set</span>; }
+        <span class="k">public</span> <span class="t">SoapFaultException</span>(<span class="k">int</span> httpStatus, <span class="k">string</span> code, <span class="k">string</span> text, <span class="k">string</span> detail, <span class="k">string</span> body)
+            : <span class="k">base</span>(<span class="s">&quot;SOAP Fault &quot;</span> + code + <span class="s">&quot;: &quot;</span> + text + (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(detail) ? <span class="s">&quot;&quot;</span> : <span class="s">&quot; | detail: &quot;</span> + detail), httpStatus, body)
+        {
+            <span class="t">FaultCode</span> = code;
+            <span class="t">FaultString</span> = text;
+            <span class="t">Detail</span> = detail;
+        }
+    }
+
+    <span class="c">/// &lt;summary&gt;Posts an existing SOAP envelope with a Bearer token. One retry on 401 with a fresh token.&lt;/summary&gt;</span>
+    <span class="k">public</span> <span class="k">sealed</span> <span class="k">class</span> <span class="t">SoapClient</span>
+    {
+        <span class="k">private</span> <span class="k">readonly</span> <span class="k">string</span> _endpoint;
+        <span class="k">private</span> <span class="k">readonly</span> <span class="t">IAccessTokenSource</span> _tokens;
+        <span class="k">private</span> <span class="k">readonly</span> <span class="t">Action</span>&lt;<span class="k">string</span>&gt; _log;
+        <span class="k">public</span> <span class="k">int</span> <span class="t">TimeoutMs</span> = <span class="n">100000</span>;
+        <span class="k">public</span> <span class="k">string</span> <span class="t">ContentType</span> = <span class="s">&quot;text/xml; charset=utf-8&quot;</span>; <span class="c">// SOAP 1.1</span>
+
+        <span class="k">public</span> <span class="t">SoapClient</span>(<span class="k">string</span> endpointUrl, <span class="t">IAccessTokenSource</span> tokens, <span class="t">Action</span>&lt;<span class="k">string</span>&gt; log)
+        {
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(endpointUrl)) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentException</span>(<span class="s">&quot;endpointUrl is empty&quot;</span>);
+            <span class="k">if</span> (tokens == <span class="k">null</span>) <span class="k">throw</span> <span class="k">new</span> <span class="t">ArgumentNullException</span>(<span class="s">&quot;tokens&quot;</span>);
+            _endpoint = endpointUrl;
+            _tokens = tokens;
+            _log = log ?? (m =&gt; { });
+        }
+
+        <span class="k">public</span> <span class="t">SoapResult</span> <span class="t">Post</span>(<span class="k">string</span> soapXml, <span class="k">string</span> soapAction)
+        {
+            <span class="k">var</span> sw = <span class="t">Stopwatch</span>.<span class="t">StartNew</span>();
+            <span class="k">byte</span>[] body = <span class="t">Encoding</span>.<span class="t">UTF8</span>.<span class="t">GetBytes</span>(soapXml);
+
+            <span class="k">int</span> status; <span class="k">string</span> text;
+            <span class="t">Send</span>(body, soapAction, _tokens.<span class="t">GetAccessToken</span>(<span class="k">false</span>), <span class="k">out</span> status, <span class="k">out</span> text);
+            <span class="k">int</span> attempts = <span class="n">1</span>;
+            <span class="k">if</span> (status == <span class="n">401</span>)
+            {
+                _log(<span class="s">&quot;SOAP: HTTP 401 with the cached token, getting a new token and retrying once.&quot;</span>);
+                <span class="t">Send</span>(body, soapAction, _tokens.<span class="t">GetAccessToken</span>(<span class="k">true</span>), <span class="k">out</span> status, <span class="k">out</span> text);
+                attempts = <span class="n">2</span>;
+                <span class="k">if</span> (status == <span class="n">401</span>)
+                    <span class="k">throw</span> <span class="k">new</span> <span class="t">SoapCallException</span>(<span class="s">&quot;SOAP call rejected with HTTP 401 twice (fresh token too). &quot;</span>
+                        + <span class="s">&quot;Check that the client has the scope/role for this API.&quot;</span>, <span class="n">401</span>, text);
+            }
+
+            <span class="c">// A Fault can come back as HTTP 500 (SOAP 1.1 rule) or, on some servers, as HTTP 200.</span>
+            <span class="t">SoapFaultException</span> fault = <span class="t">TryReadFault</span>(status, text);
+            <span class="k">if</span> (fault != <span class="k">null</span>) <span class="k">throw</span> fault;
+            <span class="k">if</span> (status &lt; <span class="n">200</span> || status &gt; <span class="n">299</span>)
+                <span class="k">throw</span> <span class="k">new</span> <span class="t">SoapCallException</span>(<span class="s">&quot;SOAP call failed: HTTP &quot;</span> + status + <span class="s">&quot;: &quot;</span> + <span class="t">Trim</span>(text, <span class="n">300</span>), status, text);
+
+            _log(<span class="s">&quot;SOAP: HTTP &quot;</span> + status + <span class="s">&quot; in &quot;</span> + sw.<span class="t">ElapsedMilliseconds</span> + <span class="s">&quot; ms (&quot;</span> + attempts + <span class="s">&quot; attempt&quot;</span> + (attempts &gt; <span class="n">1</span> ? <span class="s">&quot;s&quot;</span> : <span class="s">&quot;&quot;</span>) + <span class="s">&quot;).&quot;</span>);
+            <span class="k">return</span> <span class="k">new</span> <span class="t">SoapResult</span> { <span class="t">HttpStatus</span> = status, <span class="t">Body</span> = text, <span class="t">ElapsedMs</span> = sw.<span class="t">ElapsedMilliseconds</span>, <span class="t">Attempts</span> = attempts };
+        }
+
+        <span class="k">private</span> <span class="k">void</span> <span class="t">Send</span>(<span class="k">byte</span>[] body, <span class="k">string</span> soapAction, <span class="k">string</span> token, <span class="k">out</span> <span class="k">int</span> status, <span class="k">out</span> <span class="k">string</span> text)
+        {
+            <span class="k">var</span> req = (<span class="t">HttpWebRequest</span>)<span class="t">WebRequest</span>.<span class="t">Create</span>(_endpoint);
+            req.<span class="t">Method</span> = <span class="s">&quot;POST&quot;</span>;
+            req.<span class="t">ContentType</span> = <span class="t">ContentType</span>;
+            req.<span class="t">Headers</span>[<span class="s">&quot;SOAPAction&quot;</span>] = <span class="s">&quot;\&quot;&quot;</span> + (soapAction ?? <span class="s">&quot;&quot;</span>) + <span class="s">&quot;\&quot;&quot;</span>;
+            req.<span class="t">Headers</span>[<span class="t">HttpRequestHeader</span>.<span class="t">Authorization</span>] = <span class="s">&quot;Bearer &quot;</span> + token;
+            req.<span class="t">Timeout</span> = <span class="t">TimeoutMs</span>;
+            req.<span class="t">ReadWriteTimeout</span> = <span class="t">TimeoutMs</span>;
+            req.<span class="t">ContentLength</span> = body.<span class="t">Length</span>;
+            <span class="k">try</span>
+            {
+                <span class="k">using</span> (<span class="t">Stream</span> rs = req.<span class="t">GetRequestStream</span>()) rs.<span class="t">Write</span>(body, <span class="n">0</span>, body.<span class="t">Length</span>);
+                <span class="k">using</span> (<span class="k">var</span> resp = (<span class="t">HttpWebResponse</span>)req.<span class="t">GetResponse</span>())
+                {
+                    status = (<span class="k">int</span>)resp.<span class="t">StatusCode</span>;
+                    text = <span class="t">TokenProvider</span>.<span class="t">ReadAll</span>(resp);
+                }
+            }
+            <span class="k">catch</span> (<span class="t">WebException</span> ex)
+            {
+                <span class="k">var</span> er = ex.<span class="t">Response</span> <span class="k">as</span> <span class="t">HttpWebResponse</span>;
+                <span class="k">if</span> (er == <span class="k">null</span>)
+                    <span class="k">throw</span> <span class="k">new</span> <span class="t">SoapCallException</span>(<span class="s">&quot;SOAP endpoint not reachable (&quot;</span> + ex.<span class="t">Status</span> + <span class="s">&quot;): &quot;</span> + ex.<span class="t">Message</span>, <span class="n">0</span>, <span class="k">null</span>, ex);
+                <span class="k">using</span> (er)
+                {
+                    status = (<span class="k">int</span>)er.<span class="t">StatusCode</span>;
+                    text = <span class="t">TokenProvider</span>.<span class="t">ReadAll</span>(er);
+                }
+            }
+        }
+
+        <span class="c">/// &lt;summary&gt;Reads a SOAP 1.1 (faultcode/faultstring) or SOAP 1.2 (Code/Reason) Fault, or returns null.&lt;/summary&gt;</span>
+        <span class="k">public</span> <span class="k">static</span> <span class="t">SoapFaultException</span> <span class="t">TryReadFault</span>(<span class="k">int</span> status, <span class="k">string</span> xml)
+        {
+            <span class="k">if</span> (<span class="k">string</span>.<span class="t">IsNullOrEmpty</span>(xml) || xml.<span class="t">IndexOf</span>(<span class="s">&quot;Fault&quot;</span>, <span class="t">StringComparison</span>.<span class="t">Ordinal</span>) &lt; <span class="n">0</span>) <span class="k">return</span> <span class="k">null</span>;
+            <span class="k">var</span> doc = <span class="k">new</span> <span class="t">XmlDocument</span> { <span class="t">XmlResolver</span> = <span class="k">null</span> }; <span class="c">// no external entities</span>
+            <span class="k">try</span>
+            {
+                <span class="k">using</span> (<span class="k">var</span> sr = <span class="k">new</span> <span class="t">StringReader</span>(xml))
+                <span class="k">using</span> (<span class="k">var</span> xr = <span class="t">XmlReader</span>.<span class="t">Create</span>(sr, <span class="k">new</span> <span class="t">XmlReaderSettings</span> { <span class="t">DtdProcessing</span> = <span class="t">DtdProcessing</span>.<span class="t">Prohibit</span>, <span class="t">XmlResolver</span> = <span class="k">null</span> }))
+                    doc.<span class="t">Load</span>(xr);
+            }
+            <span class="k">catch</span> (<span class="t">XmlException</span>) { <span class="k">return</span> <span class="k">null</span>; }
+
+            <span class="t">XmlNode</span> fault = <span class="k">null</span>;
+            <span class="k">foreach</span> (<span class="t">XmlNode</span> n <span class="k">in</span> doc.<span class="t">GetElementsByTagName</span>(<span class="s">&quot;*&quot;</span>))
+                <span class="k">if</span> (n.<span class="t">LocalName</span> == <span class="s">&quot;Fault&quot;</span>) { fault = n; <span class="k">break</span>; }
+            <span class="k">if</span> (fault == <span class="k">null</span>) <span class="k">return</span> <span class="k">null</span>;
+
+            <span class="k">string</span> code = <span class="t">Child</span>(fault, <span class="s">&quot;faultcode&quot;</span>) ?? <span class="t">Child</span>(fault, <span class="s">&quot;Code&quot;</span>);
+            <span class="k">string</span> text = <span class="t">Child</span>(fault, <span class="s">&quot;faultstring&quot;</span>) ?? <span class="t">Child</span>(fault, <span class="s">&quot;Reason&quot;</span>);
+            <span class="k">string</span> detail = <span class="t">Child</span>(fault, <span class="s">&quot;detail&quot;</span>) ?? <span class="t">Child</span>(fault, <span class="s">&quot;Detail&quot;</span>);
+            <span class="k">return</span> <span class="k">new</span> <span class="t">SoapFaultException</span>(status, code ?? <span class="s">&quot;(none)&quot;</span>, text ?? <span class="s">&quot;(none)&quot;</span>, <span class="t">Trim</span>(detail, <span class="n">500</span>), xml);
+        }
+
+        <span class="k">private</span> <span class="k">static</span> <span class="k">string</span> <span class="t">Child</span>(<span class="t">XmlNode</span> parent, <span class="k">string</span> localName)
+        {
+            <span class="k">foreach</span> (<span class="t">XmlNode</span> c <span class="k">in</span> parent.<span class="t">ChildNodes</span>)
+                <span class="k">if</span> (c.<span class="t">LocalName</span> == localName) <span class="k">return</span> c.<span class="t">InnerText</span>.<span class="t">Trim</span>();
+            <span class="k">return</span> <span class="k">null</span>;
+        }
+
+        <span class="k">private</span> <span class="k">static</span> <span class="k">string</span> <span class="t">Trim</span>(<span class="k">string</span> s, <span class="k">int</span> max)
+        {
+            <span class="k">if</span> (s == <span class="k">null</span>) <span class="k">return</span> <span class="k">null</span>;
+            s = s.<span class="t">Replace</span>(<span class="s">&quot;\r&quot;</span>, <span class="s">&quot; &quot;</span>).<span class="t">Replace</span>(<span class="s">&quot;\n&quot;</span>, <span class="s">&quot; &quot;</span>).<span class="t">Trim</span>();
+            <span class="k">return</span> s.<span class="t">Length</span> &lt;= max ? s : s.<span class="t">Substring</span>(<span class="n">0</span>, max) + <span class="s">&quot;...&quot;</span>;
+        }
+    }
+}
+</code></pre>
+</div>
+  <div class="codebox">
+  <div class="codehead"><b>ScriptMain.cs</b><span class="note">118 lines</span><span class="sp"></span>
+    <button type="button" class="btn ghost sm copy" data-for="pre-ScriptMain.cs">Copy</button>
+    <a class="btn ghost sm" href="ScriptMain.cs" download>Download</a></div>
+  <pre id="pre-ScriptMain.cs" class="code" tabindex="0" aria-label="ScriptMain.cs"><code class="cs"><span class="c">// ScriptMain.cs - the SSIS-only part of the XMLCCXmlLoad Script Task (C# 7.3, .NET Framework 4.x).</span>
+<span class="c">// Add GuidewireOAuth.cs to the same Script Task project (Project &gt; Add Existing Item) and a reference to</span>
+<span class="c">// System.Runtime.Serialization. Keep your project&#x27;s own ST_... namespace; only Main() changes.</span>
+<span class="c">//</span>
+<span class="c">// Script Task Editor:</span>
+<span class="c">//   ReadOnlyVariables : $Package::OAuthTokenUrl, $Package::OAuthClientId, $Package::OAuthScope,</span>
+<span class="c">//                       $Package::OAuthClientSecret (Sensitive = True), $Package::GuidewireSoapUrl,</span>
+<span class="c">//                       $Package::SoapAction, User::ClaimXml</span>
+<span class="c">//   ReadWriteVariables: User::SoapResponse</span>
+<span class="c">// The secret is never in this file: it comes from the sensitive package parameter, which the SSIS catalog</span>
+<span class="c">// fills from an environment variable marked Sensitive (stored encrypted in SSISDB).</span>
+
+<span class="k">using</span> <span class="t">System</span>;
+<span class="k">using</span> <span class="t">GuidewireAuth</span>;
+
+<span class="k">namespace</span> <span class="t">ST_XMLCCXmlLoad</span>
+{
+    [<span class="t">Microsoft</span>.<span class="t">SqlServer</span>.<span class="t">Dts</span>.<span class="t">Tasks</span>.<span class="t">ScriptTask</span>.<span class="t">SSISScriptTaskEntryPointAttribute</span>]
+    <span class="k">public</span> partial <span class="k">class</span> <span class="t">ScriptMain</span> : <span class="t">Microsoft</span>.<span class="t">SqlServer</span>.<span class="t">Dts</span>.<span class="t">Tasks</span>.<span class="t">ScriptTask</span>.<span class="t">VSTARTScriptObjectModelBase</span>
+    {
+        <span class="k">private</span> <span class="k">const</span> <span class="k">string</span> <span class="t">Source</span> = <span class="s">&quot;XMLCCXmlLoad&quot;</span>;
+
+        <span class="c">// Static: if the task runs many times in one package execution (Foreach Loop), the token is reused</span>
+        <span class="c">// until 60 s before it expires instead of being requested for every claim.</span>
+        <span class="k">private</span> <span class="k">static</span> <span class="t">TokenProvider</span> _tokens;
+        <span class="k">private</span> <span class="k">static</span> <span class="k">string</span> _tokensKey;
+        <span class="k">private</span> <span class="k">static</span> <span class="t">Action</span>&lt;<span class="k">string</span>&gt; _currentLog;
+        <span class="k">private</span> <span class="k">static</span> <span class="k">readonly</span> <span class="k">object</span> _gate = <span class="k">new</span> <span class="k">object</span>();
+
+        <span class="k">public</span> <span class="k">void</span> <span class="t">Main</span>()
+        {
+            <span class="k">try</span>
+            {
+                _currentLog = <span class="t">Info</span>; <span class="c">// token messages go to this run&#x27;s log</span>
+                <span class="t">NetSetup</span>.<span class="t">Apply</span>();   <span class="c">// TLS 1.2 on .NET Framework</span>
+
+                <span class="k">var</span> settings = <span class="k">new</span> <span class="t">OAuthSettings</span>
+                {
+                    <span class="t">TokenUrl</span> = <span class="t">Param</span>(<span class="s">&quot;$Package::OAuthTokenUrl&quot;</span>),
+                    <span class="t">ClientId</span> = <span class="t">Param</span>(<span class="s">&quot;$Package::OAuthClientId&quot;</span>),
+                    <span class="t">Scope</span> = <span class="t">Param</span>(<span class="s">&quot;$Package::OAuthScope&quot;</span>),
+                    <span class="t">ClientSecret</span> = <span class="t">Convert</span>.<span class="t">ToString</span>(<span class="t">Dts</span>.<span class="t">Variables</span>[<span class="s">&quot;$Package::OAuthClientSecret&quot;</span>].<span class="t">GetSensitiveValue</span>()),
+                    <span class="t">UseBasicAuth</span> = <span class="k">false</span> <span class="c">// set true if the token endpoint wants client_secret_basic</span>
+                };
+                <span class="k">string</span> soapUrl = <span class="t">Param</span>(<span class="s">&quot;$Package::GuidewireSoapUrl&quot;</span>);
+                <span class="k">string</span> soapAction = <span class="t">Param</span>(<span class="s">&quot;$Package::SoapAction&quot;</span>);
+
+                <span class="c">// Your existing code that builds the claim XML stays as it is; here it is read from a variable.</span>
+                <span class="k">string</span> soapXml = <span class="t">Param</span>(<span class="s">&quot;User::ClaimXml&quot;</span>);
+
+                <span class="t">Info</span>(<span class="s">&quot;Calling &quot;</span> + soapUrl + <span class="s">&quot; (client id &quot;</span> + settings.<span class="t">ClientId</span> + <span class="s">&quot;, &quot;</span> + soapXml.<span class="t">Length</span> + <span class="s">&quot; chars).&quot;</span>);
+
+                <span class="k">var</span> client = <span class="k">new</span> <span class="t">SoapClient</span>(soapUrl, <span class="t">GetProvider</span>(settings), <span class="t">Info</span>);
+                <span class="t">SoapResult</span> result = client.<span class="t">Post</span>(soapXml, soapAction);
+
+                <span class="t">Dts</span>.<span class="t">Variables</span>[<span class="s">&quot;User::SoapResponse&quot;</span>].<span class="t">Value</span> = result.<span class="t">Body</span>;
+                <span class="t">Info</span>(<span class="s">&quot;Claim submitted: HTTP &quot;</span> + result.<span class="t">HttpStatus</span> + <span class="s">&quot;, &quot;</span> + result.<span class="t">ElapsedMs</span> + <span class="s">&quot; ms.&quot;</span>);
+                <span class="t">Dts</span>.<span class="t">TaskResult</span> = (<span class="k">int</span>)<span class="t">ScriptResults</span>.<span class="t">Success</span>;
+            }
+            <span class="k">catch</span> (<span class="t">SoapFaultException</span> ex)
+            {
+                <span class="t">Error</span>(<span class="s">&quot;Guidewire returned a SOAP Fault. &quot;</span> + ex.<span class="t">Message</span>);
+                <span class="t">Dts</span>.<span class="t">TaskResult</span> = (<span class="k">int</span>)<span class="t">ScriptResults</span>.<span class="t">Failure</span>;
+            }
+            <span class="k">catch</span> (<span class="t">TokenRequestException</span> ex)
+            {
+                <span class="t">Error</span>(ex.<span class="t">Message</span>); <span class="c">// never contains the secret or a token</span>
+                <span class="t">Dts</span>.<span class="t">TaskResult</span> = (<span class="k">int</span>)<span class="t">ScriptResults</span>.<span class="t">Failure</span>;
+            }
+            <span class="k">catch</span> (<span class="t">Exception</span> ex)
+            {
+                <span class="t">Error</span>(ex.<span class="t">GetType</span>().<span class="t">Name</span> + <span class="s">&quot;: &quot;</span> + ex.<span class="t">Message</span>);
+                <span class="t">Dts</span>.<span class="t">TaskResult</span> = (<span class="k">int</span>)<span class="t">ScriptResults</span>.<span class="t">Failure</span>;
+            }
+        }
+
+        <span class="k">private</span> <span class="k">static</span> <span class="t">TokenProvider</span> <span class="t">GetProvider</span>(<span class="t">OAuthSettings</span> s)
+        {
+            <span class="c">// Kept in memory only, never logged: a new provider if any setting (or the secret) changed.</span>
+            <span class="k">string</span> key = s.<span class="t">TokenUrl</span> + <span class="s">&quot;|&quot;</span> + s.<span class="t">ClientId</span> + <span class="s">&quot;|&quot;</span> + s.<span class="t">Scope</span> + <span class="s">&quot;|&quot;</span> + s.<span class="t">UseBasicAuth</span> + <span class="s">&quot;|&quot;</span> + s.<span class="t">ClientSecret</span>;
+            <span class="k">lock</span> (_gate)
+            {
+                <span class="k">if</span> (_tokens == <span class="k">null</span> || _tokensKey != key)
+                {
+                    _tokens = <span class="k">new</span> <span class="t">TokenProvider</span>(s, m =&gt; { <span class="t">Action</span>&lt;<span class="k">string</span>&gt; log = _currentLog; <span class="k">if</span> (log != <span class="k">null</span>) log(m); });
+                    _tokensKey = key;
+                }
+                <span class="k">return</span> _tokens;
+            }
+        }
+
+        <span class="k">private</span> <span class="k">string</span> <span class="t">Param</span>(<span class="k">string</span> name)
+        {
+            <span class="k">object</span> v = <span class="t">Dts</span>.<span class="t">Variables</span>[name].<span class="t">Value</span>;
+            <span class="k">return</span> v == <span class="k">null</span> ? <span class="s">&quot;&quot;</span> : v.<span class="t">ToString</span>();
+        }
+
+        <span class="k">private</span> <span class="k">void</span> <span class="t">Info</span>(<span class="k">string</span> message)
+        {
+            <span class="k">bool</span> fireAgain = <span class="k">true</span>;
+            <span class="t">Dts</span>.<span class="t">Events</span>.<span class="t">FireInformation</span>(<span class="n">0</span>, <span class="t">Source</span>, message, <span class="k">string</span>.<span class="t">Empty</span>, <span class="n">0</span>, <span class="k">ref</span> fireAgain);
+        }
+
+        <span class="k">private</span> <span class="k">void</span> <span class="t">Error</span>(<span class="k">string</span> message)
+        {
+            <span class="t">Dts</span>.<span class="t">Events</span>.<span class="t">FireError</span>(<span class="n">0</span>, <span class="t">Source</span>, message, <span class="k">string</span>.<span class="t">Empty</span>, <span class="n">0</span>);
+        }
+
+<span class="c">        #region ScriptResults declaration</span>
+        <span class="k">enum</span> <span class="t">ScriptResults</span>
+        {
+            <span class="t">Success</span> = <span class="t">Microsoft</span>.<span class="t">SqlServer</span>.<span class="t">Dts</span>.<span class="t">Runtime</span>.<span class="t">DTSExecResult</span>.<span class="t">Success</span>,
+            <span class="t">Failure</span> = <span class="t">Microsoft</span>.<span class="t">SqlServer</span>.<span class="t">Dts</span>.<span class="t">Runtime</span>.<span class="t">DTSExecResult</span>.<span class="t">Failure</span>
+        };
+<span class="c">        #endregion</span>
+    }
+}
+</code></pre>
+</div>
+  <div class="codebox">
+    <div class="codehead"><b>compat73-build.txt</b><span class="note">C# 7.3 compile check</span><span class="sp"></span>
+      <a class="btn ghost sm" href="compat73-build.txt" download>Download</a></div>
+    <pre class="code" tabindex="0" aria-label="C# 7.3 build output"><code>$ dotnet build Compat73.csproj -c Release --no-incremental   # net48 reference assemblies, LangVersion 7.3, warnings as errors
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Compat73 -&gt; ./compat73/bin/Release/net48/Compat73.dll
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+Time Elapsed 00:00:00.68
+</code></pre>
+  </div>
+  <p class="note">The compile check builds <code>GuidewireOAuth.cs</code> and <code>ScriptMain.cs</code> with <code>LangVersion 7.3</code> against the .NET Framework 4.8 reference assemblies, warnings treated as errors. <code>ScriptMain.cs</code> is compiled against small stand-ins for the SSIS types (<code>Dts.Variables</code>, <code>Dts.Events</code>), because the real SSIS assemblies only exist on Windows. Test harness and mock: <a href="Program.cs" download>Program.cs</a>, <a href="mock_guidewire.py" download>mock_guidewire.py</a>.</p>
+
+  <h2>Postman first</h2>
+  <div class="card">
+    <p>Two requests: <b>1. Get token</b> (client credentials, saves <code>access_token</code>) and <b>2. Submit claim</b> (your SOAP XML with <code>Bearer {{access_token}}</code>). Variables: <code>token_url</code>, <code>client_id</code>, <code>client_secret</code> (empty: put it in a Postman environment as a secret), <code>scope</code>, <code>soap_url</code>, <code>soap_action</code>. Defaults point at the local mock; swap in the Guidewire values for the real test.</p>
+    <div class="dl"><a class="btn" href="ssis-guidewire-oauth.postman_collection.json" download>Download the Postman collection (v2.1)</a></div>
+  </div>
+
+  <h2>How the secret is stored</h2>
+  <div class="grid2">
+    <div class="card"><h3>In the package</h3>
+      <ul>
+        <li>A package parameter <code>OAuthClientSecret</code> with <b>Sensitive = True</b>, read in the task with <code>Dts.Variables["$Package::OAuthClientSecret"].GetSensitiveValue()</code>. <code>.Value</code> is not readable for sensitive parameters.</li>
+        <li>Token URL, client id, scope and the SOAP URL are normal parameters, so they can change per environment without editing code.</li>
+        <li>Project <b>ProtectionLevel = DontSaveSensitive</b>: the secret is never saved in the .dtsx, the .ispac or source control.</li>
+      </ul></div>
+    <div class="card"><h3>On the server</h3>
+      <ul>
+        <li>An SSIS catalog <b>environment variable marked Sensitive</b>, mapped to <code>OAuthClientSecret</code> in the project configuration. SSISDB stores sensitive values encrypted.</li>
+        <li>If AutoSys starts the package from the catalog (a SQL Agent job, or <code>dtexec /ISServer ... /Env</code>), the job only references the environment, so the secret is not in the job definition.</li>
+        <li>Not on the command line with <code>/Par</code>, and never in the log: the code writes neither the secret nor the token (checked in the run above).</li>
+      </ul></div>
+  </div>
+
+  <p class="small">Mock endpoints only: the mock is not Guidewire, and the token URL, scope, SOAP namespace and claim fields shown are placeholders. All credentials on this page are fake demo values. Made by S'limane Chanchoul.</p>
+</main>
+<script>
+document.querySelectorAll("button.copy").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var pre = document.getElementById(b.getAttribute("data-for"));
+    var text = pre ? pre.innerText : "";
+    function done(ok) { b.textContent = ok ? "Copied" : "Copy failed"; setTimeout(function () { b.textContent = "Copy"; }, 1600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+    } else {
+      var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { done(document.execCommand("copy")); } catch (e) { done(false); } s.removeAllRanges();
+    }
+  });
+});
+</script>
+</body></html>

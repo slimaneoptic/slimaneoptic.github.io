@@ -1,0 +1,141 @@
+{
+  "info": {
+    "_postman_id": "0351f51c-c570-5058-a9cb-9fa4ee14a8e6",
+    "name": "SSIS Guidewire OAuth (client credentials + SOAP)",
+    "description": "1) Get token: OAuth 2.0 client credentials, saves access_token. 2) Submit claim (SOAP): posts the SOAP XML with Authorization: Bearer {{access_token}}.\n\nDefaults point at the local mock (python3 mock_guidewire.py, port 18765). For the real test, replace token_url, client_id, scope, soap_url and soap_action with the values from Guidewire, and put client_secret in a Postman environment as type 'secret' (never commit it). The mock accepts client_secret FAKE-demo-secret-0000 (fake).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Get token (client credentials)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('token received', function () { pm.response.to.have.status(200); });",
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('access_token', j.access_token);",
+              "console.log('token_type', j.token_type, 'expires_in', j.expires_in);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-www-form-urlencoded"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            {
+              "key": "grant_type",
+              "value": "client_credentials",
+              "type": "text"
+            },
+            {
+              "key": "client_id",
+              "value": "{{client_id}}",
+              "type": "text"
+            },
+            {
+              "key": "client_secret",
+              "value": "{{client_secret}}",
+              "type": "text"
+            },
+            {
+              "key": "scope",
+              "value": "{{scope}}",
+              "type": "text"
+            }
+          ]
+        },
+        "url": "{{token_url}}",
+        "description": "If the token endpoint wants client_secret_basic, remove client_id/client_secret from the body and use Authorization > Basic Auth with the same two values."
+      }
+    },
+    {
+      "name": "2. Submit claim (SOAP, Bearer token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200, no SOAP Fault', function () { pm.response.to.have.status(200); pm.expect(pm.response.text()).to.not.include('Fault>'); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "text/xml; charset=utf-8"
+          },
+          {
+            "key": "SOAPAction",
+            "value": "\"{{soap_action}}\""
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:tpa=\"http://example.com/mock/tpa/claims\">\n  <soapenv:Header/>\n  <soapenv:Body>\n    <tpa:submitClaim>\n      <tpa:ClaimNumber>DEMO-000101</tpa:ClaimNumber>\n      <tpa:LossDate>2026-10-28</tpa:LossDate>\n      <tpa:PaidAmount>1250.00</tpa:PaidAmount>\n    </tpa:submitClaim>\n  </soapenv:Body>\n</soapenv:Envelope>",
+          "options": {
+            "raw": {
+              "language": "xml"
+            }
+          }
+        },
+        "url": "{{soap_url}}",
+        "description": "Paste the XML your XMLCCXmlLoad Script Task sends today in place of this sample body."
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "token_url",
+      "value": "http://127.0.0.1:18765/oauth2/token"
+    },
+    {
+      "key": "client_id",
+      "value": "demo-ssis-client"
+    },
+    {
+      "key": "client_secret",
+      "value": "",
+      "description": "Set in a Postman environment (type secret). Mock value: FAKE-demo-secret-0000"
+    },
+    {
+      "key": "scope",
+      "value": "tpa.claims.submit"
+    },
+    {
+      "key": "soap_url",
+      "value": "http://127.0.0.1:18765/cc/ws/claim"
+    },
+    {
+      "key": "soap_action",
+      "value": "urn:mock:tpa:submitClaim"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "description": "Filled by request 1"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+GuidewireOAuth.cs test run against mock_guidewire.py (mock token + SOAP servers, not Guidewire)
+Run at 2026-11-03 16:19:01 UTC on .NET 8.0.33, Ubuntu 22.04.5 LTS
+SecurityProtocol after NetSetup.Apply(): Tls12
+
+(a) Normal call: token, then SOAP with Bearer; second claim reuses the cached token
+  [     2 ms] Token: no cached token, requesting one.
+  [    33 ms] Token: #1 received in 29 ms, expires_in 3600 s, reused until 3540 s from now.
+  [    35 ms] SOAP: HTTP 200 in 33 ms (1 attempt).
+  [    36 ms] Response: ACCEPTED, receipt MOCK-7554B714
+  [    37 ms] SOAP: HTTP 200 in 1 ms (1 attempt).
+  [    37 ms] Response: ACCEPTED, receipt MOCK-EA39D0E7
+  => PASS in 37 ms. 2 claims ACCEPTED with 1 token | token requests 1, SOAP requests 2 (mock counters)
+
+(b) Token close to expiry: refreshed 60 s before it expires (HTTP Basic client auth)
+  [    41 ms] Token: no cached token, requesting one.
+  [    45 ms] Token: #1 received in 2 ms, expires_in 62 s, reused until 2 s from now.
+  [    47 ms] SOAP: HTTP 200 in 5 ms (1 attempt).
+  [    47 ms] Waiting 2.5 s so the 62 s token is inside the 60 s refresh margin...
+  [  2548 ms] Token: cached token is within 60 s of expiry, refreshing.
+  [  2551 ms] Token: #2 received in 3 ms, expires_in 62 s, reused until 2 s from now.
+  [  2554 ms] SOAP: HTTP 200 in 5 ms (1 attempt).
+  => PASS in 2554 ms. token refreshed before use, no 401 | token requests 2, SOAP requests 2 (mock counters)
+
+(c) Server rejects the cached token once (HTTP 401): refresh + one retry
+  [     0 ms] Token: no cached token, requesting one.
+  [     3 ms] Token: #1 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  [     5 ms] SOAP: HTTP 200 in 5 ms (1 attempt).
+  [     5 ms] Mock told to reject the next SOAP call with 401 (token revoked on the server side).
+  [    52 ms] SOAP: HTTP 401 with the cached token, getting a new token and retrying once.
+  [    53 ms] Token: refresh forced.
+  [    55 ms] Token: #2 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  [    58 ms] SOAP: HTTP 200 in 11 ms (2 attempts).
+  => PASS in 58 ms. retry with new token succeeded (HTTP 200) | token requests 2, SOAP requests 3 (mock counters)
+
+(d) Wrong client secret: clear error, no retry loop
+  [     0 ms] Token: no cached token, requesting one.
+  [     4 ms] Caught TokenRequestException: Token request failed: HTTP 401 invalid_client - Client authentication failed. Check client id, client secret and scope.
+  => PASS in 4 ms. stopped with HTTP 401 invalid_client | token requests 1, SOAP requests 0 (mock counters)
+
+(e) Bad payload: SOAP Fault surfaced with code, text and detail
+  [     0 ms] Token: no cached token, requesting one.
+  [     3 ms] Token: #1 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  [    13 ms] Caught SoapFaultException (HTTP 500): SOAP Fault soapenv:Client: Invalid claim payload | detail: ClaimNumber is required
+  => PASS in 13 ms. fault soapenv:Client / Invalid claim payload | token requests 1, SOAP requests 1 (mock counters)
+
+(f) Server keeps answering 401: exactly one retry, then a clear error
+  [    41 ms] Token: no cached token, requesting one.
+  [    45 ms] Token: #1 received in 3 ms, expires_in 3600 s, reused until 3540 s from now.
+  [    48 ms] SOAP: HTTP 401 with the cached token, getting a new token and retrying once.
+  [    48 ms] Token: refresh forced.
+  [    51 ms] Token: #2 received in 2 ms, expires_in 3600 s, reused until 3540 s from now.
+  [    55 ms] Caught SoapCallException: SOAP call rejected with HTTP 401 twice (fresh token too). Check that the client has the scope/role for this API.
+  => PASS in 55 ms. stopped after 2 attempts | token requests 2, SOAP requests 2 (mock counters)
