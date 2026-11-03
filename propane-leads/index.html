@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Paso propane prospects: scored, with confirmed vs. assumed use</title>
+<meta name="description" content="Businesses in El Paso County that may buy propane, from public OpenStreetMap data: scored by type and distance, with homepage evidence marked confirmed, assumed or unchecked, a customer-list duplicate check and CSV export.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Ccircle cx='16' cy='14' r='6' fill='none' stroke='%232A78D6' stroke-width='3'/%3E%3Cpath d='M16 20 L16 26' stroke='%232A78D6' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="leaflet.css">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --s-c: #138a5e; --s-a: #c27c0e; --s-u: #8a96a3; --cust: #5b6b7a; --rowdup: #EEF1F4; --area: #2A78D6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --s-c: #3fc28c; --s-a: #f0a63a; --s-u: #7d8a97; --cust: #95A3B1; --rowdup: #1B252F; --area: #5AA2F0; }
+}
+:root[data-theme="dark"] { --s-c: #3fc28c; --s-a: #f0a63a; --s-u: #7d8a97; --cust: #95A3B1; --rowdup: #1B252F; --area: #5AA2F0; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, label.zone:focus-within { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.2rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 48rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .5rem .85rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+/* tiles */
+.tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: .6rem; margin: 0 0 1rem; }
+.tile { background: var(--surface); color: var(--slate); border: 1px solid var(--rule); border-radius: 8px; padding: .55rem .7rem; font-size: .85rem; line-height: 1.3; }
+.tile b { display: block; font-size: 1.55rem; color: var(--ink); margin-top: .15rem; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .3rem; vertical-align: -.02rem; border: 1.5px solid rgba(0,0,0,.25); box-sizing: border-box; }
+.dot.c { background: var(--s-c); } .dot.a { background: var(--s-a); } .dot.u { background: var(--s-u); }
+.dot.x { background: transparent; border: 2px solid var(--cust); }
+/* layout */
+.work { display: grid; grid-template-columns: 300px 1fr; gap: 1rem; align-items: start; }
+.ctrl { display: grid; gap: 1rem; }
+.ctrl h3 { font-size: .95rem; margin: 0 0 .4rem; }
+.ctrl fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.ctrl legend { font-weight: 800; font-size: .95rem; padding: 0; margin-bottom: .35rem; }
+.chk { display: flex; align-items: center; gap: .4rem; font-size: .9rem; margin: .15rem 0; cursor: pointer; }
+.chk input { margin: 0; accent-color: var(--blue); }
+.chk .n { margin-left: auto; color: var(--slate); font-variant-numeric: tabular-nums; font-size: .82rem; }
+input[type=range] { width: 100%; accent-color: var(--blue); }
+.rad { display: flex; justify-content: space-between; align-items: baseline; }
+.rad b { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+#map { height: min(780px, calc(100vh - 2rem)); position: sticky; top: 1rem; border-radius: 10px; border: 1px solid var(--rule); background: var(--codebg); z-index: 0; }
+.leaflet-container { font-family: inherit; }
+.leaflet-popup-content { font-size: .85rem; line-height: 1.4; margin: .7rem .8rem; }
+.leaflet-popup-content b { font-size: .95rem; }
+label.zone { position: relative; display: block; border: 2px dashed var(--rule); border-radius: 10px; padding: .7rem .8rem; background: var(--surface); cursor: pointer; }
+label.zone.over { border-color: var(--blue); }
+label.zone b { display: block; font-size: .95rem; }
+label.zone .note { display: block; }
+label.zone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+#custmsg { font-size: .88rem; margin: .45rem 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; }
+/* table */
+.tbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between; margin: 1.2rem 0 .5rem; }
+.tbar h2 { margin: 0; }
+#count { color: var(--slate); font-size: .9rem; }
+.scroll { overflow: auto; max-height: 620px; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table.list { border-collapse: collapse; width: 100%; font-size: .88rem; }
+table.list th { position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 800; padding: .5rem .6rem; border-bottom: 2px solid var(--rule); white-space: nowrap; z-index: 1; }
+table.list th button { font: inherit; font-weight: 800; color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; }
+table.list th button::after { content: ""; margin-left: .25rem; color: var(--slate); }
+table.list th[aria-sort=ascending] button::after { content: "\25B2"; font-size: .7rem; }
+table.list th[aria-sort=descending] button::after { content: "\25BC"; font-size: .7rem; }
+table.list td { padding: .45rem .6rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.list td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.list td.sc b { display: inline-block; min-width: 2rem; }
+table.list tr.dup td { background: var(--rowdup); color: var(--slate); }
+table.list tr.dup td.nm { text-decoration: line-through; }
+table.list tr.out td { opacity: .55; }
+table.list tr { cursor: pointer; }
+table.list tr:hover td { background: var(--codebg); }
+.nm { font-weight: 600; min-width: 9rem; }
+.ad { display: block; font-weight: 400; color: var(--slate); font-size: .8rem; }
+.st { white-space: nowrap; }
+.ev { min-width: 16rem; max-width: 30rem; }
+.ev q { font-style: italic; }
+.ev .llm { display: block; margin-top: .25rem; }
+.tag { display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; border: 1px solid var(--rule); border-radius: 4px; padding: 0 .3rem; margin-right: .3rem; color: var(--slate); }
+.more { margin: .6rem 0 0; }
+/* rules */
+table.rules { border-collapse: collapse; font-size: .9rem; width: 100%; max-width: 46rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; }
+table.rules th, table.rules td { text-align: left; padding: .4rem .7rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+table.rules td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 700; }
+ol.how { padding-left: 1.2rem; margin: 0; } ol.how li { margin: .45rem 0; }
+.ex { display: grid; gap: .6rem; }
+.ex .card q { font-style: italic; }
+@media (max-width: 900px) { .work { grid-template-columns: 1fr; } #map { height: 420px; position: static; order: -1; } .ctrl { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; }
+  .tiles { grid-template-columns: repeat(2, 1fr); } .tiles .tile:first-child { grid-column: 1 / -1; }
+  .ctrl { grid-template-columns: 1fr; } #map { height: 360px; }
+}
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="leaflet.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Propane prospect scoring</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>El Paso propane prospects: scored, with confirmed vs. assumed use</h1>
+  <p class="lead">Warehouses, manufacturers, scrap yards, restaurants and hotels in El Paso County, each with a propane-need score you can read line by line, the source of every record, and whether the business's own homepage confirms propane, LP gas or forklift use.</p>
+  <p class="status" id="status"><b>Status:</b> Built on public OpenStreetMap data (coverage of industrial sites may be incomplete) and public homepages checked on <span data-s="checked_on">...</span>. No personal data: business names, types, locations, street addresses and websites only. Contacts would come only from a licensed B2B data tool the client picks.</p>
+
+  <div class="tiles" aria-live="polite">
+    <div class="tile">In your service area<b id="k-in">-</b></div>
+    <div class="tile"><span class="dot c"></span>Confirmed<b id="k-c">-</b></div>
+    <div class="tile"><span class="dot a"></span>Assumed<b id="k-a">-</b></div>
+    <div class="tile"><span class="dot u"></span>Unchecked<b id="k-u">-</b></div>
+    <div class="tile"><span class="dot x"></span>Existing customers<b id="k-x">0</b></div>
+  </div>
+
+  <div class="work">
+    <div class="ctrl">
+      <div class="card">
+        <div class="rad"><label for="radius"><b style="font-size:.95rem">Service radius</b></label><b><span id="rv">20</span> km</b></div>
+        <input type="range" id="radius" min="5" max="60" step="1" value="20" aria-describedby="radnote">
+        <p class="note" id="radnote" style="margin:.3rem 0 0">From <span id="cname">El Paso downtown</span>. Click the map to move the center. <button type="button" class="btn ghost" id="reset" style="padding:.15rem .5rem;font-size:.82rem" hidden>Back to downtown</button></p>
+        <label class="chk" style="margin-top:.5rem"><input type="checkbox" id="inonly" checked> Only show businesses inside the radius</label>
+      </div>
+      <div class="card"><fieldset id="types"><legend>Business type</legend></fieldset></div>
+      <div class="card"><fieldset id="stats"><legend>Verification status</legend>
+        <label class="chk"><input type="checkbox" value="C" checked><span class="dot c"></span>Confirmed<span class="n" id="n-C"></span></label>
+        <label class="chk"><input type="checkbox" value="A" checked><span class="dot a"></span>Assumed<span class="n" id="n-A"></span></label>
+        <label class="chk"><input type="checkbox" value="U" checked><span class="dot u"></span>Unchecked<span class="n" id="n-U"></span></label>
+        <p class="note" style="margin:.4rem 0 0"><b>Confirmed</b>: the homepage mentions propane, LP gas, LPG or forklifts (snippet and link kept). <b>Assumed</b>: homepage read, no mention; need inferred from the type. <b>Unchecked</b>: not read yet.</p>
+      </fieldset></div>
+      <div>
+        <label class="zone" id="zone"><b>Drop your customer CSV</b><span class="note">Columns: <code>name</code>, <code>address</code>, or <code>lat</code>,<code>lon</code>. Read in your browser, never uploaded.</span>
+          <input type="file" id="file" accept=".csv,text/csv" aria-label="Customer CSV file"></label>
+        <div class="row"><button type="button" class="btn ghost" id="sample">Try a sample customer list</button><button type="button" class="btn ghost" id="clear" hidden>Clear customers</button></div>
+        <p id="custmsg" class="note"></p>
+      </div>
+    </div>
+    <div id="map" role="region" aria-label="Map of prospects"></div>
+  </div>
+
+  <div class="tbar">
+    <h2>Prospects</h2>
+    <span id="count"></span>
+    <button type="button" class="btn" id="csv">Export CSV</button>
+  </div>
+  <div class="scroll"><table class="list" id="list"><thead><tr>
+    <th data-k="score" aria-sort="descending"><button type="button">Score</button></th>
+    <th data-k="n"><button type="button">Name</button></th>
+    <th data-k="t"><button type="button">Type</button></th>
+    <th data-k="d"><button type="button">km</button></th>
+    <th data-k="st"><button type="button">Status</button></th>
+    <th>Evidence, source or reason</th>
+  </tr></thead><tbody></tbody></table></div>
+  <p class="more"><button type="button" class="btn ghost" id="more" hidden>Show all rows</button></p>
+  <p class="note">The export holds the filtered prospects, without the rows marked as existing customers. Click a row to find it on the map.</p>
+
+  <h2>How the score works</h2>
+  <p class="note" style="margin-top:0">A plain sum, capped to 0-100, recomputed when you move the radius or the center. No hidden model.</p>
+  <table class="rules" id="rules"><thead><tr><th>Rule</th><th>Points</th></tr></thead><tbody></tbody></table>
+
+  <h2>What this run found</h2>
+  <div class="card" id="found"></div>
+  <h3 style="font-size:1rem;margin:1.2rem 0 .5rem">Confirmed by the business's own homepage</h3>
+  <div class="ex" id="examples"></div>
+
+  <h2>How it was built</h2>
+  <ol class="how">
+    <li><b>Collect.</b> One query to the public OpenStreetMap Overpass API for named restaurants, cafes, fast food, hotels, motels, warehouses, wholesale and trade counters, works, industrial features, crafts and anything tagged as selling LPG inside El Paso County, Texas.</li>
+    <li><b>Clean.</b> Unnamed features, public utilities (pump stations, ponds, power plants, pipelines) and unrelated shops were dropped. Records with the same normalized name within 150 m were merged as duplicates.</li>
+    <li><b>Verify.</b> For up to 30 of the most relevant businesses with a website (one per web domain), the public homepage was read once, with a named user agent, a 10-second timeout and robots.txt respected. Only the words propane, LP gas, LPG and forklift were searched. A dead domain is kept as a data-quality flag.</li>
+    <li><b>Score.</b> The rules above. Every row keeps its OpenStreetMap link, so each record can be traced back to its source.</li>
+    <li><b>Explain.</b> <span id="llmnote"></span></li>
+    <li><b>Check against customers.</b> Your CSV is matched by normalized name (inside 1 km when your file has coordinates), by house number and street (only where one prospect has that address, so a shared plaza address cannot grey its neighbors), or by location within 75 m. Matches turn grey and leave the export.</li>
+  </ol>
+
+  <p class="small">Map data and business records &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, available under the Open Database License (ODbL). Map tiles from openstreetmap.org. Map library: Leaflet 1.9.4 (BSD 2-Clause, <a href="LICENSE-leaflet.txt">license</a>), served from this site. Sample customer list made for this demo from three businesses in the data. The full delivery would add the client's own service-area polygons, a licensed contact source, and a re-check schedule.</p>
+</main>
+</body></html>
