@@ -1,0 +1,38 @@
+,,
+Variable,DAPA-CKD (N = 4304),Pooled CKD (N = 10 273)
+,,
+"Age, years",61.8 (12.1),63.3 (9.6)
+Female,1425 (33.1),3365 (32.8)
+Race,,
+Asian,1467 (34.1),2367 (23.0)
+Black,191 (4.4),411 (4.0)
+Other,356 (8.3),581 (5.7)
+White,2290 (53.2),6914 (67.3)
+"Baseline body mass index, kg/m²",29.5 (6.2),31.3 (6.3)
+Current smoker,584 (13.6),1482 (14.4)
+"Baseline systolic blood pressure, mmHg",137.1 (17.4),137.3 (16.7)
+"Baseline diastolic blood pressure, mmHg",77.5 (10.5),77.8 (9.8)
+"Haemoglobin, g/dL",12.8 (1.8),13.4 (1.7)
+"Baseline serum potassium, mq/L",4.6 (0.6),4.5 (0.5)
+Baseline eGFR (mL/min per 1.73 m2),,
+Mean (SD),43.1 (12.4),64.4 (24.7)
+Distribution,,
+G1 (>90),0 (0.0),2335 (22.7)
+G2 (60–89),454 (10.5),2854 (27.8)
+G3a (45–59),1328 (30.9),2378 (23.1)
+G3b (30–44),1898 (44.1),2062 (20.1)
+G4 (15–29),624 (14.5),640 (6.2)
+G5 (<15),0 (0.0),4 (0.0)
+Baseline UACR (mg/g),,
+Median (IQR),949 (477–1885),284 (62–932)
+Distribution,,
+A1 (<30),1 (0.0),772 (7.5)
+A2 (30–300),444 (10.3),4473 (43.5)
+A3 (>300),3859 (89.7),5028 (48.9)
+Medical history,,
+Baseline T2D mellitus,2906 (67.5),8875 (86.4)
+History of cardiovascular disease,1625 (37.8),3569 (34.7)
+History of heart failure,468 (10.9),1203 (11.7)
+History of stroke,298 (6.9),767 (7.5)
+History of myocardial infarction,392 (9.1),1760 (17.1)
+ACE inhibitor or ARB,4209 (97.8),9170 (89.3)

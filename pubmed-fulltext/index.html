@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biomedical full-text extraction: a proof of concept on open-access PubMed Central</title>
+<meta name="description" content="PMID/DOI matching, metadata validation against Crossref, open-access and licence check, JATS full text split into sections, tables (CSV), references and supplementary links, deduplication and a coverage report with a reason for every gap.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M9 7h10l5 5v13H9z' fill='none' stroke='%23fff' stroke-width='2.2'/%3E%3Cpath d='M12 16h9M12 20h9' stroke='%232A78D6' stroke-width='2.2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #146C43; --okbg: #E5F5EC; --hold: #8A5A00; --holdbg: #FFF4DC; --neg: #B4322F; --cutbg: #FBEAEA; --sel: #E6EFFB; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --ok: #47CD89; --okbg: #0F2A1C; --hold: #F5B83D; --holdbg: #2A2010; --neg: #F28B85; --cutbg: #2A1614; --sel: #15283C; }
+}
+:root[data-theme="dark"] { --ok: #47CD89; --okbg: #0F2A1C; --hold: #F5B83D; --holdbg: #2A2010; --neg: #F28B85; --cutbg: #2A1614; --sel: #15283C; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible, tr:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+main { max-width: 1080px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+h3 { font-size: 1rem; margin: 1.2rem 0 .4rem; }
+.lead { color: var(--slate); font-size: 1.08rem; margin: 0 0 1.2rem; max-width: 50rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; overflow-wrap: anywhere; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; min-width: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .6rem; margin: 0 0 .5rem; }
+.tile { background: var(--surface); color: var(--slate); border: 1px solid var(--rule); border-radius: 8px; padding: .55rem .7rem; font-size: .82rem; line-height: 1.3; min-width: 0; }
+.tile b { display: block; font-size: 1.6rem; color: var(--ink); margin-top: .15rem; font-variant-numeric: tabular-nums; }
+.tile small { display: block; margin-top: .15rem; }
+ol.flow { padding-left: 1.2rem; margin: 0; } ol.flow li { margin: .35rem 0; }
+.filters { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .6rem; }
+.fbtn { font: inherit; font-size: .85rem; font-weight: 600; border: 1px solid var(--rule); background: var(--surface); color: var(--ink); border-radius: 999px; padding: .25rem .7rem; cursor: pointer; }
+.fbtn[aria-pressed="true"] { background: var(--btnbg); color: var(--btnfg); border-color: var(--btnbg); }
+.fbtn span { font-weight: 400; opacity: .8; }
+.scroll { overflow: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.listbox { max-height: 34rem; }
+table.t { border-collapse: collapse; width: 100%; font-size: .84rem; }
+table.t th { position: sticky; top: 0; z-index: 1; background: var(--surface); text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .5rem; white-space: nowrap; }
+table.t td { border-bottom: 1px solid var(--rule); padding: .38rem .5rem; vertical-align: top; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.cov { min-width: 60rem; }
+table.cov tbody tr { cursor: pointer; }
+table.cov tbody tr:hover td { background: var(--codebg); }
+table.cov tbody tr.on td { background: var(--sel); }
+table.cov td.id { width: 9rem; max-width: 9rem; overflow-wrap: anywhere; word-break: break-all; }
+table.cov td.why { min-width: 11rem; color: var(--slate); }
+table.data { font-size: .8rem; } table.data td { white-space: nowrap; } table.data tr.h td { font-weight: 700; background: var(--codebg); }
+.chip { display: inline-block; font-size: .74rem; font-weight: 700; border-radius: 999px; padding: .05rem .5rem; white-space: nowrap; }
+.s-full { background: var(--okbg); color: var(--ok); }
+.s-abs { background: var(--holdbg); color: var(--hold); }
+.s-noa { background: var(--cutbg); color: var(--neg); }
+.s-dup, .s-nf { background: var(--codebg); color: var(--slate); }
+.yes { color: var(--ok); font-weight: 700; } .no { color: var(--neg); font-weight: 700; }
+#detail { margin-top: .9rem; scroll-margin-top: 1rem; }
+#detail h3:first-child { margin-top: 0; }
+.ids { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .88rem; margin: .2rem 0 .6rem; }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .15rem .8rem; font-size: .88rem; margin: .4rem 0 .6rem; }
+dl.facts dt { color: var(--slate); } dl.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+ul.plain { list-style: none; padding: 0; margin: 0; font-size: .88rem; }
+ul.plain li { padding: .25rem 0; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; gap: .8rem; }
+ul.plain li span:last-child { color: var(--slate); white-space: nowrap; font-variant-numeric: tabular-nums; }
+ul.plain li.bm span:first-child { color: var(--slate); }
+.cap { font-size: .86rem; margin: .8rem 0 .35rem; }
+.boxes { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.boxes .card h3 { margin-top: 0; }
+.boxes ul { padding-left: 1.1rem; margin: .3rem 0 0; } .boxes li { margin: .3rem 0; }
+.dl { display: flex; flex-wrap: wrap; gap: .5rem; }
+.btn { display: inline-block; font: inherit; font-weight: 600; font-size: .9rem; border: 1px solid var(--rule); border-radius: 8px; padding: .45rem .8rem; background: var(--surface); color: var(--ink); text-decoration: none; }
+.btn:hover { border-color: var(--blue); color: var(--blue); }
+.btn small { color: var(--slate); font-weight: 400; }
+@media (max-width: 760px) { .two, .boxes { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Biomedical full-text extraction</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Biomedical full-text extraction: a proof of concept on open-access PubMed Central</h1>
+  <p class="lead">A list of PMIDs and DOIs goes in. Each one is matched across PubMed, PMC and Crossref, checked for an open licence, and when one exists the full JATS XML is split into sections, tables (CSV), references and supplementary files. Duplicates are merged and every input ID gets a row in the coverage report, with the reason when something is missing.</p>
+  <p class="status" id="status"><b>Status:</b> loading the run&hellip;</p>
+
+  <h2>Run summary</h2>
+  <div class="tiles" id="tiles"></div>
+  <p class="note" id="tilenote"></p>
+
+  <h2>What the pipeline did</h2>
+  <div class="card">
+    <ol class="flow">
+      <li><b>ID resolution.</b> PMIDs and DOIs (also <code>https://doi.org/...</code> links, any case) go through the NCBI PMC ID Converter. DOIs that are not in PMC are looked up in PubMed by <code>[doi]</code>.</li>
+      <li><b>Metadata.</b> Title, journal, year and author count from PubMed (E-utilities efetch), cross-checked against Crossref: title similarity, year (issued, print or online) and journal name. A row passes when all three agree.</li>
+      <li><b>Open access and licence.</b> Europe PMC says whether the article is in the PMC Open Access subset; the licence is then read from the article's own XML. For the rest, Unpaywall says whether any legal copy exists and where.</li>
+      <li><b>Full text.</b> Open-licence articles only: JATS XML from the PMC OAI-PMH service (Europe PMC as fallback), split into sections with word counts, tables (each to a CSV with its caption), references (with the DOIs and PMIDs found) and supplementary file links.</li>
+      <li><b>Dedupe.</b> On normalised DOI first, then PMID. Every merge is logged.</li>
+      <li><b>Coverage report.</b> One row per input ID, including the duplicates, with status, licence, counts and the reason for any gap.</li>
+    </ol>
+  </div>
+
+  <h2>Coverage report <small class="note">(one row per input ID; click a row for its sections, tables, references and the full reason)</small></h2>
+  <div class="filters" id="filters" role="group" aria-label="Filter by status"></div>
+  <div class="scroll listbox"><table class="t cov" id="cov"></table></div>
+  <div class="card" id="detail" aria-live="polite"></div>
+
+  <h2>Deduplication log</h2>
+  <div class="scroll"><table class="t" id="merges" style="min-width:36rem"></table></div>
+
+  <h2>Permissions and completeness</h2>
+  <div class="boxes">
+    <div class="card">
+      <h3>How permissions are handled</h3>
+      <ul>
+        <li>Full text is collected only for articles with an open licence in the PMC Open Access subset (CC BY, CC BY-NC, CC BY-ND and so on), through the official APIs: NCBI E-utilities, the PMC ID Converter, PMC OAI-PMH, Europe PMC REST, Crossref and Unpaywall.</li>
+        <li>The licence is stored per article, read from the article's own XML, so every reuse decision can be traced. On this public page, tables from non-commercial (NC) articles are counted but their CSVs are not republished.</li>
+        <li>Articles that are only free to read (in PMC without a reuse licence, or free on the publisher site) are not bulk-downloaded. The abstract and metadata are kept and the reason is shown.</li>
+        <li>Paywalled articles are marked "not OA". They can be collected only through the client's own institutional TDM licence or publisher API keys (for example Elsevier or Wiley TDM), never by scraping publisher pages or going around a paywall or a block.</li>
+        <li>Polite access: a named tool and contact address on every call, at most 3 requests per second to NCBI, and every response cached so a re-run does not hit the APIs again.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>How completeness is verified</h3>
+      <ul id="complete">
+        <li>Every input ID gets exactly one row, duplicates included; the run checks that the row count equals the input count.</li>
+        <li>Every row that is not full text carries a reason: not in PMC, in PMC without a reuse licence, open copy only on a publisher or repository site, or paywalled.</li>
+        <li>Per article: number of main sections and words, tables found and tables with real cell data (tables supplied only as images are counted and flagged), references and how many carry a DOI or PMID, supplementary files.</li>
+        <li>Metadata from PubMed and Crossref must agree on title, year and journal; disagreements are written into the row.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Downloads</h2>
+  <div class="dl" id="downloads">
+    <a class="btn" href="coverage.csv" download>coverage.csv <small>one row per input</small></a>
+    <a class="btn" href="articles.json" download>articles.json <small>sections, tables, references, supplements</small></a>
+    <a class="btn" href="tables.zip" download>tables.zip <small>table CSVs + index with captions</small></a>
+    <a class="btn" href="tables_index.csv" download>tables_index.csv <small>caption per table</small></a>
+    <a class="btn" href="pipeline_source.zip" download>pipeline_source.zip <small>Python code and inputs</small></a>
+  </div>
+  <p class="note" id="dlnote">The tables zip holds every table CSV whose licence allows republishing here (CC BY, CC BY-ND); tables from CC BY-NC articles are listed in the index but their CSVs are left out of this public page. Full-text XML is not republished either; the pipeline fetches it from PMC on each run.</p>
+
+  <p class="small" id="foot"></p>
+</main>
+</body></html>

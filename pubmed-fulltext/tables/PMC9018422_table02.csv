@@ -1,0 +1,8 @@
+,Observed values,Observed values,Observed values,Observed values,Change from baseline,Change from baseline,Change from baseline,Change from baseline,Change from baseline
+,Placebo,Placebo,Canagliflozin,Canagliflozin,Placebo,Canagliflozin,Difference of change,Difference of change,Difference of change
+,n,Mean (s.d.),n,Mean (s.d.),LS mean (s.e.),LS mean (s.e.),LS mean (s.e.),95% CI,P value
+Baseline,226,58.0 (21.12),221,57.4 (21.32),,,,,
+Week 2,222,61.5 (21.21),222,63.5 (20.90),3.4 (1.03),6.1 (1.03),2.7 (1.44),"(−0.1, 5.5)",
+Week 4,215,62.1 (21.50),216,64.5 (21.01),4.1 (1.10),7.1 (1.10),3.0 (1.54),"(−0.0, 6.1)",
+Week 6,209,64.8 (21.44),209,65.0 (21.62),6.4 (1.13),7.6 (1.13),1.2 (1.59),"(−1.9, 4.3)",
+Week 12,206,63.2 (22.32),208,67.1 (22.19),4.9 (1.27),9.2 (1.27),4.3 (1.78),"(0.8, 7.8)",0.016

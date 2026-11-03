@@ -1,0 +1,20 @@
+,,HR (95% CI)a per 1-unit increase of potential mediator,HR (95% CI)a per 1-unit increase of potential mediator
+,,Time-dependent,Landmark Week 12 current
+Physiological category,Potential mediator,updated mean,change from baseline
+Glycemia,"HbA1c, %","1.220 (0.992, 1.501)","1.415 (1.132, 1.768)"
+,"FPG, mg/dL","0.999 (0.994, 1.005)","1.004 (1.000, 1.009)*"
+Vascular tone,"SBP, mmHg","1.018 (1.004, 1.033)","1.023 (1.012, 1.035)"
+,"DBP, mmHg","0.995 (0.969, 1.021)","1.023 (1.001, 1.045)"
+,"Heart rate, BPM","1.021 (0.996, 1.046)","1.035 (0.994, 1.078)"
+Lipids,"LDL, mg/dL","1.001 (0.995, 1.008)","1.003 (0.996, 1.010)"
+,"HDL, mg/dL","0.961 (0.935, 0.987)","0.972 (0.945, 0.999)"
+,"Triglycerides, mg/dL","1.001 (1.000, 1.003)","1.002 (1.000, 1.003)**"
+,"FFA, mg/dL","0.909 (0.873, 0.946)","0.917 (0.885, 0.950)"
+Kidney,"logUACR, mg/g","2.085 (1.722, 2.524)","1.693 (1.397, 2.052)"
+Adiposity,"Weight, kg","0.989 (0.938, 1.042)","0.979 (0.911, 1.052)"
+,"BMI, kg/m2","0.991 (0.857, 1.146)","0.958 (0.788, 1.164)"
+,"Waist, cm","1.024 (0.989, 1.061)","1.009 (0.966, 1.055)"
+Volume status and hematopoiesis/oxygenation,"Hematocrit, %","0.741 (0.701, 0.783)","0.881 (0.824, 0.942)"
+,"Hemoglobin, g/dL","0.424 (0.355, 0.507)","0.767 (0.623, 0.945)"
+,"Albumin, g/dL","0.075 (0.033, 0.171)","0.233 (0.109, 0.498)"
+Other,"Uric acid, mg/dL","1.898 (1.623, 2.219)","1.159 (1.001, 1.343)"
