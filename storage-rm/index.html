@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-storage revenue model for small rural facilities</title>
+<meta name="description" content="Street-rate recommendations from competitor rates by 3, 10 and 25 mile rings, occupancy tiers, guardrails and seasonality, plus an existing-customer rate increase list. Runs in the browser.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Crect x='7' y='9' width='18' height='16' rx='1.5' fill='none' stroke='%23fff' stroke-width='2.4'/%3E%3Cpath d='M7 15h18M7 20h18' stroke='%232A78D6' stroke-width='2.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --pos: #1F5FAE; --neg: #B4322F; --hold: #8A5A00; --holdbg: #FFF4DC; --capbg: #E6EFFB; --cutbg: #FBEAEA; --okbg: #E5F5EC; --ok: #146C43; --muted-bar: #A9C6EC; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --pos: #7DB5F2; --neg: #F28B85; --hold: #F5B83D; --holdbg: #2A2010; --capbg: #15283C; --cutbg: #2A1614; --okbg: #0F2A1C; --ok: #47CD89; --muted-bar: #2F4A6B; }
+}
+:root[data-theme="dark"] { --pos: #7DB5F2; --neg: #F28B85; --hold: #F5B83D; --holdbg: #2A2010; --capbg: #15283C; --cutbg: #2A1614; --okbg: #0F2A1C; --ok: #47CD89; --muted-bar: #2F4A6B; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, label.zone:focus-within, summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1080px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+h3 { font-size: 1rem; margin: 0; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 48rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; min-width: 0; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .55rem .9rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.btn.sm { font-size: .85rem; padding: .3rem .6rem; }
+/* data */
+.load { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
+label.zone { position: relative; display: block; border: 2px dashed var(--rule); border-radius: 10px; padding: .8rem .9rem; background: var(--surface); cursor: pointer; min-width: 0; }
+label.zone.over { border-color: var(--blue); }
+label.zone b { display: block; }
+label.zone .fn { display: block; color: var(--slate); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+label.zone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: center; margin: .7rem 0 0; }
+.private { font-size: .88rem; color: var(--slate); margin: .6rem 0 0; }
+#err { color: var(--neg); font-weight: 600; }
+details.map { margin-top: .6rem; }
+details.map summary { cursor: pointer; font-size: .9rem; }
+.mapgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .4rem .8rem; margin: .5rem 0 0; }
+.mapgrid label, .rules label { display: flex; flex-direction: column; font-size: .82rem; color: var(--slate); min-width: 0; }
+select, input[type=number], input[type=text], input[type=date] { font: inherit; font-size: .9rem; padding: .3rem .45rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--ink); min-width: 0; box-sizing: border-box; }
+/* recommendation cards */
+.asof { color: var(--slate); font-size: .92rem; margin: 0 0 .7rem; }
+.recs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem; }
+.rec header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .3rem .6rem; }
+.rec h3 small { color: var(--slate); font-weight: 400; font-size: .85rem; }
+.tag { font-size: .78rem; font-weight: 700; border-radius: 999px; padding: .1rem .55rem; white-space: nowrap; }
+.t-up, .t-capup { background: var(--capbg); color: var(--pos); }
+.t-down, .t-capdown { background: var(--cutbg); color: var(--neg); }
+.t-hold { background: var(--holdbg); color: var(--hold); }
+.t-band, .t-none { background: var(--codebg); color: var(--slate); }
+.rate { font-size: 1.05rem; margin: .5rem 0 .3rem; font-variant-numeric: tabular-nums; }
+.rate .old { color: var(--slate); text-decoration: line-through; }
+.rate b { font-size: 1.9rem; }
+.chg { font-weight: 700; margin-left: .3rem; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+dl.facts { display: grid; grid-template-columns: auto 1fr; gap: .1rem .7rem; font-size: .85rem; margin: .4rem 0 .6rem; }
+dl.facts dt { color: var(--slate); } dl.facts dd { margin: 0; font-variant-numeric: tabular-nums; text-align: right; }
+p.why { font-size: .92rem; margin: 0; border-top: 1px solid var(--rule); padding-top: .55rem; }
+/* rules */
+.rules { display: grid; grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr)); gap: .8rem; }
+.rules fieldset { border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); margin: 0; padding: .6rem .8rem .8rem; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .45rem .6rem; }
+.rules legend { font-weight: 700; font-size: .92rem; padding: 0 .3rem; }
+.rules label.wide { grid-column: 1 / -1; }
+.rules label.changed input, .rules label.changed select { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue); }
+.rules .d { font-size: .74rem; }
+.rules label input, .rules label select { margin-top: auto; }
+/* tables */
+.scroll { overflow: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table.t { border-collapse: collapse; width: 100%; font-size: .85rem; }
+table.t th { position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .5rem; white-space: nowrap; }
+table.t td { border-bottom: 1px solid var(--rule); padding: .38rem .5rem; vertical-align: top; }
+table.t td.n, table.t th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.t tr.grp td { background: var(--codebg); font-weight: 700; }
+table.t input { width: 100%; min-width: 4.5rem; }
+.mi { min-width: 44rem; } .ec { min-width: 66rem; } .ec td { white-space: nowrap; } .ed { min-width: 40rem; }
+.call { font-size: .74rem; font-weight: 700; color: var(--hold); background: var(--holdbg); border-radius: 4px; padding: 0 .3rem; white-space: nowrap; }
+.ok { color: var(--ok); font-weight: 700; }
+.skip { color: var(--slate); }
+.listbox { max-height: 30rem; }
+/* ecri tiles */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; margin: 0 0 .7rem; }
+.tile { font: inherit; text-align: left; background: var(--surface); color: var(--slate); border: 1px solid var(--rule); border-radius: 8px; padding: .55rem .7rem; cursor: pointer; font-size: .82rem; line-height: 1.3; }
+.tile b { display: block; font-size: 1.5rem; color: var(--ink); margin-top: .15rem; }
+.tile.on { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+/* summary */
+.sum { min-width: 34rem; }
+/* chart */
+#season svg { display: block; width: 100%; height: auto; }
+#season .axis { stroke: var(--rule); }
+#season .ref { stroke: var(--slate); stroke-dasharray: 3 3; }
+#season .lbl { font-size: 11px; fill: var(--slate); }
+#season .val { font-size: 12px; fill: var(--ink); font-weight: 700; }
+#season .b { fill: var(--muted-bar); } #season .b.on { fill: var(--blue); }
+#season .hit { fill: transparent; } #season g:hover .b { opacity: .8; }
+#tip { position: fixed; z-index: 60; max-width: 20rem; background: var(--btnbg); color: var(--btnfg); font-size: .8rem; line-height: 1.4; padding: .4rem .6rem; border-radius: 6px; pointer-events: none; }
+ol.how { padding-left: 1.2rem; margin: 0; } ol.how li { margin: .45rem 0; }
+@media (max-width: 860px) { .recs { grid-template-columns: 1fr; } .load { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="xlsx.mini.min.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Self-storage revenue model</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Self-storage revenue model for small rural facilities</h1>
+  <p class="lead">Weekly street rates per unit size from local competitor rates, your occupancy and your own move-in season, with a plain-English reason for every number. Plus the list of existing tenants who are due a rate increase, and who to skip.</p>
+  <p class="status"><b>Status:</b> Sample data, fictional: a 175-unit facility and 12 invented rural competitors, in the shapes of a StorTrack export and a rent roll (column order assumed; the column match is shown and can be changed). The rules are taken from the client brief; every threshold is an editable default. Everything runs in your browser.</p>
+
+  <h2>1. Data</h2>
+  <div class="load">
+    <label class="zone" id="z-comps"><b>Competitor rate export</b><span class="fn">Loading sample&hellip;</span><span class="note">StorTrack-style CSV or .xlsx, drop or click</span>
+      <input type="file" accept=".csv,.txt,.xlsx,.xls" aria-label="Competitor rate export file"></label>
+    <label class="zone" id="z-roll"><b>Rent roll</b><span class="fn">Loading sample&hellip;</span><span class="note">CSV or .xlsx, drop or click</span>
+      <input type="file" accept=".csv,.txt,.xlsx,.xls" aria-label="Rent roll file"></label>
+    <label class="zone" id="z-moves"><b>Move-in history</b><span class="fn">Loading sample&hellip;</span><span class="note">Weekly move-ins, CSV or .xlsx</span>
+      <input type="file" accept=".csv,.txt,.xlsx,.xls" aria-label="Move-in history file"></label>
+  </div>
+  <div id="maps"></div>
+  <div class="row"><button type="button" class="btn ghost sm" id="sample">Reload the sample data</button><span class="note" id="loadline" aria-live="polite"></span></div>
+  <p class="private">Files you drop are read by this page and never uploaded. Sample files (fictional): <a href="comp_rates_stortrack.csv" download>comp_rates_stortrack.csv</a>, <a href="rent_roll.csv" download>rent_roll.csv</a>, <a href="own_moves_weekly.csv" download>own_moves_weekly.csv</a>, <a href="call_around.csv" download>call_around.csv</a>, <a href="unit_mix.csv" download>unit_mix.csv</a>, or all five in <a href="storage_sample_data.xlsx" download>storage_sample_data.xlsx</a>.</p>
+  <p id="err" hidden></p>
+
+  <h2>2. Street rates for this week</h2>
+  <p class="asof" id="asof"></p>
+  <div class="recs" id="recs"></div>
+  <div class="row"><button type="button" class="btn" id="xlsx">Export recommendations + ECRI list (.xlsx)</button></div>
+
+  <h2>3. Rules <small class="note">(editable defaults, recomputed as you type)</small></h2>
+  <form class="rules" id="rules" onsubmit="return false"></form>
+  <div class="row"><button type="button" class="btn ghost sm" id="reset">Reset to defaults</button><span class="note" id="changed"></span></div>
+
+  <h2>4. Market index by ring</h2>
+  <p class="note" style="margin-top:0">Latest web rate per competitor (newest within the staleness limit) plus call-around prices for competitors with no web rate. P25, median and P75 are within each ring; the recommendation uses the weighted comp set across all rings.</p>
+  <div class="scroll"><table class="t mi" id="ringtab"></table></div>
+  <details class="card" style="margin-top:.8rem"><summary><b>Every comp rate used</b></summary><div class="scroll listbox" style="margin-top:.6rem"><table class="t mi" id="comptab"></table></div></details>
+
+  <h2>5. Seasonality from your move-ins</h2>
+  <p class="note" style="margin-top:0" id="seasnote"></p>
+  <div class="card"><div id="season"></div></div>
+  <details style="margin-top:.5rem"><summary class="note">Factors as a table</summary><div class="scroll" style="margin-top:.4rem"><table class="t" id="seastab"></table></div></details>
+
+  <h2>6. Existing customer rate increases (ECRI)</h2>
+  <div class="tiles" id="etiles"></div>
+  <p class="note" id="eline" style="margin-top:0"></p>
+  <div class="scroll listbox"><table class="t ec" id="ecri"></table></div>
+
+  <h2>7. Before and after</h2>
+  <div class="scroll"><table class="t sum" id="sum"></table></div>
+  <p class="note" id="assume"></p>
+
+  <h2>8. Unit mix and call-around prices</h2>
+  <p class="note" style="margin-top:0">Your own unit sizes and today's street rates. Occupancy comes from the rent roll.</p>
+  <div class="scroll"><table class="t ed" id="mixtab"></table></div>
+  <div class="row"><button type="button" class="btn ghost sm" id="addmix">Add a unit size</button></div>
+  <h3 style="margin-top:1.4rem">Call-around prices <small class="note">(competitors that post no web rate; typed in after a phone call)</small></h3>
+  <div class="scroll" style="margin-top:.5rem"><table class="t ed" id="calltab"></table></div>
+  <div class="row"><button type="button" class="btn ghost sm" id="addcall">Add a call-around price</button></div>
+
+  <h2>How it works</h2>
+  <ol class="how">
+    <li><b>Comp set.</b> For each unit size, the newest non-climate web rate per competitor, and a call-around price where a competitor posts none. Competitors are put in 0-3, 3-10 and 10-25 mile rings; farther ones are left out.</li>
+    <li><b>Target.</b> Occupancy picks the tier and the tier picks a percentile. Close comps weigh more: with weights 3/2/1 a 0-3 mile rate is counted three times, then the percentile is taken like Excel's PERCENTILE.INC.</li>
+    <li><b>Season.</b> Each month's average weekly move-ins divided by the all-year average gives a factor, averaged 1-2-1 with the months either side because a small facility has few move-ins a month. A share of that swing (capped) moves the target.</li>
+    <li><b>Guardrails.</b> If close comps' median rate fell more than the hold limit over the last weeks, the rate holds. Otherwise small moves inside the dead band are skipped and the weekly change is capped. Rates are whole dollars.</li>
+    <li><b>ECRI.</b> Each tenant is checked in order: days late, tenure, last increase, rent at or above street, gap too small. Eligible tenants get a share of the gap to the street rate, capped, never above street.</li>
+  </ol>
+
+  <p class="small">Sample data made with a Python script (fixed seed); the recommendations were re-calculated by a separate Python script from the same CSVs. Reading and writing .xlsx uses SheetJS Community Edition 0.20.3 (Apache 2.0), served from this site; see <a href="NOTICE.txt">NOTICE.txt</a>.</p>
+</main>
+<div id="tip" hidden></div>
+</body></html>

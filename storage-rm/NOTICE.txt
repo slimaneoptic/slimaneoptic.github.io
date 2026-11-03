@@ -1,0 +1,11 @@
+Third-party software on this page
+
+xlsx.mini.min.js
+  SheetJS Community Edition, version 0.20.3 (mini build), from https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+  Copyright (C) 2012-present SheetJS LLC
+  Licensed under the Apache License, Version 2.0: https://www.apache.org/licenses/LICENSE-2.0
+  The full license text is in LICENSE-sheetjs.txt next to this file.
+
+comp_rates_stortrack.csv, call_around.csv, own_moves_weekly.csv, rent_roll.csv, unit_mix.csv, storage_sample_data.xlsx
+  Sample data, fictional, made for this demo with a Python script (fixed seed). The facility, the competitors
+  and their addresses are invented. The comp file follows the shape of a StorTrack export; its column order is assumed.
