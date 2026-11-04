@@ -36,10 +36,24 @@
   var RANK = { matched: 3, close: 2, again: 1, none: 0 };
   var PRAISE = ['Well done!', 'Great job!', 'Excellent!'];
 
+  // Guided-flow timings (ms) and speech rate: tune here.
+  var TIMING = {
+    rate: 0.85,          // speech rate for the model word, prompts and praise
+    afterWord: 800,      // model word -> "Your turn"
+    afterPrompt: 500,    // "Your turn" -> start listening
+    afterPraise: 1000,   // hold after ping + praise, before typing
+    perChar: 250,        // typing speed, per letter
+    holdFilled: 2000,    // filled blank stays on screen
+    holdBlock: 2000,     // after the last word of a block, the whole filled block stays on screen
+    beforeNext: 350,     // small gap before the next picture
+    scrollMax: 1500      // longest wait for a smooth scroll to settle
+  };
+  try { if (window.MicLayerTiming) { for (var tk in window.MicLayerTiming) { TIMING[tk] = window.MicLayerTiming[tk]; } } } catch (e) { /* defaults */ }
+
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
   var SS = ('speechSynthesis' in window && window.SpeechSynthesisUtterance) ? window.speechSynthesis : null;
   var state = {
-    lang: 'en-ZA', voice: null, voiceFallback: null, active: null, words: [], root: null,
+    log: [], lang: 'en-ZA', voice: null, voiceFallback: null, active: null, words: [], root: null,
     run: 0, practice: 0, flow: 'idle', flowAt: 0, praise: 0, sounds: [], tapResolve: null, utter: null
   };
 
@@ -148,7 +162,7 @@
       if (state.voice) {
         try { u.voice = state.voice; u.lang = String(state.voice.lang).replace('_', '-'); } catch (e) { /* default voice */ }
       }
-      u.rate = rate || 0.9;
+      u.rate = rate || TIMING.rate;
       function fin() { if (!done) { done = true; clearTimeout(timer); resolve(); } }
       u.onend = fin;
       u.onerror = fin;
@@ -250,14 +264,14 @@
 
   /* ---------- results, feedback, xAPI ---------- */
 
-  function record(w, alts) {
+  function record(w, alts, noFill) {
     var g = gradeAll(alts, w.word);
     if (g.kind === 'none') { feedback(w, 'again', 'I didn’t catch a word.'); return g; }
     var pts = POINTS[g.kind];
     w.tries += 1;
     if (w.best === null || pts > w.best) { w.best = pts; }
     if (g.kind === 'matched') {
-      fill(w);
+      if (!noFill) { fill(w); }
       feedback(w, 'matched', '✓ Matched: I heard “' + g.heard + '”. ' + (w.blanks.length > 1 ? 'Letters' : 'Letter') + ' filled in.');
     } else if (g.kind === 'close') {
       feedback(w, 'close', 'Close: I heard “' + g.heard + '”. ' + (g.why === 'plural' ? 'Listen to the end of the word and try again.' : 'Listen and try once more.'));
@@ -415,9 +429,76 @@
   }
   function status(text) { var el = document.getElementById('ml-flow-status'); if (el) { el.textContent = text; } }
 
+  function logEv(e, n, extra) {
+    var o = { t: Date.now(), e: e, n: n };
+    if (extra) { for (var k in extra) { o[k] = extra[k]; } }
+    state.log.push(o);
+  }
+
+  // Smooth scroll, resolved when the page stops moving.
+  function scrollToY(y) {
+    var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    var target = Math.max(0, Math.min(Math.round(y), max));
+    try { window.scrollTo({ top: target, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, target); }
+    return new Promise(function (res) {
+      var last = -1, same = 0, t0 = Date.now();
+      (function poll() {
+        var cur = window.scrollY;
+        same = cur === last ? same + 1 : 0;
+        last = cur;
+        if (same >= 2 || Date.now() - t0 > TIMING.scrollMax) { res(); } else { setTimeout(poll, 60); }
+      })();
+    });
+  }
+  // Centre an element (in this page or inside an H5P frame) in the window.
+  function centerOn(el, win) {
+    var r = el.getBoundingClientRect(), off = win && win.frameElement ? win.frameElement.getBoundingClientRect().top : 0;
+    return scrollToY(window.scrollY + off + r.top + r.height / 2 - window.innerHeight / 2);
+  }
+  function inView(el, win) {
+    var r = el.getBoundingClientRect(), off = win && win.frameElement ? win.frameElement.getBoundingClientRect().top : 0;
+    var top = off + r.top;
+    return top >= 0 && top + r.height <= window.innerHeight;
+  }
+
   function focusWord(w) {
     state.words.forEach(function (x) { x.fig.classList.toggle('ml-current', x === w); });
-    try { w.fig.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { w.fig.scrollIntoView(); }
+    logEv('current', w.n);
+    return centerOn(w.fig);
+  }
+
+  // Type the letter(s) into the H5P blank(s) one at a time, with a green glow, then hold.
+  function typeIn(w, stale) {
+    var slots = [];
+    w.blanks.forEach(function (bl) {
+      var win = blockWin(bl[0]), inp = win && inputsOf(win)[bl[1]];
+      if (win && inp && (inp.disabled || visible(win.document.querySelector('.h5p-question-try-again')))) { reopen(bl[0]); inp = inputsOf(win)[bl[1]]; }
+      if (inp) { slots.push({ win: win, inp: inp, ch: bl[2] }); }
+    });
+    if (!slots.length) { w.filled = true; return Promise.resolve(); }
+    return centerOn(slots[0].inp, slots[0].win).then(function () {
+      var chain = Promise.resolve();
+      slots.forEach(function (sl) {
+        chain = chain.then(function () {
+          if (stale()) { return; }
+          sl.inp.style.transition = 'box-shadow .25s ease, background-color .25s ease';
+          sl.inp.style.boxShadow = '0 0 0 4px rgba(31, 122, 58, .55)';
+          sl.inp.style.backgroundColor = '#E8F5EC';
+          setInput(sl.win, sl.inp, '');
+          return wait(TIMING.perChar).then(function () {
+            if (stale()) { return; }
+            setInput(sl.win, sl.inp, sl.ch);
+            logEv('typed', w.n, { ch: sl.ch, visible: inView(sl.inp, sl.win) });
+          });
+        });
+      });
+      return chain.then(function () {
+        w.filled = true;
+        return wait(TIMING.holdFilled);
+      }).then(function () {
+        slots.forEach(function (sl) { sl.inp.style.boxShadow = ''; sl.inp.style.backgroundColor = ''; });
+      });
+    });
   }
 
   // Shown only if the browser refuses to listen without a fresh tap.
@@ -464,16 +545,16 @@
     function doWord(i) {
       if (stale()) { return Promise.resolve(); }
       if (i >= state.words.length) { return finish(); }
-      var w = state.words[i], tries = 0;
+      var w = state.words[i], tries = 0, nextW = state.words[i + 1];
+      var blockEnd = !nextW || nextW.blanks[0][0] !== w.blanks[0][0];
       state.flowAt = i;
-      focusWord(w);
       status('Word ' + w.n + ' of 10: listen.');
       feedback(w, 'info', '');
 
       function attempt() {
         if (stale()) { return Promise.resolve(); }
         status('Word ' + w.n + ' of 10: your turn, say it now.');
-        return wait(150).then(function () { return listenInFlow(w, run); }).then(function (r) {
+        return listenInFlow(w, run).then(function (r) {
           if (stale() || r.cancelled) { return; }
           if (r.blocked) {
             pauseFlow();
@@ -482,27 +563,45 @@
             return;
           }
           tries++;
-          var g = r.alts ? record(w, r.alts) : { kind: 'none' };
+          var g = r.alts ? record(w, r.alts, true) : { kind: 'none' };
           if (!r.alts) { feedback(w, 'again', errorText(r.error)); }
           if (g.kind === 'matched') {
             status('Word ' + w.n + ' of 10: matched!');
-            return react('matched', w, stale).then(function () { return next(); });
+            return react('matched', w, stale)
+              .then(function () { return stale() ? null : wait(TIMING.afterPraise); })
+              .then(function () { if (!stale()) { status('Word ' + w.n + ' of 10: watch the letter go in.'); return typeIn(w, stale); } })
+              .then(next);
           }
           if (tries >= 2) {
-            fill(w);
             feedback(w, 'info', 'The word is “' + w.word + '”. ' + (w.blanks.length > 1 ? 'Letters' : 'Letter') + ' filled in, moving on.');
             status('Word ' + w.n + ' of 10: the word is “' + w.word + '”.');
-            return speak('The word is ' + (w.say || w.word)).then(function () { return next(); });
+            return speak('The word is ' + (w.say || w.word))
+              .then(function () { if (!stale()) { return typeIn(w, stale); } })
+              .then(next);
           }
-          return react(g.kind === 'close' ? 'close' : 'again', w, stale).then(attempt);
+          return react(g.kind === 'close' ? 'close' : 'again', w, stale).then(function () {
+            return stale() ? null : wait(TIMING.afterPrompt);
+          }).then(attempt);
         });
       }
-      function next() { if (!stale()) { return wait(350).then(function () { return doWord(i + 1); }); } }
-
-      return speak(w.say || w.word).then(function () {
+      function next() {
         if (stale()) { return; }
-        return wait(250).then(function () { return stale() ? null : speak('Your turn'); });
-      }).then(attempt);
+        var p = Promise.resolve();
+        if (blockEnd) {
+          var win = blockWin(w.blanks[0][0]);
+          if (win && win.frameElement) {
+            p = centerOn(win.frameElement).then(function () { logEv('block', w.n); return wait(TIMING.holdBlock); });
+          }
+        }
+        return p.then(function () { return stale() ? null : wait(TIMING.beforeNext); }).then(function () { return doWord(i + 1); });
+      }
+
+      return focusWord(w)
+        .then(function () { return stale() ? null : speak(w.say || w.word); })
+        .then(function () { return stale() ? null : wait(TIMING.afterWord); })
+        .then(function () { return stale() ? null : speak('Your turn'); })
+        .then(function () { return stale() ? null : wait(TIMING.afterPrompt); })
+        .then(attempt);
     }
 
     function finish() {
@@ -514,8 +613,12 @@
       var t = totals();
       status('All done! Speaking score ' + t.sum + ' / 10. Check was pressed on each block for you.');
       return speak('All done!').then(function () {
-        var n = pressCheckAll();
-        state.checked = n;
+        state.checked = pressCheckAll();
+        logEv('done', 0);
+        return wait(300);
+      }).then(function () {
+        var win = blockWin(1);
+        if (win && win.frameElement) { return scrollToY(window.scrollY + win.frameElement.getBoundingClientRect().top - 90); }
       });
     }
 
@@ -620,6 +723,8 @@
     grade: grade,
     setLang: setLang,
     sounds: state.sounds,
+    log: state.log,
+    timing: TIMING,
     info: function () {
       return {
         lang: state.lang, recognition: !!SR, synthesis: !!SS,
