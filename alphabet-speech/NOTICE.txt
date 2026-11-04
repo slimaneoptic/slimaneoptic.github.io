@@ -1,0 +1,45 @@
+alphabet-speech preview: third-party code and sources
+=====================================================
+
+1. Player: h5p-standalone 3.8.2 (folder player/)
+   Source: npm package "h5p-standalone" (https://www.npmjs.com/package/h5p-standalone),
+           https://github.com/tunapanda/h5p-standalone
+   License: MIT, Copyright (c) 2015 Tunapanda (full text: player/LICENSE-h5p-standalone.txt,
+            bundled third-party notices: player/main.bundle.js.LICENSE.txt)
+   Files: the package's dist/ folder, unchanged (h5p.d.ts left out).
+   Fonts in player/fonts: Inter (SIL OFL, player/fonts/inter/LICENSE.txt),
+            Open Sans (SIL OFL, player/fonts/open-sans/OFL.txt), as shipped in the package.
+
+2. H5P libraries (folder h5p/libraries/)
+   Source: the public "Fill in the Blanks" example export on h5p.org
+           (https://h5p.org/sites/default/files/h5p/exports/fill-in-the-blanks-837.h5p).
+           Only the library folders are used.
+   Upstream code: https://github.com/h5p (h5p-blanks, h5p-question, h5p-joubel-ui, h5p-transition,
+                  h5p-font-icons, font-awesome).
+
+   Library            Version   License
+   H5P.Blanks         1.14.13   MIT (library.json)
+   H5P.Question       1.5.15    MIT (library.json)
+   H5P.JoubelUI       1.3.19    MIT (README.md in the library folder)
+   H5P.Transition     1.0.4     MIT (library.json)
+   H5P.FontIcons      1.0.6     MIT (README of github.com/h5p/h5p-font-icons)
+   H5P.TextUtilities  1.3.0     "pd" (public domain) in library.json; author Oliver Tacke
+   FontAwesome        4.5.4     MIT (library.json); Font Awesome by Dave Gandy
+
+   Changes: removed the language/ (editor translation) folders and the unused FontAwesome
+   .eot/.svg/.ttf/.otf font files. No code was changed.
+
+3. Activity content and pictures
+   h5p/block-1..4: "The Alphabet - Activity 1" from ABC International's LMS, rebuilt as four
+   H5P.Blanks blocks with the same task text, blanks, tips and settings, for a private preview.
+   The ten pictures are not stored here: the page loads them from abcinternationalonline.com.
+
+4. Our own files
+   index.html, mic-layer.js: written for this preview.
+
+Notes
+   - Speech recognition is the browser's Web Speech API (Chrome, Edge, Safari). In Chrome the audio is
+     sent to the browser vendor's speech service; nothing is sent to this site.
+   - The model voice is the browser's speechSynthesis with the voices installed on the device.
+   - Matching is rule-based (normalised word match, singular/plural and small spelling distance = close).
+     No AI model is called from this page.

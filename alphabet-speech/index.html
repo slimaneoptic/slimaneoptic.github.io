@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Alphabet – Activity 1, with a speaking step</title>
+<meta name="description" content="Private preview: an H5P fill-in-the-missing-letters activity with a speaking step (listen, say the word) added on top.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #1F7A3A; --okbg: #E8F5EC; --warn: #9A5B00; --warnbg: #FFF4E0; --bad: #B3261E; --badbg: #FDECEA; --blue-soft: #EAF2FC; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, input:focus-visible + span { outline: 3px solid var(--blue); outline-offset: 2px; }
+main { max-width: 1160px; margin: 0 auto; padding: 1.8rem 1rem 3rem; }
+h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); line-height: 1.15; margin: 0 0 .7rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; max-width: 52rem; }
+code { font-size: .9em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 330px); grid-template-rows: auto 1fr; gap: 1.2rem; align-items: start; }
+.accent { grid-column: 2; grid-row: 1; }
+.activity { grid-column: 1; grid-row: 1 / span 2; }
+.xapi { grid-column: 2; grid-row: 2; position: sticky; top: 1rem; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; min-width: 0; box-sizing: border-box; }
+.card h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+.hint { color: var(--slate); font-size: .88rem; margin: 0 0 .6rem; }
+
+/* accent picker */
+.accent fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.accent legend { font-weight: 600; font-size: .95rem; margin-bottom: .4rem; padding: 0; }
+.pills { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pills label { position: relative; cursor: pointer; }
+.pills input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.pills span { display: inline-block; padding: .3rem .7rem; border: 1px solid var(--rule); border-radius: 999px; font-size: .88rem; background: var(--surface); }
+.pills input:checked + span { background: var(--btnbg); color: var(--btnfg); border-color: var(--btnbg); }
+#ml-voice { font-size: .86rem; color: var(--slate); margin: .6rem 0 0; overflow-wrap: anywhere; }
+#ml-sr-note { font-size: .86rem; margin: .6rem 0 0; padding: .5rem .6rem; border-radius: 6px; background: var(--warnbg); color: var(--warn); }
+#ml-total { font-size: .92rem; margin: .7rem 0 0; }
+
+/* her activity, rebuilt */
+.activity { padding: 1.1rem 1.1rem 1.4rem; }
+.topic { font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; color: var(--slate); margin: 0 0 .2rem; }
+.activity h2 { font-size: 1.35rem; margin: 0 0 .3rem; }
+.how { font-size: .9rem; color: var(--slate); margin: 0 0 1rem; }
+.block { border-top: 1px solid var(--rule); padding-top: 1rem; margin-top: 1rem; }
+.block:first-of-type { border-top: 0; margin-top: 0; padding-top: 0; }
+.pics { display: grid; grid-template-columns: repeat(3, minmax(0, 180px)); gap: .9rem; margin: 0 0 .8rem; }
+.pics figure { margin: 0; min-width: 0; position: relative; }
+.pics img { display: block; width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--codebg); }
+.num { position: absolute; top: .35rem; left: .35rem; min-width: 1.5rem; height: 1.5rem; padding: 0 .3rem; box-sizing: border-box; border-radius: 999px;
+       background: rgba(20, 32, 43, .82); color: #fff; font-size: .8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.h5p-slot { background: #fff; border-radius: 8px; min-height: 150px; }
+.h5p-slot .h5p-iframe-wrapper { background: transparent !important; }
+.h5p-slot iframe { width: 100%; border: 0; display: block; }
+
+/* the mic layer (styles for mic-layer.js) */
+.ml-box { margin-top: .4rem; }
+.ml-btns { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem; }
+.ml-btns button { font: inherit; font-size: .85rem; line-height: 1.2; padding: .4rem .3rem; border-radius: 6px; cursor: pointer; white-space: nowrap; min-width: 0; }
+.ml-listen { background: var(--surface); color: var(--ink); border: 1px solid var(--rule); }
+.ml-listen:hover { border-color: var(--blue); }
+.ml-say { background: var(--btnbg); color: var(--btnfg); border: 1px solid var(--btnbg); }
+.ml-say:hover { background: var(--btnhover); }
+.ml-say[disabled] { opacity: .45; cursor: not-allowed; }
+.ml-say.ml-on { background: #D93F3F; border-color: #D93F3F; color: #fff; animation: ml-pulse 1s ease-in-out infinite; }
+@keyframes ml-pulse { 50% { box-shadow: 0 0 0 5px rgba(217, 63, 63, .22); } }
+@media (prefers-reduced-motion: reduce) { .ml-say.ml-on { animation: none; } }
+.ml-fb { font-size: .82rem; line-height: 1.35; margin: .35rem 0 0; overflow-wrap: anywhere; }
+.ml-fb:empty { display: none; }
+.ml-fb.ml-matched { color: var(--ok); }
+.ml-fb.ml-close { color: var(--warn); }
+.ml-fb.ml-again { color: var(--bad); }
+.ml-fb.ml-info { color: var(--slate); }
+.ml-score { font-size: .78rem; color: var(--slate); margin: .15rem 0 0; font-variant-numeric: tabular-nums; }
+figure[data-result="matched"] img { outline: 3px solid var(--ok); outline-offset: -3px; }
+figure[data-result="close"] img { outline: 3px solid #E0A030; outline-offset: -3px; }
+
+/* xAPI panel */
+#xapi-log { list-style: none; padding: 0; margin: 0; max-height: 380px; overflow-y: auto; font-size: .85rem; }
+#xapi-log li { border-top: 1px solid var(--rule); padding: .45rem 0; margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .1rem .5rem; }
+#xapi-log li:first-child { border-top: 0; }
+#xapi-log .t { color: var(--slate); font-variant-numeric: tabular-nums; }
+#xapi-log .v { font-weight: 600; }
+#xapi-log .src { display: inline-block; font-size: .72rem; font-weight: 600; padding: 0 .35rem; border-radius: 4px; margin-left: .3rem; vertical-align: 1px; }
+#xapi-log .src.h5p { background: var(--blue-soft); color: var(--blue); }
+#xapi-log .src.speak { background: var(--okbg); color: var(--ok); }
+#xapi-log .d { grid-column: 2; color: var(--slate); overflow-wrap: anywhere; }
+#xapi-empty { color: var(--slate); font-size: .88rem; margin: 0; }
+.xapi details { margin-top: .7rem; font-size: .85rem; }
+.xapi summary { cursor: pointer; color: var(--blue); }
+.xapi pre { font-size: .72rem; line-height: 1.4; background: var(--codebg); border-radius: 6px; padding: .6rem; max-height: 300px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: .4rem 0 0; }
+.xapi .foot { font-size: .8rem; color: var(--slate); margin: .7rem 0 0; }
+.small { color: var(--slate); font-size: 0.82rem; margin-top: 2rem; max-width: 52rem; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .accent, .activity, .xapi { grid-column: 1; grid-row: auto; position: static; }
+}
+@media (max-width: 640px) {
+  .demo { display: none; } .bar { padding: 0 1rem; } .card { padding: .8rem; } .activity { padding: .9rem .8rem 1.1rem; }
+  .pics { gap: .5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ml-btns { grid-template-columns: 1fr; }
+  .ml-btns button { padding: .45rem .2rem; }
+}
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Private preview for ABC International</span></div>
+</header>
+<main>
+  <h1>The Alphabet – Activity 1, with a speaking step</h1>
+  <p class="status">Private preview for ABC International: your activity and pictures, rebuilt here with a mic added. Nothing on your site was changed. Speech recognition uses the browser's built-in service (Chrome/Edge/Safari).</p>
+
+  <div class="layout">
+    <section class="card accent" aria-labelledby="acc-h">
+      <h2 id="acc-h">Accent</h2>
+      <fieldset>
+        <legend>Model voice and mic language</legend>
+        <div class="pills">
+          <label><input type="radio" name="ml-accent" value="en-ZA" checked><span>South African (en-ZA)</span></label>
+          <label><input type="radio" name="ml-accent" value="en-GB"><span>British (en-GB)</span></label>
+          <label><input type="radio" name="ml-accent" value="en-US"><span>American (en-US)</span></label>
+        </div>
+      </fieldset>
+      <p id="ml-voice" aria-live="polite"></p>
+      <p id="ml-sr-note" hidden></p>
+      <p id="ml-total" aria-live="polite"></p>
+    </section>
+
+    <section class="card activity" data-mic-layer aria-labelledby="act-h">
+      <p class="topic">The Alphabet – Activity 1</p>
+      <h2 id="act-h">Put in the missing letters.</h2>
+      <p class="how">New step: under each picture, tap <b>🔊 Listen</b>, then <b>🎤 Say it</b> and say the whole word. Then type the missing letter in the task below, as before.</p>
+
+      <div class="block" id="block-1">
+        <div class="pics">
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/oranges.jpg" width="200" height="200" alt="Picture 1" referrerpolicy="no-referrer"><span class="num">1</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/queen.jpg" width="200" height="200" alt="Picture 2" referrerpolicy="no-referrer"><span class="num">2</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/elephant.jpg" width="200" height="200" alt="Picture 3" referrerpolicy="no-referrer"><span class="num">3</span></figure>
+        </div>
+        <div class="h5p-slot" id="h5p-1"></div>
+      </div>
+
+      <div class="block" id="block-2">
+        <div class="pics">
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/grapes.jpg" width="200" height="200" alt="Picture 4" referrerpolicy="no-referrer"><span class="num">4</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/umbrella.jpg" width="200" height="200" alt="Picture 5" referrerpolicy="no-referrer"><span class="num">5</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/violin.jpeg" width="200" height="200" alt="Picture 6" referrerpolicy="no-referrer"><span class="num">6</span></figure>
+        </div>
+        <div class="h5p-slot" id="h5p-2"></div>
+      </div>
+
+      <div class="block" id="block-3">
+        <div class="pics">
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/nail.jpg" width="200" height="200" alt="Picture 7" referrerpolicy="no-referrer"><span class="num">7</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/x-ray.jpg" width="200" height="200" alt="Picture 8" referrerpolicy="no-referrer"><span class="num">8</span></figure>
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/keys.jpg" width="200" height="200" alt="Picture 9" referrerpolicy="no-referrer"><span class="num">9</span></figure>
+        </div>
+        <div class="h5p-slot" id="h5p-3"></div>
+      </div>
+
+      <div class="block" id="block-4">
+        <div class="pics">
+          <figure><img src="https://abcinternationalonline.com/wp-content/uploads/2020/09/ice-cream.jpg" width="200" height="200" alt="Picture 10" referrerpolicy="no-referrer"><span class="num">10</span></figure>
+        </div>
+        <div class="h5p-slot" id="h5p-4"></div>
+      </div>
+    </section>
+
+    <section class="card xapi" aria-labelledby="xapi-h">
+      <h2 id="xapi-h">What your LMS would receive</h2>
+      <p class="hint">Standard xAPI statements, as they happen: H5P's own <b>answered</b> (after Check) and our <b>speaking</b> result for each try. H5P's "interacted" events while typing are left out here.</p>
+      <p id="xapi-empty">Nothing yet. Say a word or press Check.</p>
+      <ul id="xapi-log" aria-live="polite"></ul>
+      <details id="xapi-last" hidden>
+        <summary>Latest statement as JSON</summary>
+        <pre id="xapi-json"></pre>
+      </details>
+      <p class="foot">On your site the actor is the logged-in student. The WordPress H5P plugin already stores the H5P score; the speaking statement can go to an xAPI add-on for LearnDash or to an LRS.</p>
+    </section>
+  </div>
+
+  <p class="small"><b>About this preview.</b> Your site runs H5P.Blanks 1.12; this preview runs H5P.Blanks 1.14.13 in the open-source h5p-standalone player with your settings (case-sensitive check, Check, Retry and Show solution buttons, no auto-check). The mic layer works with both: it sits on the page under the pictures and only listens to standard xAPI events, so it doesn't touch the H5P block's code. Pictures are loaded from your site, not copied. Matching is rule-based (spelling-tolerant word match, singular/plural counts as close). Third-party code and licenses: <a href="NOTICE.txt">NOTICE.txt</a>.</p>
+</main>
+
+<script src="player/main.bundle.js" charset="UTF-8"></script>
+<script src="mic-layer.js"></script>
+<script>
+(function () {
+  var BLOCKS = { 1: 'items 1–3', 2: 'items 4–6', 3: 'items 7–9', 4: 'item 10' };
+  var log = document.getElementById('xapi-log'), empty = document.getElementById('xapi-empty');
+  var last = document.getElementById('xapi-last'), json = document.getElementById('xapi-json');
+  var events = [];
+  window.__xapi = events;
+
+  function verbOf(st) {
+    var v = st && st.verb;
+    if (!v) { return '?'; }
+    return (v.display && (v.display['en-US'] || v.display.en)) || String(v.id || '').split('/').pop();
+  }
+
+  function add(st, source, detail) {
+    var verb = verbOf(st), r = st.result || {}, sc = r.score;
+    events.push({ source: source, verb: verb, score: sc ? { raw: sc.raw, max: sc.max } : null, success: r.success, response: r.response, block: detail.block, statement: st });
+    var li = document.createElement('li');
+    var t = document.createElement('span'); t.className = 't';
+    t.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    var v = document.createElement('span'); v.className = 'v'; v.textContent = verb;
+    var s = document.createElement('span'); s.className = 'src ' + (source === 'speaking' ? 'speak' : 'h5p'); s.textContent = source === 'speaking' ? 'speaking' : 'H5P';
+    v.appendChild(s);
+    var d = document.createElement('span'); d.className = 'd'; d.textContent = detail.text;
+    li.appendChild(t); li.appendChild(v); li.appendChild(d);
+    log.insertBefore(li, log.firstChild);
+    empty.hidden = true;
+    last.hidden = false;
+    json.textContent = JSON.stringify(st, null, 2);
+  }
+
+  function blockOf(st) {
+    var ext = (st.object && st.object.definition && st.object.definition.extensions) || {};
+    var id = String(ext['http://h5p.org/x-api/h5p-local-content-id'] || (st.object && st.object.id) || '');
+    var m = id.match(/alphabet-block-(\d)/);
+    return m ? +m[1] : null;
+  }
+
+  function onH5P(event) {
+    var st = event && event.data && event.data.statement;
+    if (!st) { return; }
+    var verb = verbOf(st);
+    if (verb !== 'answered' && verb !== 'completed') { return; }
+    if (st.context && st.context.contextActivities && st.context.contextActivities.parent) { return; }
+    var r = st.result || {}, sc = r.score, b = blockOf(st), parts = [];
+    parts.push(b ? 'Block ' + b + ' (' + BLOCKS[b] + ')' : 'H5P block');
+    if (sc && typeof sc.raw === 'number') { parts.push('score ' + sc.raw + '/' + sc.max); }
+    if (typeof r.success === 'boolean') { parts.push(r.success ? 'success' : 'not all correct'); }
+    if (r.response !== undefined && r.response !== '') { parts.push('typed: ' + String(r.response).split('[,]').join(', ')); }
+    add(st, 'h5p', { block: b, text: parts.join(' · ') });
+  }
+
+  document.addEventListener('miclayer:statement', function (e) {
+    var st = e.detail, r = st.result, ext = r.extensions || {}, k = 'https://slimanechanchoul.com/xapi/speaking/';
+    var name = st.object.definition.name['en-US'].replace('Say it: ', '');
+    add(st, 'speaking', { block: null, text: name + ' · heard “' + r.response + '” · ' + ext[k + 'match'] + ' · score ' + r.score.raw + '/' + r.score.max + ' · ' + ext[k + 'recognition-lang'] });
+  });
+
+  // Listen to each H5P block's xAPI dispatcher (and the page's one); the same statement is logged once.
+  var hooked = [], seen = (typeof WeakSet === 'function') ? new WeakSet() : null;
+  function listenTo(d) {
+    if (!d || !d.on || hooked.indexOf(d) !== -1) { return; }
+    hooked.push(d);
+    d.on('xAPI', function (event) {
+      var st = event && event.data && event.data.statement;
+      if (!st || (seen && seen.has(st))) { return; }
+      if (seen) { seen.add(st); }
+      onH5P(event);
+    });
+  }
+  function hook(i) {
+    var f = document.querySelector('#h5p-' + i + ' iframe'), fw = f && f.contentWindow;
+    listenTo(window.H5P && window.H5P.externalDispatcher);
+    listenTo(fw && fw.H5P && fw.H5P.externalDispatcher);
+  }
+
+  var Player = window.H5PStandalone && window.H5PStandalone.H5P; // keep a reference: later loads may reset the global
+  var chain = Promise.resolve();
+  [1, 2, 3, 4].forEach(function (i) {
+    chain = chain.then(function () {
+      return new Player(document.getElementById('h5p-' + i), {
+        id: 'alphabet-block-' + i,
+        h5pJsonPath: './h5p/block-' + i,
+        librariesPath: './h5p/libraries',
+        frameJs: './player/frame.bundle.js',
+        frameCss: './player/styles/h5p.css',
+        frame: false,
+        icon: false
+      }).then(function () { hook(i); });
+    });
+  });
+  chain.then(function () { window.__blocksReady = true; }, function (err) { window.__blocksError = String(err); });
+})();
+</script>
+</body></html>
