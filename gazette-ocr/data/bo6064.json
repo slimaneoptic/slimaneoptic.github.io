@@ -1,0 +1,334 @@
+{
+ "page": "bo6064",
+ "model": "google/gemini-3.8-flash",
+ "text": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)\n\nالشهادة | الدولة | قرار المعادلة\n... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات\n\nالشهادة | الدولة | قرار المعادلة\n... - Maîtrise ès sciences (M.SC) - sciences de la gestion, préparée et délivrée au siège de HEC Montréal – Université de Montréal le 13 octobre 2009.  مشفوعة بالإجازة في العلوم الاقتصادية، اختيار اقتصاد المقاولة، دورة ماي 1998. | ... كندا | ",
+ "raw_read_before_rules": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)\n\nالشهادة | الدولة | قرار المعادلة\n... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات\n\nالشهادة | الدولة | قرار المعادلة\n... - Maîtrise ès sciences (M.SC) - sciences de la gestion, préparée et délivrée au siège de HEC Montréal – Université de Montréal le 13 octobre 2009.  مشفوعة بالإجازة في العلوم الاقتصادية، اختيار اقتصاد المقاولة، دورة ماي 1998. | ... كندا | ",
+ "column_rule": [
+  970,
+  215,
+  2219
+ ],
+ "regions": [
+  {
+   "kind": "header",
+   "col": "",
+   "box": [
+    40,
+    0,
+    1754,
+    210
+   ],
+   "mode": "block",
+   "text": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "kind": "text",
+   "col": "right",
+   "box": [
+    976,
+    215,
+    1774,
+    236
+   ],
+   "mode": "block",
+   "text": ""
+  },
+  {
+   "kind": "table",
+   "col": "right",
+   "box": [
+    993,
+    238,
+    1735,
+    895
+   ],
+   "html": "<table dir=\"rtl\"><tr><th dir=\"auto\">الشهادة</th><th dir=\"auto\">الدولة</th><th dir=\"auto\">قرار المعادلة</th></tr><tr><td dir=\"auto\">...<br>- Diplôme de master administration<br>des affaires. à finalité<br>professionnelle. préparé et<br>délivré au siège de<br>l&#x27;université Lille 2, au titre de<br>l&#x27;année universitaire<br>2002-2003, assorti de la<br>maîtrise en sciences et<br>techniques. spécialité :<br>comptables et financières,<br>préparée et délivrée au siège<br>de l&#x27;université de Valenciennes<br>et du Hainaut Cambresis -<br>France, au titre de l&#x27;année<br>universitaire 2000-2001.</td><td dir=\"auto\">...<br>فرنسا</td><td dir=\"auto\">...<br>قرار لوزير التربية الوطنية والتعليم<br>العالي وتكوين الأطر والبحث<br>العلمي رقم 655.11 صادر في<br>12 من ربيع الآخر 1432<br>(17 مارس 2011) بتحديد بعض<br>المعادلات بين الشهادات</td></tr></table>",
+   "cells": [
+    [
+     {
+      "row": 0,
+      "col": 0,
+      "box": [
+       1408,
+       246,
+       1727,
+       310
+      ],
+      "text": "الشهادة"
+     },
+     {
+      "row": 0,
+      "col": 1,
+      "box": [
+       1310,
+       246,
+       1400,
+       310
+      ],
+      "text": "الدولة"
+     },
+     {
+      "row": 0,
+      "col": 2,
+      "box": [
+       999,
+       246,
+       1302,
+       310
+      ],
+      "text": "قرار المعادلة"
+     }
+    ],
+    [
+     {
+      "row": 1,
+      "col": 0,
+      "box": [
+       1408,
+       318,
+       1727,
+       886
+      ],
+      "text": "...\n- Diplôme de master administration\ndes affaires. à finalité\nprofessionnelle. préparé et\ndélivré au siège de\nl'université Lille 2, au titre de\nl'année universitaire\n2002-2003, assorti de la\nmaîtrise en sciences et\ntechniques. spécialité :\ncomptables et financières,\npréparée et délivrée au siège\nde l'université de Valenciennes\net du Hainaut Cambresis -\nFrance, au titre de l'année\nuniversitaire 2000-2001."
+     },
+     {
+      "row": 1,
+      "col": 1,
+      "box": [
+       1310,
+       318,
+       1400,
+       886
+      ],
+      "text": "...\nفرنسا"
+     },
+     {
+      "row": 1,
+      "col": 2,
+      "box": [
+       999,
+       318,
+       1302,
+       886
+      ],
+      "text": "...\nقرار لوزير التربية الوطنية والتعليم\nالعالي وتكوين الأطر والبحث\nالعلمي رقم 655.11 صادر في\n12 من ربيع الآخر 1432\n(17 مارس 2011) بتحديد بعض\nالمعادلات بين الشهادات"
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "text",
+   "col": "right",
+   "box": [
+    976,
+    897,
+    1774,
+    2352
+   ],
+   "mode": "block",
+   "not_read": true,
+   "text": ""
+  },
+  {
+   "kind": "table",
+   "col": "left",
+   "box": [
+    209,
+    232,
+    948,
+    694
+   ],
+   "html": "<table dir=\"rtl\"><tr><th dir=\"auto\">الشهادة</th><th dir=\"auto\">الدولة</th><th dir=\"auto\">قرار المعادلة</th></tr><tr><td dir=\"auto\">...<br>- Maîtrise ès sciences (M.SC) -<br>sciences de la gestion,<br>préparée et délivrée au siège<br>de HEC Montréal –<br>Université de Montréal le<br>13 octobre 2009.<br><br>مشفوعة بالإجازة في العلوم الاقتصادية، اختيار<br>اقتصاد المقاولة، دورة ماي 1998.</td><td dir=\"auto\">...<br>كندا</td><td dir=\"auto\"></td></tr></table>",
+   "cells": [
+    [
+     {
+      "row": 0,
+      "col": 0,
+      "box": [
+       623,
+       240,
+       941,
+       304
+      ],
+      "text": "الشهادة"
+     },
+     {
+      "row": 0,
+      "col": 1,
+      "box": [
+       525,
+       240,
+       615,
+       304
+      ],
+      "text": "الدولة"
+     },
+     {
+      "row": 0,
+      "col": 2,
+      "box": [
+       216,
+       240,
+       517,
+       304
+      ],
+      "text": "قرار المعادلة"
+     }
+    ],
+    [
+     {
+      "row": 1,
+      "col": 0,
+      "box": [
+       623,
+       312,
+       941,
+       683
+      ],
+      "text": "...\n- Maîtrise ès sciences (M.SC) -\nsciences de la gestion,\npréparée et délivrée au siège\nde HEC Montréal –\nUniversité de Montréal le\n13 octobre 2009.\n\nمشفوعة بالإجازة في العلوم الاقتصادية، اختيار\nاقتصاد المقاولة، دورة ماي 1998."
+     },
+     {
+      "row": 1,
+      "col": 1,
+      "box": [
+       525,
+       312,
+       615,
+       683
+      ],
+      "text": "...\nكندا"
+     },
+     {
+      "row": 1,
+      "col": 2,
+      "box": [
+       216,
+       312,
+       517,
+       683
+      ],
+      "not_read": true,
+      "text": ""
+     }
+    ]
+   ]
+  },
+  {
+   "kind": "text",
+   "col": "left",
+   "box": [
+    20,
+    696,
+    964,
+    2352
+   ],
+   "mode": "block",
+   "not_read": true,
+   "text": ""
+  }
+ ],
+ "numbers": [
+  {
+   "value": "4181",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "6064",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "22",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "1433",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "12",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "2012",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "4181\tالجريدة الرسمية\tعدد 6064 - 22 شعبان 1433 (12 يوليو 2012)"
+  },
+  {
+   "value": "2",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "2002-2003",
+   "pattern": "year range yyyy-yyyy",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "2000-2001",
+   "pattern": "year range yyyy-yyyy",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "655.11",
+   "pattern": "law / order nn.yy",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "12",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "1432",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "17",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "2011",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Diplôme de master administration des affaires. à finalité professionnelle. préparé et délivré au siège de l'université Lille 2, au titre de l'année universitaire 2002-2003, assorti de la maîtrise en sciences et techniques. spécialité : comptables et financières, préparée et délivrée au siège de l'université de Valenciennes et du Hainaut Cambresis - France, au titre de l'année universitaire 2000-2001. | ... فرنسا | ... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 655.11 صادر في 12 من ربيع الآخر 1432 (17 مارس 2011) بتحديد بعض المعادلات بين الشهادات"
+  },
+  {
+   "value": "13",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Maîtrise ès sciences (M.SC) - sciences de la gestion, préparée et délivrée au siège de HEC Montréal – Université de Montréal le 13 octobre 2009.  مشفوعة بالإجازة في العلوم الاقتصادية، اختيار اقتصاد المقاولة، دورة ماي 1998. | ... كندا | "
+  },
+  {
+   "value": "2009",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Maîtrise ès sciences (M.SC) - sciences de la gestion, préparée et délivrée au siège de HEC Montréal – Université de Montréal le 13 octobre 2009.  مشفوعة بالإجازة في العلوم الاقتصادية، اختيار اقتصاد المقاولة، دورة ماي 1998. | ... كندا | "
+  },
+  {
+   "value": "1998",
+   "pattern": "plain number",
+   "flags": [],
+   "line": "... - Maîtrise ès sciences (M.SC) - sciences de la gestion, préparée et délivrée au siège de HEC Montréal – Université de Montréal le 13 octobre 2009.  مشفوعة بالإجازة في العلوم الاقتصادية، اختيار اقتصاد المقاولة، دورة ماي 1998. | ... كندا | "
+  }
+ ]
+}
