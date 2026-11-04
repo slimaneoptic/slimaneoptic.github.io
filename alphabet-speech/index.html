@@ -82,8 +82,25 @@ code { font-size: .9em; background: var(--codebg); padding: .05rem .3rem; border
 .ml-fb.ml-again { color: var(--bad); }
 .ml-fb.ml-info { color: var(--slate); }
 .ml-score { font-size: .78rem; color: var(--slate); margin: .15rem 0 0; font-variant-numeric: tabular-nums; }
+/* guided flow */
+.ml-flow { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; margin: 0 -.3rem 1rem; padding: .55rem .3rem;
+           background: var(--surface); border-bottom: 1px solid var(--rule); }
+.ml-flow-btns { display: flex; gap: .4rem; }
+.ml-start, .ml-pause { font: inherit; font-weight: 700; font-size: 1rem; padding: .5rem 1.1rem; border-radius: 8px; cursor: pointer; }
+.ml-start { background: var(--blue); color: #fff; border: 1px solid var(--blue); }
+.ml-start:hover { filter: brightness(1.08); }
+.ml-start[disabled] { opacity: .45; cursor: not-allowed; }
+.ml-pause { background: var(--surface); color: var(--ink); border: 1px solid var(--rule); }
+.ml-flow-status { margin: 0; font-size: .92rem; flex: 1 1 12rem; min-width: 0; }
+.ml-flow-status:empty { display: none; }
+.ml-tap { flex-basis: 100%; font: inherit; font-weight: 800; font-size: 1.2rem; padding: .9rem; border-radius: 10px; border: 0; background: #D93F3F; color: #fff; cursor: pointer; }
+.ml-flow [hidden] { display: none; }
+.ml-flow + .block { border-top: 0; margin-top: 0; padding-top: 0; }
+figure.ml-current img { outline: 4px solid var(--blue); outline-offset: -4px; }
+figure.ml-current .num { background: var(--blue); }
 figure[data-result="matched"] img { outline: 3px solid var(--ok); outline-offset: -3px; }
 figure[data-result="close"] img { outline: 3px solid #E0A030; outline-offset: -3px; }
+figure.ml-current[data-result] img { outline: 4px solid var(--blue); outline-offset: -4px; }
 
 /* xAPI panel */
 #xapi-log { list-style: none; padding: 0; margin: 0; max-height: 380px; overflow-y: auto; font-size: .85rem; }
@@ -144,7 +161,7 @@ figure[data-result="close"] img { outline: 3px solid #E0A030; outline-offset: -3
     <section class="card activity" data-mic-layer aria-labelledby="act-h">
       <p class="topic">The Alphabet – Activity 1</p>
       <h2 id="act-h">Put in the missing letters.</h2>
-      <p class="how">New step: under each picture, tap <b>🔊 Listen</b>, then <b>🎤 Say it</b> and say the whole word. Then type the missing letter in the task below, as before.</p>
+      <p class="how">Press <b>▶ Start</b>: you hear each word, say it when you hear “Your turn”, and the missing letters fill in for you (🔊 Listen and 🎤 Say it under a picture practise one word).</p>
 
       <div class="block" id="block-1">
         <div class="pics">
@@ -194,7 +211,7 @@ figure[data-result="close"] img { outline: 3px solid #E0A030; outline-offset: -3
     </section>
   </div>
 
-  <p class="small"><b>About this preview.</b> Your site runs H5P.Blanks 1.12; this preview runs H5P.Blanks 1.14.13 in the open-source h5p-standalone player with your settings (case-sensitive check, Check, Retry and Show solution buttons, no auto-check). The mic layer works with both: it sits on the page under the pictures and only listens to standard xAPI events, so it doesn't touch the H5P block's code. Pictures are loaded from your site, not copied. Matching is rule-based (spelling-tolerant word match, singular/plural counts as close). Third-party code and licenses: <a href="NOTICE.txt">NOTICE.txt</a>.</p>
+  <p class="small"><b>About this preview.</b> Your site runs H5P.Blanks 1.12; this preview runs H5P.Blanks 1.14.13 in the open-source h5p-standalone player with your settings (case-sensitive check, Check, Retry and Show solution buttons, no auto-check). The mic layer works with both: it sits on the page under the pictures, types a matched word's letter into the blank through H5P's own input field (the same markup in the H5P.Blanks 1.12.8 source), and reads the standard xAPI events; it doesn't change the H5P block's code. After the last word, the guided flow presses Check on each block for you. Pictures are loaded from your site, not copied. Matching is rule-based (spelling-tolerant word match, singular/plural counts as close). Third-party code and licenses: <a href="NOTICE.txt">NOTICE.txt</a>.</p>
 </main>
 
 <script src="player/main.bundle.js" charset="UTF-8"></script>

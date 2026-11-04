@@ -1,38 +1,47 @@
 /*
  * mic-layer.js: a speaking step for "The Alphabet - Activity 1".
  *
- * It runs on the page next to the H5P blocks and never touches the H5P content or the H5P.Blanks code.
- * 1. Finds each picture by its file name and adds two buttons under it:
- *    Listen (speechSynthesis, the model voice) and Say it (Web Speech API recognition).
- * 2. Compares what the browser heard with the word: matched / close / try again, and keeps the best score per word.
- * 3. Builds an xAPI "answered" statement for every try and hands it to the page
- *    (DOM event "miclayer:statement" on document), next to H5P's own statements.
- * The written H5P task stays as it is: the student says the word first, then types the missing letter.
+ * It runs on the page next to the H5P blocks. It does not change the H5P content or the H5P.Blanks code.
+ * 1. Finds each picture by its file name and adds Listen (speechSynthesis) and Say it (Web Speech API) under it.
+ * 2. Speaking is the answer: when the word matches, it types the missing letter(s) into that word's blank
+ *    through H5P's own input field (value + H5P's keyup/change events), so H5P's Check scores it as usual.
+ *    Typing still works.
+ * 3. Sound feedback: a short WebAudio "ping" + spoken praise on a match, a soft tone + "Almost, try again" when close,
+ *    "Let's try again" + the model word on a miss.
+ * 4. Guided flow from one Start click: model word, "Your turn", listen, feedback, fill, next picture; 2 tries per word,
+ *    then it shows the word, fills it and moves on. Pause/Resume. After the last word it says "All done!"
+ *    and presses Check on each H5P block.
+ * 5. Builds an xAPI "answered" statement for every try (DOM event "miclayer:statement" on document).
  */
 (function () {
   'use strict';
 
   var TOPIC = 'https://abcinternationalonline.com/topic/the-alphabet-activity-1/';
   var EXT = 'https://slimanechanchoul.com/xapi/speaking/';
+  // blanks: [H5P block (1-4), blank index in that block, letter]
   var WORDS = [
-    { n: 1, img: 'oranges.jpg', word: 'orange' },
-    { n: 2, img: 'queen.jpg', word: 'queen' },
-    { n: 3, img: 'elephant.jpg', word: 'elephant' },
-    { n: 4, img: 'grapes.jpg', word: 'grapes' },
-    { n: 5, img: 'umbrella.jpg', word: 'umbrella' },
-    { n: 6, img: 'violin.jpeg', word: 'violin' },
-    { n: 7, img: 'nail.jpg', word: 'nail' },
-    { n: 8, img: 'x-ray.jpg', word: 'x-ray', say: 'X-ray' },
-    { n: 9, img: 'keys.jpg', word: 'keys' },
-    { n: 10, img: 'ice-cream.jpg', word: 'ice cream', letters: 2 }
+    { n: 1, img: 'oranges.jpg', word: 'orange', blanks: [[1, 0, 'O']] },
+    { n: 2, img: 'queen.jpg', word: 'queen', blanks: [[1, 1, 'Q']] },
+    { n: 3, img: 'elephant.jpg', word: 'elephant', blanks: [[1, 2, 'h']] },
+    { n: 4, img: 'grapes.jpg', word: 'grapes', blanks: [[2, 0, 'p']] },
+    { n: 5, img: 'umbrella.jpg', word: 'umbrella', blanks: [[2, 1, 'm']] },
+    { n: 6, img: 'violin.jpeg', word: 'violin', blanks: [[2, 2, 'l']] },
+    { n: 7, img: 'nail.jpg', word: 'nail', blanks: [[3, 0, 'N']] },
+    { n: 8, img: 'x-ray.jpg', word: 'x-ray', say: 'X-ray', blanks: [[3, 1, 'y']] },
+    { n: 9, img: 'keys.jpg', word: 'keys', blanks: [[3, 2, 'K']] },
+    { n: 10, img: 'ice-cream.jpg', word: 'ice cream', blanks: [[4, 0, 'c'], [4, 1, 'r']] }
   ];
   var ACCENTS = { 'en-ZA': 'South African English', 'en-GB': 'British English', 'en-US': 'American English' };
   var POINTS = { matched: 1, close: 0.5, again: 0 };
   var RANK = { matched: 3, close: 2, again: 1, none: 0 };
+  var PRAISE = ['Well done!', 'Great job!', 'Excellent!'];
 
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
   var SS = ('speechSynthesis' in window && window.SpeechSynthesisUtterance) ? window.speechSynthesis : null;
-  var state = { lang: 'en-ZA', voice: null, voiceFallback: null, active: null, words: [] };
+  var state = {
+    lang: 'en-ZA', voice: null, voiceFallback: null, active: null, words: [], root: null,
+    run: 0, practice: 0, flow: 'idle', flowAt: 0, praise: 0, sounds: [], tapResolve: null, utter: null
+  };
 
   /* ---------- matching what was heard ---------- */
 
@@ -77,7 +86,6 @@
     return { kind: best };
   }
 
-  // Several alternatives from the recognizer: keep the best one.
   function gradeAll(alts, target) {
     var best = null;
     alts.forEach(function (a) {
@@ -89,7 +97,7 @@
     return best || { kind: 'none', heard: '' };
   }
 
-  /* ---------- model voice ---------- */
+  /* ---------- voice, sounds ---------- */
 
   function voicesFor(lang) {
     var L = lang.toLowerCase();
@@ -97,7 +105,7 @@
       return String(v.lang || '').replace('_', '-').toLowerCase() === L;
     });
   }
-  function score(v) { return (/natural|neural|online/i.test(v.name) ? 2 : 0) + (/google|microsoft|apple|siri/i.test(v.name) ? 1 : 0); }
+  function vscore(v) { return (/natural|neural|online/i.test(v.name) ? 2 : 0) + (/google|microsoft|apple|siri/i.test(v.name) ? 1 : 0); }
 
   function pickVoice() {
     var lang = state.lang, list = voicesFor(lang), fellBack = null;
@@ -106,7 +114,7 @@
       list = SS.getVoices().filter(function (v) { return /^en[-_]/i.test(v.lang || ''); });
       fellBack = list.length ? 'en' : null;
     }
-    list.sort(function (a, b) { return score(b) - score(a); });
+    list.sort(function (a, b) { return vscore(b) - vscore(a); });
     state.voice = list[0] || null;
     state.voiceFallback = fellBack;
     showVoice();
@@ -129,83 +137,155 @@
     el.setAttribute('data-voice', v ? v.name + '|' + v.lang : '');
   }
 
-  function listen(w) {
-    if (!SS) { return; }
-    SS.cancel();
-    var u = new window.SpeechSynthesisUtterance(w.say || w.word);
-    u.lang = state.lang;
-    if (state.voice) {
-      try { u.voice = state.voice; u.lang = String(state.voice.lang).replace('_', '-'); } catch (e) { /* keep the browser's default voice */ }
-    }
-    u.rate = 0.85;
-    SS.speak(u);
-  }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-  /* ---------- the microphone ---------- */
-
-  function sayIt(w) {
-    if (!SR) { return; }
-    if (state.active) { try { state.active.abort(); } catch (e) { /* already stopped */ } }
-    var rec = new SR(), got = false, failed = false;
-    rec.lang = state.lang;
-    rec.interimResults = false;
-    rec.continuous = false;
-    rec.maxAlternatives = 5;
-    state.active = rec;
-    w.say$.classList.add('ml-on');
-    w.say$.setAttribute('aria-pressed', 'true');
-    feedback(w, 'info', 'Listening… say the whole word.');
-
-    rec.onresult = function (e) {
-      var res = e.results[e.resultIndex || 0] || e.results[0], alts = [], i;
-      for (i = 0; res && i < res.length; i++) { alts.push({ text: res[i].transcript, confidence: res[i].confidence }); }
-      got = true;
-      handle(w, alts);
-    };
-    rec.onerror = function (e) {
-      failed = true;
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-        feedback(w, 'again', 'The microphone is blocked. Allow it in the address bar, then try again.');
-      } else if (e.error === 'no-speech') {
-        feedback(w, 'again', 'I didn’t hear anything. Tap Say it and try again.');
-      } else if (e.error === 'network') {
-        feedback(w, 'again', 'The browser’s speech service is not reachable. Check the connection and try again.');
-      } else if (e.error !== 'aborted') {
-        feedback(w, 'again', 'Speech error (' + e.error + '). Try again.');
+  // Speak and resolve when done (with a time limit, as some browsers skip the "end" event).
+  function speak(text, rate) {
+    return new Promise(function (resolve) {
+      if (!SS) { resolve(); return; }
+      var u = new window.SpeechSynthesisUtterance(text), done = false, timer;
+      u.lang = state.lang;
+      if (state.voice) {
+        try { u.voice = state.voice; u.lang = String(state.voice.lang).replace('_', '-'); } catch (e) { /* default voice */ }
       }
-    };
-    rec.onend = function () {
-      w.say$.classList.remove('ml-on');
-      w.say$.setAttribute('aria-pressed', 'false');
-      if (state.active === rec) { state.active = null; }
-      if (!got && !failed) { feedback(w, 'again', 'I didn’t hear anything. Tap Say it and try again.'); }
-    };
-    try { rec.start(); } catch (err) { feedback(w, 'again', 'Could not start the microphone. Try again.'); }
+      u.rate = rate || 0.9;
+      function fin() { if (!done) { done = true; clearTimeout(timer); resolve(); } }
+      u.onend = fin;
+      u.onerror = fin;
+      timer = setTimeout(fin, 1500 + text.length * 130);
+      state.utter = u; // keep a reference until it ends
+      SS.speak(u);
+    });
   }
 
-  function handle(w, alts) {
+  var actx = null;
+  function ensureAudio() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!actx && AC) { actx = new AC(); }
+      if (actx && actx.state === 'suspended') { actx.resume(); }
+    } catch (e) { actx = null; }
+  }
+
+  // name: 'ping' (two bright notes) or 'soft' (one low, quiet note). Generated, no audio file.
+  function tone(name) {
+    state.sounds.push(name);
+    var notes = name === 'ping' ? [[880, 0, 0.16], [1318.5, 0.11, 0.3]] : [[392, 0, 0.28]];
+    var total = name === 'ping' ? 450 : 330;
+    try {
+      ensureAudio();
+      if (actx) {
+        var t0 = actx.currentTime + 0.02;
+        notes.forEach(function (nt) {
+          var o = actx.createOscillator(), g = actx.createGain(), t = t0 + nt[1];
+          o.type = name === 'ping' ? 'sine' : 'triangle';
+          o.frequency.setValueAtTime(nt[0], t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(name === 'ping' ? 0.22 : 0.12, t + 0.015);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + nt[2]);
+          o.connect(g); g.connect(actx.destination);
+          o.start(t); o.stop(t + nt[2] + 0.05);
+        });
+      }
+    } catch (e) { /* no sound, keep going */ }
+    return wait(total);
+  }
+
+  /* ---------- filling the H5P blanks ---------- */
+
+  function blockWin(b) {
+    var frames = state.root.querySelectorAll('iframe');
+    var f = frames[b - 1];
+    return f && f.contentWindow && f.contentWindow.document ? f.contentWindow : null;
+  }
+  function inputsOf(win) { return win.document.querySelectorAll('.h5p-input-wrapper > input.h5p-text-input'); }
+  function visible(el) { return !!(el && el.offsetParent !== null); }
+
+  function setInput(win, input, letter) {
+    input.value = letter;
+    var $ = win.H5P && win.H5P.jQuery;
+    if ($) { $(input).trigger('keyup').trigger('change'); } else { input.dispatchEvent(new win.Event('change', { bubbles: true })); }
+  }
+
+  // A block that was already checked: press its own "Retry", then put back the letters already earned.
+  function reopen(b) {
+    var win = blockWin(b);
+    if (!win) { return; }
+    var retry = win.document.querySelector('.h5p-question-try-again');
+    if (visible(retry)) {
+      retry.click();
+      state.words.forEach(function (w) {
+        if (!w.filled) { return; }
+        w.blanks.forEach(function (bl) {
+          if (bl[0] === b) { var inp = inputsOf(win)[bl[1]]; if (inp) { setInput(win, inp, bl[2]); } }
+        });
+      });
+    }
+  }
+
+  function fill(w) {
+    w.blanks.forEach(function (bl) {
+      var win = blockWin(bl[0]);
+      if (!win) { return; }
+      var inp = inputsOf(win)[bl[1]];
+      if (!inp) { return; }
+      if (inp.disabled || visible(win.document.querySelector('.h5p-question-try-again'))) {
+        if (inp.value === bl[2] && inp.disabled) { return; }
+        reopen(bl[0]);
+        inp = inputsOf(win)[bl[1]];
+      }
+      if (inp) { setInput(win, inp, bl[2]); }
+    });
+    w.filled = true;
+  }
+
+  function pressCheckAll() {
+    var pressed = 0;
+    for (var b = 1; b <= 4; b++) {
+      var win = blockWin(b), btn = win && win.document.querySelector('.h5p-question-check-answer');
+      if (visible(btn)) { btn.click(); pressed++; }
+    }
+    return pressed;
+  }
+
+  /* ---------- results, feedback, xAPI ---------- */
+
+  function record(w, alts) {
     var g = gradeAll(alts, w.word);
-    if (g.kind === 'none') { feedback(w, 'again', 'I didn’t catch a word. Try again.'); return g; }
+    if (g.kind === 'none') { feedback(w, 'again', 'I didn’t catch a word.'); return g; }
     var pts = POINTS[g.kind];
     w.tries += 1;
     if (w.best === null || pts > w.best) { w.best = pts; }
-    var letters = w.letters ? 'letters' : 'letter';
     if (g.kind === 'matched') {
-      feedback(w, 'matched', '✓ Matched: I heard “' + g.heard + '”. Now type the missing ' + letters + ' in ' + w.n + '.');
+      fill(w);
+      feedback(w, 'matched', '✓ Matched: I heard “' + g.heard + '”. ' + (w.blanks.length > 1 ? 'Letters' : 'Letter') + ' filled in.');
     } else if (g.kind === 'close') {
       feedback(w, 'close', 'Close: I heard “' + g.heard + '”. ' + (g.why === 'plural' ? 'Listen to the end of the word and try again.' : 'Listen and try once more.'));
     } else {
-      feedback(w, 'again', 'Try again: I heard “' + g.heard + '”. Tap Listen first.');
+      feedback(w, 'again', 'Try again: I heard “' + g.heard + '”.');
     }
-    w.score$.textContent = 'Score ' + fmt(w.best) + ' / 1, ' + w.tries + (w.tries === 1 ? ' try' : ' tries');
+    w.score$.textContent = 'Score ' + (w.best === 0.5 ? '0.5' : String(w.best)) + ' / 1, ' + w.tries + (w.tries === 1 ? ' try' : ' tries');
     w.score$.hidden = false;
     w.fig.setAttribute('data-result', g.kind);
     total();
     emit(statement(w, g, pts));
-    return { kind: g.kind, heard: g.heard, score: pts, best: w.best };
+    return g;
   }
 
-  function fmt(x) { return x === 0.5 ? '0.5' : String(x); }
+  // The sound + voice after a try. last=true: no "try again" (the flow moves on).
+  function react(kind, w, isStale) {
+    if (kind === 'matched') {
+      return tone('ping').then(function () {
+        if (isStale()) { return; }
+        var p = PRAISE[state.praise++ % PRAISE.length];
+        return speak(p);
+      });
+    }
+    if (kind === 'close') {
+      return tone('soft').then(function () { if (!isStale()) { return speak('Almost, try again'); } });
+    }
+    return speak('Let’s try again').then(function () { if (!isStale()) { return wait(200).then(function () { if (!isStale()) { return speak(w.say || w.word); } }); } });
+  }
 
   function feedback(w, kind, text) {
     w.fb$.textContent = text;
@@ -214,16 +294,18 @@
 
   function total() {
     var el = document.getElementById('ml-total');
-    if (!el) { return; }
+    var t = totals();
+    if (el) { el.innerHTML = 'Speaking score: <b>' + t.sum + ' / ' + state.words.length + '</b> (' + t.m + ' matched, ' + t.c + ' close)'; }
+    return t;
+  }
+  function totals() {
     var sum = 0, m = 0, c = 0;
     state.words.forEach(function (w) {
       if (w.best !== null) { sum += w.best; }
       if (w.best === 1) { m++; } else if (w.best === 0.5) { c++; }
     });
-    el.innerHTML = 'Speaking score: <b>' + (Math.round(sum * 10) / 10) + ' / ' + state.words.length + '</b> (' + m + ' matched, ' + c + ' close)';
+    return { sum: Math.round(sum * 10) / 10, m: m, c: c };
   }
-
-  /* ---------- xAPI ---------- */
 
   function statement(w, g, pts) {
     var ext = {};
@@ -255,16 +337,233 @@
     document.dispatchEvent(ev);
   }
 
-  /* ---------- building the buttons under the pictures ---------- */
+  /* ---------- the microphone ---------- */
+
+  // One recognition run. Resolves with {alts:[...]} or {error:'...'}.
+  function recognize(w) {
+    return new Promise(function (resolve) {
+      if (state.active) { try { state.active.abort(); } catch (e) { /* stopped */ } }
+      var rec = new SR(), settled = false, timer;
+      rec.lang = state.lang;
+      rec.interimResults = false;
+      rec.continuous = false;
+      rec.maxAlternatives = 5;
+      state.active = rec;
+      w.say$.classList.add('ml-on');
+      w.say$.setAttribute('aria-pressed', 'true');
+      feedback(w, 'info', 'Listening… say the whole word.');
+      function fin(r) {
+        if (settled) { return; }
+        settled = true;
+        clearTimeout(timer);
+        w.say$.classList.remove('ml-on');
+        w.say$.setAttribute('aria-pressed', 'false');
+        if (state.active === rec) { state.active = null; }
+        resolve(r);
+      }
+      rec.onresult = function (e) {
+        var res = e.results[e.resultIndex || 0] || e.results[0], alts = [], i;
+        for (i = 0; res && i < res.length; i++) { alts.push({ text: res[i].transcript, confidence: res[i].confidence }); }
+        fin({ alts: alts });
+      };
+      rec.onerror = function (e) { fin({ error: e.error || 'error' }); };
+      rec.onend = function () { fin({ error: 'no-speech' }); };
+      timer = setTimeout(function () { try { rec.abort(); } catch (e) { /* ignore */ } fin({ error: 'no-speech' }); }, 12000);
+      try { rec.start(); } catch (err) { fin({ error: 'start-failed' }); }
+    });
+  }
+
+  function errorText(err) {
+    if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'start-failed') { return 'The microphone is blocked. Allow it in the address bar, then try again.'; }
+    if (err === 'network') { return 'The browser’s speech service is not reachable. Check the connection and try again.'; }
+    return 'I didn’t hear anything. Try again.';
+  }
+
+  /* practice: one word, from its own Say it button */
+  function sayIt(w) {
+    if (!SR) { return; }
+    pauseFlow();
+    ensureAudio();
+    if (SS) { SS.cancel(); }
+    var token = ++state.practice;
+    function stale() { return token !== state.practice; }
+    recognize(w).then(function (r) {
+      if (stale()) { return; }
+      if (r.error) { if (r.error !== 'aborted') { feedback(w, 'again', errorText(r.error)); } return; }
+      var g = record(w, r.alts);
+      if (g.kind !== 'none') { return react(g.kind, w, stale); }
+    });
+  }
+
+  function listen(w) {
+    if (!SS) { return; }
+    state.practice++;
+    SS.cancel();
+    speak(w.say || w.word, 0.85);
+  }
+
+  /* ---------- guided flow ---------- */
+
+  function flowUI() {
+    var start = document.getElementById('ml-start'), pause = document.getElementById('ml-pause');
+    if (!start) { return; }
+    var running = state.flow === 'running';
+    start.hidden = running;
+    pause.hidden = !running;
+    start.innerHTML = state.flow === 'paused' ? '<span aria-hidden="true">▶</span> Resume (word ' + state.words[state.flowAt].n + ')'
+      : state.flow === 'done' ? '<span aria-hidden="true">▶</span> Start again' : '<span aria-hidden="true">▶</span> Start';
+  }
+  function status(text) { var el = document.getElementById('ml-flow-status'); if (el) { el.textContent = text; } }
+
+  function focusWord(w) {
+    state.words.forEach(function (x) { x.fig.classList.toggle('ml-current', x === w); });
+    try { w.fig.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) { w.fig.scrollIntoView(); }
+  }
+
+  // Shown only if the browser refuses to listen without a fresh tap.
+  function waitForTap(run) {
+    var tap = document.getElementById('ml-tap');
+    return new Promise(function (resolve) {
+      tap.hidden = false;
+      try { tap.focus(); } catch (e) { /* ignore */ }
+      state.tapResolve = function (ok) { tap.hidden = true; state.tapResolve = null; resolve(ok && run === state.run); };
+    });
+  }
+
+  function listenInFlow(w, run) {
+    return recognize(w).then(function (r) {
+      if (run !== state.run) { return { cancelled: true }; }
+      if (r.error === 'not-allowed' || r.error === 'service-not-allowed' || r.error === 'start-failed') {
+        status('Word ' + w.n + ' of 10: tap the big mic button, then say the word.');
+        return waitForTap(run).then(function (ok) {
+          if (!ok) { return { cancelled: true }; }
+          return recognize(w).then(function (r2) {
+            if (run !== state.run) { return { cancelled: true }; }
+            if (r2.error === 'not-allowed' || r2.error === 'service-not-allowed' || r2.error === 'start-failed') { return { blocked: true }; }
+            return r2;
+          });
+        });
+      }
+      return r;
+    });
+  }
+
+  function runFlow(from) {
+    var run = ++state.run;
+    state.practice++;
+    state.flow = 'running';
+    flowUI();
+    ensureAudio();
+    if (SS) { SS.cancel(); }
+    if (from === 0) {
+      state.words.forEach(function (x) { x.filled = false; });
+      for (var b = 1; b <= 4; b++) { reopen(b); }
+    }
+    function stale() { return run !== state.run; }
+
+    function doWord(i) {
+      if (stale()) { return Promise.resolve(); }
+      if (i >= state.words.length) { return finish(); }
+      var w = state.words[i], tries = 0;
+      state.flowAt = i;
+      focusWord(w);
+      status('Word ' + w.n + ' of 10: listen.');
+      feedback(w, 'info', '');
+
+      function attempt() {
+        if (stale()) { return Promise.resolve(); }
+        status('Word ' + w.n + ' of 10: your turn, say it now.');
+        return wait(150).then(function () { return listenInFlow(w, run); }).then(function (r) {
+          if (stale() || r.cancelled) { return; }
+          if (r.blocked) {
+            pauseFlow();
+            status('The microphone is blocked. Allow it in the address bar, then press Resume.');
+            feedback(w, 'again', errorText('not-allowed'));
+            return;
+          }
+          tries++;
+          var g = r.alts ? record(w, r.alts) : { kind: 'none' };
+          if (!r.alts) { feedback(w, 'again', errorText(r.error)); }
+          if (g.kind === 'matched') {
+            status('Word ' + w.n + ' of 10: matched!');
+            return react('matched', w, stale).then(function () { return next(); });
+          }
+          if (tries >= 2) {
+            fill(w);
+            feedback(w, 'info', 'The word is “' + w.word + '”. ' + (w.blanks.length > 1 ? 'Letters' : 'Letter') + ' filled in, moving on.');
+            status('Word ' + w.n + ' of 10: the word is “' + w.word + '”.');
+            return speak('The word is ' + (w.say || w.word)).then(function () { return next(); });
+          }
+          return react(g.kind === 'close' ? 'close' : 'again', w, stale).then(attempt);
+        });
+      }
+      function next() { if (!stale()) { return wait(350).then(function () { return doWord(i + 1); }); } }
+
+      return speak(w.say || w.word).then(function () {
+        if (stale()) { return; }
+        return wait(250).then(function () { return stale() ? null : speak('Your turn'); });
+      }).then(attempt);
+    }
+
+    function finish() {
+      if (stale()) { return; }
+      state.words.forEach(function (x) { x.fig.classList.remove('ml-current'); });
+      state.flow = 'done';
+      state.flowAt = 0;
+      flowUI();
+      var t = totals();
+      status('All done! Speaking score ' + t.sum + ' / 10. Check was pressed on each block for you.');
+      return speak('All done!').then(function () {
+        var n = pressCheckAll();
+        state.checked = n;
+      });
+    }
+
+    return doWord(from).then(null, function (e) { status('Something went wrong: ' + e); state.flow = 'paused'; flowUI(); });
+  }
+
+  function pauseFlow() {
+    if (state.flow !== 'running') { return; }
+    state.run++;
+    state.flow = 'paused';
+    if (state.tapResolve) { state.tapResolve(false); }
+    if (state.active) { try { state.active.abort(); } catch (e) { /* stopped */ } }
+    if (SS) { SS.cancel(); }
+    flowUI();
+    status('Paused at word ' + state.words[state.flowAt].n + '.');
+  }
+
+  /* ---------- building the buttons ---------- */
+
+  function buildFlowBar(root) {
+    var bar = document.createElement('div');
+    bar.className = 'ml-flow';
+    bar.innerHTML =
+      '<div class="ml-flow-btns">' +
+      '<button type="button" id="ml-start" class="ml-start"><span aria-hidden="true">▶</span> Start</button>' +
+      '<button type="button" id="ml-pause" class="ml-pause" hidden><span aria-hidden="true">⏸</span> Pause</button>' +
+      '</div>' +
+      '<p id="ml-flow-status" class="ml-flow-status" aria-live="polite"></p>' +
+      '<button type="button" id="ml-tap" class="ml-tap" hidden><span aria-hidden="true">🎤</span> Tap to answer</button>';
+    var first = root.querySelector('.block');
+    root.insertBefore(bar, first || null);
+    var start = bar.querySelector('#ml-start');
+    if (!SR) { start.disabled = true; start.title = 'Needs speech recognition (Chrome, Edge or Safari)'; }
+    start.addEventListener('click', function () { if (SR) { runFlow(state.flow === 'paused' ? state.flowAt : 0); } });
+    bar.querySelector('#ml-pause').addEventListener('click', pauseFlow);
+    bar.querySelector('#ml-tap').addEventListener('click', function () { if (state.tapResolve) { state.tapResolve(true); } });
+    status(SR ? 'Press Start: you hear each word, then say it.' : '');
+  }
 
   function build() {
     var root = document.querySelector('[data-mic-layer]') || document.body;
+    state.root = root;
     root.classList.add(SR ? 'ml-has-sr' : 'ml-no-sr');
     WORDS.forEach(function (def) {
       var img = root.querySelector('img[src$="/' + def.img + '"]');
       if (!img) { return; }
       var fig = img.closest('figure') || img.parentNode;
-      var w = { n: def.n, word: def.word, say: def.say, letters: def.letters, fig: fig, tries: 0, best: null };
+      var w = { n: def.n, word: def.word, say: def.say, blanks: def.blanks, fig: fig, tries: 0, best: null, filled: false };
       var box = document.createElement('div');
       box.className = 'ml-box';
       box.innerHTML =
@@ -281,16 +580,17 @@
       w.say$.setAttribute('aria-label', 'Say word ' + def.n);
       if (!SS) { w.listen$.hidden = true; }
       if (!SR) { w.say$.disabled = true; w.say$.title = 'Speech recognition needs Chrome, Edge or Safari'; }
-      w.listen$.addEventListener('click', function () { listen(w); });
+      w.listen$.addEventListener('click', function () { pauseFlow(); listen(w); });
       w.say$.addEventListener('click', function () { sayIt(w); });
       state.words.push(w);
     });
+    buildFlowBar(root);
 
     var note = document.getElementById('ml-sr-note');
     if (note) {
       note.hidden = !!SR;
       if (!SR) {
-        note.textContent = 'This browser has no speech recognition (Firefox, for example), so Say it is switched off here. Listen and the written task still work. Open this page in Chrome, Edge or Safari to try the mic.';
+        note.textContent = 'This browser has no speech recognition (Firefox, for example), so Start and Say it are switched off here. Listen and the written task still work. Open this page in Chrome, Edge or Safari to try the mic.';
       }
     }
 
@@ -311,7 +611,7 @@
   function setLang(lang) {
     if (!ACCENTS[lang]) { return; }
     state.lang = lang;
-    if (state.active) { try { state.active.abort(); } catch (e) { /* stopped */ } }
+    if (state.flow !== 'running' && state.active) { try { state.active.abort(); } catch (e) { /* stopped */ } }
     pickVoice();
   }
 
@@ -319,12 +619,14 @@
     words: WORDS,
     grade: grade,
     setLang: setLang,
+    sounds: state.sounds,
     info: function () {
       return {
         lang: state.lang, recognition: !!SR, synthesis: !!SS,
         voice: state.voice ? { name: state.voice.name, lang: state.voice.lang } : null,
         voiceFallback: state.voiceFallback,
-        words: state.words.map(function (w) { return { n: w.n, word: w.word, tries: w.tries, best: w.best }; })
+        flow: state.flow, flowAt: state.flowAt, checked: state.checked || 0,
+        words: state.words.map(function (w) { return { n: w.n, word: w.word, tries: w.tries, best: w.best, filled: w.filled }; })
       };
     }
   };
