@@ -1,6 +1,6 @@
 {
  "note": "hand-checked test set: typed by hand from the page images; scores from the run",
- "overall_cer": 0.0018,
+ "overall_cer": 0.0017,
  "checks": {
   "leaders_7554": {
    "ok": 16,
@@ -126,14 +126,14 @@
   "double_parens_left": 0,
   "double_parens_raw": 0,
   "cells_6064": {
-   "ok": 11,
-   "read": 11,
+   "ok": 12,
+   "read": 12,
    "total": 12,
    "rule": "cell in the right row and column, and at most 5% character errors"
   },
   "numbers": {
-   "ok": 39,
-   "total": 39
+   "ok": 44,
+   "total": 44
   },
   "persian_final": 0,
   "persian_raw": 0
@@ -343,11 +343,11 @@
    ]
   },
   "bo6064": {
-   "cer": 0.0035,
-   "cer_raw_read_before_rules": 0.0035,
-   "exact": 10,
-   "items": 11,
-   "not_read": 1,
+   "cer": 0.0029,
+   "cer_raw_read_before_rules": 0.0029,
+   "exact": 11,
+   "items": 12,
+   "not_read": 0,
    "rows": [
     {
      "gt": "الشهادة",
@@ -402,6 +402,11 @@
     {
      "gt": "... كندا",
      "out": "... كندا",
+     "edits": 0
+    },
+    {
+     "gt": "... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 1076.10 صادر في 9 ربيع الآخر 1431 (26 مارس 2010) بتحديد بعض المعادلات بين الشهادات.",
+     "out": "... قرار لوزير التربية الوطنية والتعليم العالي وتكوين الأطر والبحث العلمي رقم 1076.10 صادر في 9 ربيع الآخر 1431 (26 مارس 2010) بتحديد بعض المعادلات بين الشهادات.",
      "edits": 0
     }
    ]
