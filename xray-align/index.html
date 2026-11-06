@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dental X-ray alignment prototype: ArUco tube angle, red/green correction, simulated risk</title>
+<meta name="description" content="Prototype: an ArUco marker on the positioning ring, a camera on the tube, the tube-to-ring angle in two axes, a red/amber/green light with the correction in words, a simulated risk % and an Acceptable / Unacceptable log with CSV.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%231f9d55' stroke-width='3'/%3E%3Cpath d='M16 4v6M16 22v6M4 16h6M22 16h6' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; --codebg: #EEF2F6;
+        --ok: #1f9d55; --okbg: #E6F5EC; --warn: #B7791F; --warnbg: #FDF3E1; --bad: #C93A3A; --badbg: #FBE9E9; --idle: #8796A4; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+a { color: var(--blue); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.status { background: var(--surface); border: 1px solid var(--rule); border-left: 4px solid var(--blue); border-radius: 8px; padding: .7rem .9rem; margin: 0 0 1.4rem; font-size: .95rem; }
+.note, .small { color: var(--slate); font-size: .88rem; }
+.small { margin-top: 2.5rem; }
+code { font-size: .86em; background: var(--codebg); padding: .05rem .3rem; border-radius: 4px; }
+.card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 1rem; }
+.btn { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .55rem .9rem; background: var(--btnbg); color: var(--btnfg); cursor: pointer; }
+.btn:hover { background: var(--btnhover); }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+.btn:disabled { opacity: .45; cursor: default; }
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .5rem; }
+.controls label { font-size: .88rem; color: var(--slate); display: inline-flex; align-items: center; gap: .35rem; }
+.controls input { font: inherit; font-size: .9rem; width: 4.2rem; padding: .3rem .4rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); color: var(--ink); }
+#modeLine { font-size: .9rem; color: var(--slate); margin: 0 0 .6rem; }
+/* live view */
+.live { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+.viewbox { background: #0b1117; border-radius: 10px; overflow: hidden; line-height: 0; }
+#view { width: 100%; height: auto; display: block; }
+.chipsRow { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .6rem; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.seg button { font: inherit; font-size: .88rem; border: 0; border-right: 1px solid var(--rule); background: var(--surface); color: var(--ink); padding: .3rem .6rem; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--btnbg); color: var(--btnfg); }
+#truth { font-size: .85rem; color: var(--slate); margin: .45rem 0 0; }
+.panel { border-radius: 10px; border: 1px solid var(--rule); background: var(--surface); padding: 1rem; border-top: 6px solid var(--idle); }
+.light { display: flex; align-items: center; gap: .8rem; }
+.dot { width: 3.4rem; height: 3.4rem; border-radius: 50%; background: var(--idle); flex-shrink: 0; box-shadow: inset 0 -4px 0 rgba(0,0,0,.15); }
+#stLabel { font-weight: 800; font-size: 1.25rem; line-height: 1.2; }
+.st-green { border-top-color: var(--ok); } .st-green .dot { background: #1f9d55; } .st-green #stLabel { color: var(--ok); }
+.st-amber { border-top-color: var(--warn); } .st-amber .dot { background: #e3a008; } .st-amber #stLabel { color: var(--warn); }
+.st-red { border-top-color: var(--bad); } .st-red .dot { background: #d64545; } .st-red #stLabel { color: var(--bad); }
+#corr { font-weight: 600; margin: .7rem 0 .8rem; min-height: 3em; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 0; }
+.metrics div { background: var(--paper); border-radius: 8px; padding: .45rem .6rem; }
+.metrics dt { font-size: .8rem; color: var(--slate); line-height: 1.3; }
+.metrics dd { margin: 0; font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.metrics .risk { grid-column: 1 / -1; }
+.metrics .risk dt b { color: var(--warn); font-weight: 600; }
+.rate { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .8rem; }
+.rate .btn { padding: .65rem .5rem; }
+#ok { background: #1f7a46; color: #fff; } #bad { background: #b83232; color: #fff; }
+#ok:hover:not(:disabled) { background: #19663a; } #bad:hover:not(:disabled) { background: #9c2a2a; }
+/* log */
+.scroll { overflow: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.logbox { max-height: 22rem; }
+table.list { border-collapse: collapse; width: 100%; font-size: .85rem; min-width: 44rem; }
+table.list th { position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 600; color: var(--slate); border-bottom: 1px solid var(--rule); padding: .45rem .5rem; }
+table.list td { border-bottom: 1px solid var(--rule); padding: .4rem .5rem; }
+table.list td.num { font-variant-numeric: tabular-nums; text-align: right; }
+table.list tr.r-green td:nth-child(7) { color: var(--ok); font-weight: 600; }
+table.list tr.r-amber td:nth-child(7) { color: var(--warn); font-weight: 600; }
+table.list tr.r-red td:nth-child(7) { color: var(--bad); font-weight: 600; }
+.logbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: .6rem; }
+#logCount { color: var(--slate); font-size: .88rem; }
+/* accuracy */
+table.acc { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 36rem; }
+table.acc th, table.acc td { padding: .45rem .6rem; border-bottom: 1px solid var(--rule); text-align: left; }
+table.acc th { color: var(--slate); font-weight: 600; }
+table.acc td.num { font-variant-numeric: tabular-nums; }
+pre { background: var(--codebg); border-radius: 8px; padding: .9rem 1rem; overflow: auto; font-size: .8rem; line-height: 1.45; margin: 0; }
+pre code { background: none; padding: 0; font-size: inherit; }
+ol.how { padding-left: 1.2rem; margin: 0; } ol.how li { margin: .45rem 0; }
+@media (max-width: 760px) { .live { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+<script defer src="vendor/cv.js"></script>
+<script defer src="vendor/aruco.js"></script>
+<script defer src="vendor/aruco_4x4_1000.js"></script>
+<script defer src="align.js"></script>
+<script defer src="app.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">X-ray alignment prototype</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Dental X-ray alignment prototype: ArUco tube angle, red/green correction, simulated risk</h1>
+  <p class="lead">A camera on the X-ray tube sees an ArUco marker fixed on the positioning ring. Each frame gives the angle between the tube axis and the ring in two directions, the distance, a green / amber / red light with the correction in words, and a risk % for image quality. Each reading can be rated Acceptable or Unacceptable and saved.</p>
+  <p class="status"><b>Status:</b> prototype, not for clinical use; no real X-ray tube or patient image was used. The accuracy numbers come from <b>48 synthetic views</b> rendered at known angles (0&ndash;15&deg;): the Python core read them with a mean angle error of <b>0.25&deg;</b> (max 1.49&deg;) and a mean distance error of 0.37&nbsp;mm. The browser camera mode is approximate, because your camera is not calibrated. The risk % is <b>simulated</b>.</p>
+
+  <h2>1. Try it</h2>
+  <div class="controls">
+    <button type="button" class="btn" id="camBtn">Use my camera</button>
+    <button type="button" class="btn ghost" id="sampleBtn">No camera? Play sample frames</button>
+    <label>Marker side <input id="mm" type="number" value="40" min="5" max="500" step="1" inputmode="decimal"> mm</label>
+    <label>Camera field of view <input id="fov" type="number" value="60" min="20" max="120" step="1" inputmode="decimal"> &deg;</label>
+  </div>
+  <p class="note" style="margin:0 0 .5rem">Camera mode: print the marker (<a href="aruco-marker-40mm.pdf">PDF, 40&nbsp;mm at 100&nbsp;%</a> or <a href="aruco-4x4-50-id0.png">PNG</a>; ArUco DICT_4X4_50, id&nbsp;0), hold it flat 20&ndash;40&nbsp;cm from the camera, then tilt it. Nothing leaves your browser.</p>
+  <p id="modeLine" aria-live="polite">Loading the sample frames&hellip;</p>
+  <div class="live">
+    <div>
+      <div class="viewbox"><canvas id="view" width="1280" height="720" aria-label="Camera or sample frame with the detected marker outlined"></canvas></div>
+      <div class="chipsRow" id="chipsRow"><div class="seg" id="chips" role="group" aria-label="Sample frame (true tilt)"></div><button type="button" class="btn ghost" id="auto" aria-pressed="true">Pause</button></div>
+      <p id="truth"></p>
+    </div>
+    <div class="panel" id="panel" aria-live="polite">
+      <div class="light"><span class="dot" aria-hidden="true"></span><span id="stLabel">No marker in view</span></div>
+      <p id="corr"></p>
+      <dl class="metrics">
+        <div><dt>Horizontal tilt</dt><dd id="mH">&ndash;</dd></div>
+        <div><dt>Vertical tilt</dt><dd id="mV">&ndash;</dd></div>
+        <div><dt>Total angle</dt><dd id="mT">&ndash;</dd></div>
+        <div><dt>Distance to ring</dt><dd id="mD">&ndash;</dd></div>
+        <div class="risk"><dt>Image-quality risk, <b>simulated</b> (curve, not data)</dt><dd id="mR">&ndash;</dd></div>
+      </dl>
+      <div class="rate"><button type="button" class="btn" id="ok" disabled>Acceptable</button><button type="button" class="btn" id="bad" disabled>Unacceptable</button></div>
+    </div>
+  </div>
+  <p class="note">Green within 3&deg;, amber 3&ndash;6&deg;, red over 6&deg; (total angle between the tube axis and the ring's axis). The white cross is the tube axis; the arrow shows which way to aim the tube. Directions are as the camera sees them; on the real setup they map to the patient once the camera mount is fixed. Without a calibrated camera the angles are approximate: the delivered version calibrates once with a ChArUco board.</p>
+
+  <h2>2. Exposure log</h2>
+  <div class="logbar"><button type="button" class="btn" id="csv" disabled>Download CSV</button><button type="button" class="btn ghost" id="clear" disabled>Clear</button><span id="logCount">0 rows</span></div>
+  <div class="scroll logbox"><table class="list"><thead><tr><th>Time (UTC)</th><th>Source</th><th>Horizontal&nbsp;&deg;</th><th>Vertical&nbsp;&deg;</th><th>Total&nbsp;&deg;</th><th>Distance&nbsp;mm</th><th>Status</th><th>Risk&nbsp;% (sim.)</th><th>Rating</th></tr></thead><tbody id="logBody"></tbody></table></div>
+  <p class="note">In the delivered app each phantom exposure gets one click, saved with the angles in SQLite (and CSV), so the risk curve can later be fitted to your own ratings instead of the simulated one.</p>
+
+  <h2>3. Accuracy on synthetic views at known angles</h2>
+  <p>48 images of the marker were rendered with OpenCV at known poses: tilt 0&ndash;15&deg; in random directions, random in-plane rotation, 150&ndash;300&nbsp;mm away, up to 20&nbsp;mm off-centre, with Gaussian blur (0.5&ndash;1.5&nbsp;px) and noise (2&ndash;6 grey levels). Camera: 1280&times;720, 60&deg; field of view, no lens distortion. Marker: 40&nbsp;mm on a white card. Each reading was compared with the true pose.</p>
+  <div class="scroll"><table class="acc">
+    <thead><tr><th>Code</th><th>Detected</th><th>Angle error, mean / median / max</th><th>Distance error, mean / max</th><th>Colour matched truth</th></tr></thead>
+    <tbody>
+      <tr><td>Python core (OpenCV, below)</td><td class="num">48 / 48</td><td class="num">0.25&deg; / 0.13&deg; / 1.49&deg;</td><td class="num">0.37 / 0.86&nbsp;mm</td><td class="num">47 / 48</td></tr>
+      <tr><td>This page's code (js-aruco2, sub-pixel corners, pose from the homography; run in Node on the same 48 images)</td><td class="num">48 / 48</td><td class="num">0.18&deg; / 0.11&deg; / 0.67&deg;</td><td class="num">0.28 / 0.70&nbsp;mm</td><td class="num">48 / 48</td></tr>
+    </tbody></table></div>
+  <p class="note">Python core by tilt band (16 views each): 0&ndash;5&deg; mean 0.24&deg; (max 0.42&deg;), 5&ndash;10&deg; mean 0.35&deg; (max 1.49&deg;), 10&ndash;15&deg; mean 0.14&deg; (max 0.60&deg;). The one colour miss: a view at a true 5.4&deg; read 6.5&deg;, red instead of amber. Near a band edge a 1&deg; error flips the colour, so the delivered version holds the colour until the reading is clearly past the edge. These are ideal-camera numbers; a real lens, light and print add error, which the calibration step keeps down. Raw numbers: <a href="accuracy.json">accuracy.json</a>.</p>
+
+  <h2>4. The Python core</h2>
+  <p class="note" style="margin-top:0">The function the delivered app calls on every frame, shortened (the full file also returns the lateral offset and the corners). OpenCV 5, <code>cv2.aruco</code> + <code>solvePnP</code>; <code>K</code> and <code>dist</code> come from the one-time ChArUco calibration.</p>
+<pre><code>DETECTOR = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50), params)
+
+def simulated_risk(total_deg):          # SIMULATED: logistic curve, 50 % at 6 deg
+    return 100.0 / (1.0 + math.exp(-(total_deg - 6.0) / 1.2))
+
+def measure(image, K, dist, marker_mm, marker_id=0):
+    gray = image if image.ndim == 2 else cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    corners, ids, _ = DETECTOR.detectMarkers(gray)
+    if ids is None or marker_id not in ids.ravel():
+        return None
+    c = corners[list(ids.ravel()).index(marker_id)].reshape(4, 2).astype(np.float64)
+    h = marker_mm / 2.0                  # IPPE_SQUARE corner order: TL, TR, BR, BL, y up
+    obj = np.array([[-h, h, 0], [h, h, 0], [h, -h, 0], [-h, -h, 0]], np.float64)
+    _, rvecs, tvecs, errs = cv2.solvePnPGeneric(obj, c, K, dist, flags=cv2.SOLVEPNP_IPPE_SQUARE)
+    best = int(np.argmin(np.ravel(errs)))
+    R, _ = cv2.Rodrigues(rvecs[best])
+    t = tvecs[best].ravel()
+    n = -R[:, 2]                         # ring axis in the tube frame; (0, 0, 1) when square-on
+    horiz = math.degrees(math.atan2(n[0], n[2]))
+    vert = math.degrees(math.atan2(n[1], n[2]))
+    total = math.degrees(math.acos(min(1.0, n[2])))
+    status = "green" if total &lt;= 3 else "amber" if total &lt;= 6 else "red"
+    return {"horizontal_deg": horiz, "vertical_deg": vert, "total_deg": total,
+            "distance_mm": float(np.linalg.norm(t)), "status": status,
+            "correction": correction(horiz, vert, status),
+            "risk_pct_simulated": simulated_risk(total)}</code></pre>
+
+  <h2>What the delivered version adds</h2>
+  <ol class="how">
+    <li><b>Calibration.</b> The tube camera is calibrated once with a printed ChArUco board, so the angles hold on the real lens.</li>
+    <li><b>Zero.</b> One capture with the tube set square to the ring sets the zero, so a camera mounted slightly off the tube axis does not bias the reading.</li>
+    <li><b>Desktop app.</b> Python + OpenCV with the live video, the red/green overlay and the correction text, on a USB camera with autofocus off.</li>
+    <li><b>Log.</b> Acceptable / Unacceptable per phantom exposure, saved with angles, distance and time in SQLite, with CSV export.</li>
+    <li><b>Risk.</b> The simulated curve is replaced by one fitted to those ratings once there are enough of them.</li>
+  </ol>
+
+  <p class="small">Sample frames and accuracy test made with OpenCV in Python from the marker image; they are synthetic, not photos of a phantom. Marker detection in the browser uses js-aruco2 2.0.0 (MIT), served from this site; see <a href="NOTICE.txt">NOTICE.txt</a>.</p>
+</main>
+</body></html>

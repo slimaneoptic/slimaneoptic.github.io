@@ -1,0 +1,126 @@
+{
+ "n_views": 48,
+ "detected": 48,
+ "camera": "1280x720, 60 deg horizontal field of view, fx=1108.5 px, no lens distortion",
+ "marker_mm": 40,
+ "distance_range_mm": "150-300",
+ "tilt_range_deg": "0-15",
+ "blur_sigma_px": "0.5-1.5",
+ "noise_sigma_grey": "2-6",
+ "angle_err_mean": 0.24586556340922697,
+ "angle_err_median": 0.13158211843466305,
+ "angle_err_max": 1.4854270999889292,
+ "axis_err_mean": 0.15767764496929212,
+ "axis_err_max": 1.4357692948738578,
+ "dist_err_mean_mm": 0.3672036346892593,
+ "dist_err_max_mm": 0.8583542312126724,
+ "dist_err_mean_pct": 0.16296419094079742,
+ "dist_err_max_pct": 0.3157745986986682,
+ "status_match": 47,
+ "bands": [
+  {
+   "band": "0-5 deg",
+   "n": 16,
+   "mean_err": 0.24215263660591502,
+   "max_err": 0.4222571081560292
+  },
+  {
+   "band": "5-10 deg",
+   "n": 16,
+   "mean_err": 0.35493523088794143,
+   "max_err": 1.4854270999889292
+  },
+  {
+   "band": "10-15 deg",
+   "n": 16,
+   "mean_err": 0.14050882273382442,
+   "max_err": 0.5971331047591826
+  }
+ ],
+ "samples": [
+  {
+   "src": "frames/f0.jpg",
+   "true_total": 0,
+   "true_h": 0,
+   "true_v": 0,
+   "true_dist": 230.1,
+   "python_total": 0.31,
+   "python_status": "green"
+  },
+  {
+   "src": "frames/f1.jpg",
+   "true_total": 2,
+   "true_h": -0.68,
+   "true_v": 1.88,
+   "true_dist": 210.3,
+   "python_total": 2.21,
+   "python_status": "green"
+  },
+  {
+   "src": "frames/f2.jpg",
+   "true_total": 4.5,
+   "true_h": 2.25,
+   "true_v": -3.9,
+   "true_dist": 240.1,
+   "python_total": 4.22,
+   "python_status": "amber"
+  },
+  {
+   "src": "frames/f3.jpg",
+   "true_total": 7,
+   "true_h": 4.96,
+   "true_v": 4.96,
+   "true_dist": 220.2,
+   "python_total": 7.12,
+   "python_status": "red"
+  },
+  {
+   "src": "frames/f4.jpg",
+   "true_total": 10,
+   "true_h": 0,
+   "true_v": -10,
+   "true_dist": 200.1,
+   "python_total": 10.01,
+   "python_status": "red"
+  },
+  {
+   "src": "frames/f5.jpg",
+   "true_total": 10,
+   "true_h": 10,
+   "true_v": 0,
+   "true_dist": 250.1,
+   "python_total": 9.95,
+   "python_status": "red"
+  },
+  {
+   "src": "frames/f6.jpg",
+   "true_total": 13,
+   "true_h": -12.24,
+   "true_v": 4.51,
+   "true_dist": 230.3,
+   "python_total": 13.04,
+   "python_status": "red"
+  },
+  {
+   "src": "frames/f7.jpg",
+   "true_total": 15,
+   "true_h": -10.73,
+   "true_v": -10.73,
+   "true_dist": 210.3,
+   "python_total": 15,
+   "python_status": "red"
+  }
+ ],
+ "browser_code": {
+  "note": "js-aruco2 corners + sub-pixel refinement + homography pose (align.js), same 48 images",
+  "n_views": 48,
+  "detected": 48,
+  "angle_err_mean": 0.18099101541250986,
+  "angle_err_median": 0.11458373982342203,
+  "angle_err_max": 0.6692461137270563,
+  "dist_err_mean_mm": 0.2818616535083258,
+  "dist_err_max_mm": 0.7019902845655679,
+  "status_match": 48,
+  "angle_err_mean_without_subpixel": 1.5365665388677956
+ }
+}
