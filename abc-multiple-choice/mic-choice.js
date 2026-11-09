@@ -337,8 +337,8 @@
     if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'start-failed') { return 'The microphone is blocked. Allow it in the address bar, then try again.'; }
     if (err === 'network') { return 'The browser’s speech service is not reachable. Check the connection and try again.'; }
     if (err === 'audio-capture') { return 'No microphone was found on this device.'; }
-    if (err === 'no-result') { return 'I heard you, but couldn’t make out an English word. Say it again, in English.'; }
-    return 'I didn’t hear anything. Say it after the beep.';
+    if (err === 'no-result') { return 'No result came back from speech recognition. Try again.'; }
+    return 'I didn’t hear anything. Try again.';
   }
 
   function react(g, stale) {
@@ -501,7 +501,7 @@
             if (!r.alts) { feedback(w, 'again', errorText(r.error)); }
             unheard++;
             if (unheard >= 3) { return giveAnswer(); }
-            return speak(r.error === 'no-result' ? 'Say it again, in English' : 'I didn’t hear you. Say it again').then(function () {
+            return speak('Let’s try again').then(function () {
               return stale() ? null : wait(TIMING.afterPrompt);
             }).then(attempt);
           }
