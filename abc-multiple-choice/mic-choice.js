@@ -35,14 +35,23 @@
   };
 
   // Event log for testing on this computer only. On the published page nothing is stored.
-  var LOCAL = location.hostname === '127.0.0.1';
+  var LOCAL = location.hostname === '127.0.0.1', SHOWLOG = /[?&]log=1/.test(location.search);
   function dbg(ev, data) {
-    if (!LOCAL) { return; }
+    if (!LOCAL && !SHOWLOG) { return; }
     var row = { t: new Date().toISOString().slice(11, 23), ev: ev, d: data || null, vis: document.visibilityState, focus: document.hasFocus() };
     state.log.push(row);
-    try { localStorage.setItem('mic-log', JSON.stringify(state.log.slice(-300))); } catch (e) { /* no storage */ }
+    if (LOCAL) { try { localStorage.setItem('mic-log', JSON.stringify(state.log.slice(-300))); } catch (e) { /* no storage */ } }
+    if (SHOWLOG) {
+      var el = document.getElementById('ml-log');
+      if (!el) {
+        el = document.createElement('pre'); el.id = 'ml-log';
+        el.style.cssText = 'font-size:11px;line-height:1.35;white-space:pre-wrap;overflow-wrap:anywhere;margin:1rem 0;padding:.6rem;border:1px solid #888;border-radius:6px;max-height:60vh;overflow:auto';
+        (document.querySelector('main') || document.body).appendChild(el);
+      }
+      el.textContent = row.t.slice(0, 8) + ' ' + ev + (data ? ' ' + JSON.stringify(data) : '') + (row.vis === 'visible' ? '' : ' [hidden]') + '\n' + el.textContent;
+    }
   }
-  if (LOCAL) {
+  if (LOCAL || SHOWLOG) {
     window.addEventListener('error', function (e) { dbg('page-error', { msg: String(e.message) }); });
     window.addEventListener('unhandledrejection', function (e) { dbg('promise-error', { msg: String(e.reason) }); });
     document.addEventListener('visibilitychange', function () { dbg('visibility', null); });
@@ -150,7 +159,7 @@
     } catch (e) { actx = null; }
   }
   function tone(name) {
-    var notes = name === 'ping' ? [[880, 0, 0.16], [1318.5, 0.11, 0.3]] : [[392, 0, 0.28]];
+    var notes = name === 'ping' ? [[880, 0, 0.16], [1318.5, 0.11, 0.3]] : name === 'tick' ? [[660, 0, 0.1]] : [[392, 0, 0.28]];
     try {
       ensureAudio();
       if (actx) {
@@ -266,41 +275,70 @@
   function recognize(w) {
     return new Promise(function (resolve) {
       if (state.active) { try { state.active.abort(); } catch (e) { /* stopped */ } }
-      var Rec = SRC(), rec = new Rec(), settled = false, timer;
-      rec.lang = state.lang; rec.interimResults = false; rec.continuous = false; rec.maxAlternatives = 5;
+      var Rec = SRC(), rec = new Rec(), settled = false, timer, readyTimer, isReady = false, gotSound = false, latest = null;
+      rec.lang = state.lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 5;
       state.active = rec;
-      w.say$.classList.add('ml-on');
-      w.say$.setAttribute('aria-pressed', 'true');
-      feedback(w, 'info', 'Listening… say the word.');
+      feedback(w, 'info', 'Getting the mic ready…');
       dbg('recognize', { picture: w.n, lang: rec.lang, flow: state.flow });
-      ['start', 'audiostart', 'soundstart', 'speechstart', 'speechend', 'soundend', 'audioend', 'nomatch'].forEach(function (ev) {
-        try { rec.addEventListener(ev, function () { dbg(ev, { picture: w.n }); }); } catch (e) { /* simulated mic */ }
+
+      // Only tell the student to speak once the microphone is really on.
+      function ready() {
+        if (isReady || settled) { return; }
+        isReady = true;
+        w.say$.classList.add('ml-on');
+        w.say$.setAttribute('aria-pressed', 'true');
+        feedback(w, 'info', 'Speak now…');
+        if (state.flow === 'running') { status('Picture ' + w.n + ' of ' + state.items.length + ': speak now.'); }
+        tone('tick');
+      }
+      readyTimer = setTimeout(ready, 1500);
+      ['start', 'audiostart', 'soundstart', 'speechstart', 'speechend', 'soundend', 'audioend'].forEach(function (ev) {
+        try {
+          rec.addEventListener(ev, function () {
+            dbg(ev, { picture: w.n });
+            if (ev === 'audiostart') { ready(); }
+            if (ev === 'speechstart' || ev === 'soundstart') { gotSound = true; }
+          });
+        } catch (e) { /* simulated mic */ }
       });
+
       function fin(r) {
         if (settled) { return; }
-        settled = true; clearTimeout(timer);
-        dbg('finished', { picture: w.n, error: r.error || null, heard: r.alts ? r.alts.map(function (a) { return a.text; }) : null });
+        settled = true; clearTimeout(timer); clearTimeout(readyTimer);
+        dbg('finished', { picture: w.n, error: r.error || null, partial: !!r.partial, sound: gotSound, heard: r.alts ? r.alts.map(function (a) { return a.text; }) : null });
         w.say$.classList.remove('ml-on');
         w.say$.setAttribute('aria-pressed', 'false');
         if (state.active === rec) { state.active = null; }
         resolve(r);
       }
+      // Without a final result, use the last partial one: short single words often never get a final result.
+      function endWithoutFinal(err) {
+        if (latest && latest.length) { fin({ alts: latest, partial: true }); return; }
+        fin({ error: err === 'no-speech' && gotSound ? 'no-result' : err });
+      }
       rec.onresult = function (e) {
-        var res = e.results[e.resultIndex || 0] || e.results[0], alts = [], i;
-        for (i = 0; res && i < res.length; i++) { alts.push({ text: res[i].transcript, confidence: res[i].confidence }); }
-        fin({ alts: alts });
+        var res = e.results[e.results.length - 1], alts = [], i;
+        for (i = 0; res && i < res.length; i++) {
+          if (String(res[i].transcript || '').trim()) { alts.push({ text: res[i].transcript, confidence: res[i].confidence }); }
+        }
+        if (alts.length) { latest = alts; }
+        dbg('result', { final: !!(res && res.isFinal), text: alts.map(function (a) { return a.text; }) });
+        if (res && res.isFinal) { if (latest) { fin({ alts: latest }); } else { fin({ error: 'no-result' }); } }
       };
-      rec.onerror = function (e) { fin({ error: e.error || 'error' }); };
-      rec.onend = function () { fin({ error: 'no-speech' }); };
-      timer = setTimeout(function () { try { rec.abort(); } catch (e) { /* ignore */ } fin({ error: 'no-speech' }); }, 12000);
-      try { rec.start(); } catch (err) { fin({ error: 'start-failed' }); }
+      rec.onnomatch = function () { dbg('nomatch', { picture: w.n }); endWithoutFinal('no-result'); };
+      rec.onerror = function (e) { dbg('error', { picture: w.n, error: e.error || 'error' }); endWithoutFinal(e.error || 'error'); };
+      rec.onend = function () { dbg('end', { picture: w.n }); endWithoutFinal('no-speech'); };
+      timer = setTimeout(function () { try { rec.abort(); } catch (e) { /* ignore */ } endWithoutFinal('no-speech'); }, 12000);
+      try { rec.start(); } catch (err) { dbg('start-failed', { msg: String(err) }); fin({ error: 'start-failed' }); }
     });
   }
 
   function errorText(err) {
     if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'start-failed') { return 'The microphone is blocked. Allow it in the address bar, then try again.'; }
     if (err === 'network') { return 'The browser’s speech service is not reachable. Check the connection and try again.'; }
-    return 'I didn’t hear anything. Try again.';
+    if (err === 'audio-capture') { return 'No microphone was found on this device.'; }
+    if (err === 'no-result') { return 'I heard you, but couldn’t make out an English word. Say it again, in English.'; }
+    return 'I didn’t hear anything. Say it after the beep.';
   }
 
   function react(g, stale) {
@@ -422,7 +460,7 @@
     function doItem(i) {
       if (stale()) { return Promise.resolve(); }
       if (i >= count) { return finish(); }
-      var w = state.items[i], tries = 0, lastWrong = null;
+      var w = state.items[i], tries = 0, unheard = 0, lastWrong = null;
       state.flowAt = i;
 
       function next() {
@@ -448,7 +486,7 @@
 
       function attempt() {
         if (stale()) { return Promise.resolve(); }
-        status('Picture ' + w.n + ' of ' + count + ': say the word now.');
+        status('Picture ' + w.n + ' of ' + count + ': getting the mic ready…');
         return listenInFlow(w, run).then(function (r) {
           if (stale() || r.cancelled) { return; }
           if (r.blocked) {
@@ -457,9 +495,17 @@
             feedback(w, 'again', errorText('not-allowed'));
             return;
           }
-          tries++;
           var g = r.alts ? record(w, r.alts) : { kind: 'none' };
-          if (!r.alts) { feedback(w, 'again', errorText(r.error)); }
+          // Not being heard does not use up one of the two chances.
+          if (g.kind === 'none') {
+            if (!r.alts) { feedback(w, 'again', errorText(r.error)); }
+            unheard++;
+            if (unheard >= 3) { return giveAnswer(); }
+            return speak(r.error === 'no-result' ? 'Say it again, in English' : 'I didn’t hear you. Say it again').then(function () {
+              return stale() ? null : wait(TIMING.afterPrompt);
+            }).then(attempt);
+          }
+          tries++;
           if (g.kind === 'matched') {
             status('Picture ' + w.n + ' of ' + count + ': that’s right!');
             return afterMatch(w, stale).then(next);
