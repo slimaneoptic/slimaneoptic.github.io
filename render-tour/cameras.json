@@ -1,0 +1,48 @@
+{
+ "cameras": [
+  {
+   "id": 0,
+   "label": "Living room",
+   "pos": [
+    3.4,
+    1.55,
+    3.8
+   ],
+   "yaw": -20,
+   "image": "render-0.jpg"
+  },
+  {
+   "id": 1,
+   "label": "By the doorway",
+   "pos": [
+    5.2,
+    1.55,
+    2.5
+   ],
+   "yaw": 90,
+   "image": "render-1.jpg"
+  },
+  {
+   "id": 2,
+   "label": "Bedroom",
+   "pos": [
+    7.4,
+    1.55,
+    2.5
+   ],
+   "yaw": 90,
+   "image": "render-2.jpg"
+  },
+  {
+   "id": 3,
+   "label": "Kitchen",
+   "pos": [
+    2.2,
+    1.55,
+    6.5
+   ],
+   "yaw": 0,
+   "image": "render-3.jpg"
+  }
+ ]
+}

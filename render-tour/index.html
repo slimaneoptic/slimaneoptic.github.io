@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>360 render walk-through demo</title>
+<meta name="description" content="Smooth walk-through built only from pre-rendered 360 images, a low-poly model and camera positions. Demo on a sample apartment.">
+<style>
+:root { --ink:#14202B; --paper:#F6F8FA; --card:#fff; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; }
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--paper); color:var(--ink); font-family:system-ui, -apple-system, "Segoe UI", sans-serif; line-height:1.55; }
+.bar { height:3.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); }
+.bar a { color:var(--ink); text-decoration:none; font-weight:700; }
+.bar span { color:var(--slate); font-size:.95rem; }
+.bar a, .bar span { white-space:nowrap; }
+@media (max-width:560px) { .bar span { display:none; } }
+main { max-width:960px; margin:0 auto; padding:1.25rem 16px 3rem; }
+h1 { font-size:clamp(1.3rem,4.5vw,1.9rem); line-height:1.3; margin:0 0 .3rem; }
+.lead { color:var(--slate); margin:0 0 1rem; }
+.strip { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin:0 0 1rem; }
+.strip div { background:var(--card); border:1px solid var(--rule); border-radius:10px; padding:.6rem .8rem; font-size:.92rem; }
+.strip b { display:block; font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); margin-bottom:.15rem; }
+@media (max-width:640px) { .strip { grid-template-columns:1fr; } }
+.note { font-size:.9rem; color:var(--slate); margin:.6rem 0 1rem; }
+.note strong { color:var(--ink); }
+#stage { position:relative; width:100%; height:min(62vh,560px); min-height:320px; border-radius:12px; overflow:hidden; background:#222; border:1px solid var(--rule); touch-action:none; cursor:grab; }
+#stage.drag { cursor:grabbing; }
+#stage canvas { display:block; width:100%; height:100%; }
+#label { position:absolute; left:10px; top:10px; background:rgba(20,32,43,.82); color:#fff; border-radius:8px; padding:.3rem .65rem; font-size:.85rem; pointer-events:none; }
+#hint { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; white-space:nowrap; background:rgba(255,255,255,.85); color:var(--ink); border-radius:8px; padding:.3rem .65rem; font-size:.8rem; pointer-events:none; transition:opacity .6s; }
+#load { position:absolute; inset:0; display:grid; place-items:center; color:#fff; background:#14202B; font-size:.95rem; }
+#chips { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.7rem; }
+#chips button { font:inherit; font-size:.9rem; color:var(--ink); background:var(--card); border:2px solid var(--rule); border-radius:999px; padding:.35rem .9rem; cursor:pointer; }
+#chips button[aria-current="true"] { border-color:var(--blue); color:var(--blue); font-weight:600; }
+#chips button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+</style>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <a href="/">S'limane Chanchoul</a><span>Demo: 360 render walk-through</span>
+</header>
+<main>
+  <h1>Smooth walk-through from your own 360 renders</h1>
+  <p class="lead">Drag to look around. Tap a ring on the floor, or a button below, to walk to another position.</p>
+  <div id="stage"><div id="load">Loading renders...</div><div id="label"></div><div id="hint">Drag to look around</div></div>
+  <div id="chips" role="group" aria-label="Positions"></div>
+  <div style="height:1rem"></div>
+  <div class="strip">
+    <div><b>What goes in</b>Your FBX model, your camera file and your 360 renders.</div>
+    <div><b>What comes out</b>This viewer: it runs in the browser, on phone and desktop.</div>
+    <div><b>How it moves</b>Each render is projected onto the model from its camera, and the move blends two projections. Every pixel is still your render.</div>
+  </div>
+  <p class="note"><strong>Demo on a sample apartment we modelled and rendered ourselves.</strong> The viewer loads only 4 JPG renders, a simplified box model and a camera list; the detailed scene is not drawn live.</p>
+</main>
+<script type="module">
+import * as THREE from './three.module.min.js';
+const stage = document.getElementById('stage'), labelEl = document.getElementById('label'), chips = document.getElementById('chips'), hint = document.getElementById('hint');
+const tour = { index: 0, moving: false, ready: false, moveTo: () => {} };
+window.__tour = tour;
+const DEG = Math.PI / 180;
+async function main() {
+  const [camsJ, proxyJ] = await Promise.all([fetch('cameras.json').then(r => r.json()), fetch('proxy.json').then(r => r.json())]);
+  const cams = camsJ.cameras, N = cams.length;
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  stage.insertBefore(renderer.domElement, stage.firstChild);
+  const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 80);
+  const loader = new THREE.TextureLoader();
+  const texs = await Promise.all(cams.map(c => new Promise((res, rej) => loader.load(c.image, t => {
+    t.flipY = false; t.generateMipmaps = false; t.minFilter = t.magFilter = THREE.LinearFilter; t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping; t.colorSpace = THREE.NoColorSpace; res(t);
+  }, undefined, rej))));
+  // --- simplified proxy: boxes only ---
+  const geoms = proxyJ.boxes.map(b => { const g = new THREE.BoxGeometry(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]);
+    g.translate((b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2); return g; });
+  const proxyGeo = mergeGeoms(geoms);
+  const proxyScene = new THREE.Scene(); proxyScene.add(new THREE.Mesh(proxyGeo, new THREE.MeshBasicMaterial()));
+  // --- depth cubemaps of the proxy from each camera position (for "is this point seen from that render?") ---
+  const depMat = new THREE.ShaderMaterial({ uniforms: { uC: { value: new THREE.Vector3() } },
+    vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
+    fragmentShader: 'uniform vec3 uC; varying vec3 vW; void main(){ gl_FragColor=vec4(length(vW-uC),0.,0.,1.); }' });
+  proxyScene.overrideMaterial = depMat;
+  const deps = cams.map(c => {
+    const rt = new THREE.WebGLCubeRenderTarget(512, { type: THREE.HalfFloatType, generateMipmaps: false, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter });
+    const cc = new THREE.CubeCamera(0.05, 60, rt); cc.position.set(...c.pos); depMat.uniforms.uC.value.set(...c.pos);
+    cc.update(renderer, proxyScene); return rt.texture; });
+  proxyScene.overrideMaterial = null;
+  const proj = new THREE.ShaderMaterial({
+    uniforms: { uCamA: { value: new THREE.Vector3() }, uCamB: { value: new THREE.Vector3() }, uTexA: { value: texs[0] }, uTexB: { value: texs[0] }, uDepA: { value: deps[0] }, uDepB: { value: deps[0] }, uMix: { value: 0 } },
+    vertexShader: 'varying vec3 vW; void main(){ vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w; }',
+    fragmentShader: `uniform vec3 uCamA,uCamB; uniform sampler2D uTexA,uTexB; uniform samplerCube uDepA,uDepB; uniform float uMix; varying vec3 vW;
+      vec2 eq(vec3 d){ return vec2(atan(d.x,-d.z)/6.2831853+0.5, acos(clamp(d.y,-1.,1.))/3.14159265); }
+      float vis(samplerCube dep, vec3 c){ vec3 d=vW-c; float L=length(d); float s=texture(dep,d/L).r; float b=0.05+0.02*L; return 1.0-smoothstep(b,b+0.1,L-s); }
+      void main(){
+        vec3 a=texture(uTexA,eq(normalize(vW-uCamA))).rgb, b=texture(uTexB,eq(normalize(vW-uCamB))).rgb;
+        float wa=(1.0-uMix)*vis(uDepA,uCamA), wb=uMix*vis(uDepB,uCamB);
+        float s=wa+wb; if(s<1e-3){ wa=1.0-uMix; wb=uMix; s=1.0; }
+        gl_FragColor=vec4((a*wa+b*wb)/s,1.0); }` });
+  proxyScene.children[0].material = proj;
+  // --- floor markers ---
+  const markers = [], markScene = new THREE.Group(); proxyScene.add(markScene);
+  const ringG = new THREE.RingGeometry(0.2, 0.28, 40).rotateX(-Math.PI / 2), dotG = new THREE.CircleGeometry(0.17, 32).rotateX(-Math.PI / 2), hitG = new THREE.CircleGeometry(0.55, 16).rotateX(-Math.PI / 2);
+  cams.forEach((c, i) => {
+    const g = new THREE.Group(); g.position.set(c.pos[0], 0.02, c.pos[2]);
+    const ring = new THREE.Mesh(ringG, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, toneMapped: false }));
+    const dot = new THREE.Mesh(dotG, new THREE.MeshBasicMaterial({ color: 0x2A78D6, transparent: true, opacity: 0.55, toneMapped: false }));
+    const hit = new THREE.Mesh(hitG, new THREE.MeshBasicMaterial({ visible: false })); hit.userData.i = i;
+    g.add(ring, dot, hit); g.userData = { i, ring, dot }; markScene.add(g); markers.push(g);
+  });
+  // --- state ---
+  let yaw = cams[0].yaw * DEG, pitch = -4 * DEG, cur = 0;
+  const camPos = new THREE.Vector3(...cams[0].pos);
+  const setPair = (a, b, m) => { const u = proj.uniforms; u.uCamA.value.set(...cams[a].pos); u.uCamB.value.set(...cams[b].pos); u.uTexA.value = texs[a]; u.uTexB.value = texs[b]; u.uDepA.value = deps[a]; u.uDepB.value = deps[b]; u.uMix.value = m; };
+  const setLabel = () => { labelEl.textContent = `Render ${cur + 1} of ${N}: ${cams[cur].label}`; [...chips.children].forEach((b, i) => b.setAttribute('aria-current', i === cur ? 'true' : 'false')); markers.forEach(m => m.visible = m.userData.i !== cur); };
+  cams.forEach((c, i) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = c.label; b.addEventListener('click', () => moveTo(i)); chips.appendChild(b); });
+  setPair(0, 0, 0); setLabel();
+  let move = null; const DUR = 1300;
+  const ease = t => t * t * (3 - 2 * t);
+  function moveTo(i) {
+    if (tour.moving || i === cur || i < 0 || i >= N) return false;
+    move = { from: cur, to: i, t0: performance.now() }; tour.moving = true; setPair(cur, i, 0); markScene.visible = false; hint.style.opacity = 0; return true;
+  }
+  tour.moveTo = moveTo; Object.defineProperty(tour, 'index', { get: () => cur });
+  Object.defineProperty(tour, 'progress', { get: () => (move ? proj.uniforms.uMix.value : 0) });
+  tour.setProgress = null;
+  tour.look = (y, p) => { yaw = y * DEG; pitch = p * DEG; };
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+    camera.fov = Math.min(110, 2 * Math.atan(Math.tan(35 * DEG) / Math.min(1, camera.aspect)) / DEG); camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage); resize();
+  // --- input: drag to look, tap marker to move ---
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2(); let down = null;
+  const el = renderer.domElement;
+  el.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, moved: 0 }; el.setPointerCapture(e.pointerId); stage.classList.add('drag'); });
+  el.addEventListener('pointermove', e => {
+    if (!down) return; const dx = e.clientX - down.x, dy = e.clientY - down.y; down.moved += Math.abs(dx) + Math.abs(dy); down.x = e.clientX; down.y = e.clientY;
+    const k = (camera.fov * DEG) / stage.clientHeight; yaw -= dx * k; pitch = Math.max(-80 * DEG, Math.min(80 * DEG, pitch + dy * k));
+  });
+  const end = e => { if (!down) return; const moved = down.moved; down = null; stage.classList.remove('drag');
+    if (moved < 8 && e.type === 'pointerup') { const r = el.getBoundingClientRect(); ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ptr, camera);
+      const hit = ray.intersectObjects(markers.filter(m => m.visible).flatMap(m => m.children.filter(c => c.geometry === hitG)), false)[0]; if (hit) moveTo(hit.object.userData.i); } };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  // --- loop ---
+  function frame(now) {
+    let t = 0;
+    if (move) { t = Math.min(1, (now - move.t0) / DUR); const e = ease(t);
+      camPos.set(...cams[move.from].pos).lerp(new THREE.Vector3(...cams[move.to].pos), e); proj.uniforms.uMix.value = e;
+      if (t >= 1) { cur = move.to; move = null; tour.moving = false; camPos.set(...cams[cur].pos); setPair(cur, cur, 0); markScene.visible = true; setLabel(); } }
+    markers.forEach(m => { const s = 1 + 0.08 * Math.sin(now / 350 + m.userData.i); m.userData.ring.scale.setScalar(s); });
+    camera.position.copy(camPos);
+    camera.lookAt(camPos.x + Math.sin(yaw) * Math.cos(pitch), camPos.y + Math.sin(pitch), camPos.z - Math.cos(yaw) * Math.cos(pitch));
+    renderer.render(proxyScene, camera); requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  document.getElementById('load').remove(); tour.ready = true;
+  setTimeout(() => { hint.style.opacity = 0; }, 6000);
+}
+function mergeGeoms(gs) {
+  let n = 0, ni = 0; gs.forEach(g => { n += g.attributes.position.count; ni += g.index.count; });
+  const pos = new Float32Array(n * 3), idx = new Uint32Array(ni); let po = 0, io = 0, vo = 0;
+  gs.forEach(g => { pos.set(g.attributes.position.array, po * 3); for (let i = 0; i < g.index.count; i++) idx[io + i] = g.index.array[i] + vo; po += g.attributes.position.count; vo += g.attributes.position.count; io += g.index.count; });
+  const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(pos, 3)); m.setIndex(new THREE.BufferAttribute(idx, 1)); return m;
+}
+main().catch(e => { console.error(e); document.getElementById('load').textContent = 'Could not start the viewer (WebGL needed).'; });
+</script>
+</body>
+</html>
