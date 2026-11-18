@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Excel inventory dashboard: sample workbook</title>
+<meta name="description" content="Sample Excel inventory dashboard: stock in and out, available quantities, low-stock alerts and charts. Invented products.">
+<style>
+:root { --ink:#14202B; --paper:#F6F8FA; --card:#fff; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; }
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--paper); color:var(--ink); font-family:system-ui, -apple-system, "Segoe UI", sans-serif; line-height:1.6; }
+.bar { height:3.25rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); }
+.bar a { color:var(--ink); text-decoration:none; font-weight:700; }
+.bar span { color:var(--slate); font-size:.95rem; }
+.bar a, .bar span { white-space:nowrap; }
+@media (max-width:560px) { .bar span { display:none; } }
+main { max-width:960px; margin:0 auto; padding:1.5rem 1rem 3rem; }
+h1 { font-size:clamp(1.4rem,4.5vw,2rem); line-height:1.25; margin:0 0 .5rem; }
+.lead { color:var(--slate); margin:0 0 1.2rem; }
+ul { padding-left:1.2rem; margin:0 0 1.6rem; }
+li { margin:.35rem 0; }
+figure { margin:0 0 1.6rem; }
+figure img { display:block; width:100%; height:auto; border:1px solid var(--rule); border-radius:10px; background:#fff; }
+figcaption { color:var(--slate); font-size:.92rem; margin-top:.4rem; }
+.note { color:var(--slate); font-size:.92rem; border-top:1px solid var(--rule); padding-top:1rem; }
+</style>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <a href="/">S'limane Chanchoul</a><span>Sample: Excel inventory dashboard</span>
+</header>
+<main>
+  <h1>Excel inventory dashboard</h1>
+  <p class="lead">Stock in and out, available quantities, low-stock alerts and charts, in one workbook.</p>
+  <figure>
+    <img src="dashboard.png" width="915" height="797" alt="Inventory dashboard: five headline numbers, a low-stock alert list and three charts">
+    <figcaption>Dashboard sheet: headline numbers, low-stock alerts and charts.</figcaption>
+  </figure>
+  <ul>
+    <li>Tracks stock levels for every product, with a reorder level for each.</li>
+    <li>Records incoming and outgoing stock on two simple sheets, with a dropdown for the product.</li>
+    <li>Shows the available quantity and stock value for each item, calculated automatically.</li>
+    <li>Flags low-stock and out-of-stock items, and turns the numbers into graphs and a report.</li>
+  </ul>
+  <figure>
+    <img src="items.png" width="1182" height="893" alt="Items sheet with available quantity, stock value and a coloured status column">
+    <figcaption>Items sheet: available quantity = opening + in - out, with a coloured status (OK / Low / Out).</figcaption>
+  </figure>
+  <p class="note">Sample workbook on invented products, built for this post.</p>
+</main>
+</body>
+</html>
