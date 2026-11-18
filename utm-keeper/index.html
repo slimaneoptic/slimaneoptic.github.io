@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>UTM keeper demo</title>
+<style>
+:root{--ink:#14202B;--paper:#F6F8FA;--card:#fff;--slate:#5B6B7A;--rule:#D5DBE1;--blue:#2A78D6}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6}
+.bar{height:3.25rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:0 1.25rem;border-bottom:1px solid var(--rule)}
+.bar a{color:var(--ink);text-decoration:none;font-weight:700;white-space:nowrap}
+.bar span{color:var(--slate);font-size:.95rem;white-space:nowrap}
+@media(max-width:560px){.bar span{display:none}}
+main{max-width:760px;margin:0 auto;padding:1.25rem 1rem 3rem}
+h1{font-size:clamp(1.4rem,4.5vw,2rem);line-height:1.3;margin:0 0 .4rem}
+h2{font-size:1.1rem;margin:0 0 .6rem}
+.strip{background:#E8F0FB;border-left:4px solid var(--blue);padding:.6rem .9rem;border-radius:6px;margin:0 0 1.2rem}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:12px;padding:1rem 1.1rem;margin:0 0 1rem}
+.links{display:flex;flex-wrap:wrap;gap:.6rem}
+.btn{font:inherit;font-weight:600;color:#fff;background:var(--ink);border:0;border-radius:8px;padding:.55rem 1rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.alt{background:var(--card);color:var(--ink);border:2px solid var(--ink)}
+.btn:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:.25rem .9rem;margin:0}
+dt{color:var(--slate)} dd{margin:0;word-break:break-all;font-family:ui-monospace,Menlo,monospace;font-size:.92rem}
+label{display:block;font-weight:600;margin:.6rem 0 .2rem}
+input[type=text],input[type=email]{width:100%;font:inherit;padding:.5rem .6rem;border:1px solid var(--rule);border-radius:6px;background:#fff}
+input[readonly]{background:#EEF1F4;color:var(--ink);font-family:ui-monospace,Menlo,monospace;font-size:.92rem}
+.small{color:var(--slate);font-size:.92rem}
+pre{background:#14202B;color:#fff;padding:.8rem;border-radius:8px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+</style>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar"><a href="/">S'limane Chanchoul</a><span>Demo: UTM persistence for WordPress forms</span></header>
+<main>
+<p class="strip">Demo of the rules from your post. On your site the same script fills your Gravity Forms hidden fields.</p>
+<h1>UTM parameters that survive</h1>
+<p>Pick a way to arrive, then move around. The stored values below only change when a new set of parameters arrives.</p>
+<section class="card"><h2>Test links</h2>
+<div class="links">
+<a class="btn" href="/utm-keeper/?utm_source=google&utm_medium=cpc&utm_campaign=spring&gclid=test123">Arrive from a Google ad</a>
+<a class="btn" href="/utm-keeper/?utm_source=facebook&utm_medium=paid_social&utm_campaign=summer_promo&utm_content=video_a&fbclid=fb456">Arrive from a Facebook ad</a>
+<a class="btn alt" href="/utm-keeper/">Come back directly</a>
+<a class="btn alt" href="/utm-keeper/contact/">Go to the contact page</a>
+<button class="btn alt" type="button" id="forget">Forget me</button>
+</div></section>
+<section class="card" aria-live="polite"><h2>Stored now</h2>
+<dl id="st"></dl></section>
+<script src="/utm-keeper/utm-keeper.js"></script>
+<script>
+(function(){
+  var NAMES=utmKeeper.config.params;
+  function fmt(t){return new Date(t).toLocaleString()}
+  function render(){
+    var g=utmKeeper.get(),h='';
+    if(!g){h='<dt>Status</dt><dd>nothing stored</dd>';}
+    else{
+      NAMES.forEach(function(n){h+='<dt>'+n+'</dt><dd>'+(g.values[n]?g.values[n].replace(/[<>&]/g,''):'-')+'</dd>'});
+      h+='<dt>captured</dt><dd>'+fmt(g.captured)+'</dd><dt>expires</dt><dd>'+fmt(g.expires)+'</dd><dt>read from</dt><dd>'+g.from+'</dd>';
+    }
+    document.getElementById('st').innerHTML=h;
+  }
+  render();
+  document.addEventListener('utmkeeper:ready',render);
+  window.__renderStatus=render;
+})();
+</script>
+<script>document.getElementById('forget').addEventListener('click',function(){utmKeeper.forget()});</script>
+<section class="card"><h2>Safari</h2>
+<p class="small" style="margin:0">Safari limits cookies written by JavaScript to 7 days and clears script-written storage after 7 days without a visit. So on Safari the 30 to 90 days only holds if the visitor returns within 7 days. The usual fix is a tiny uncached endpoint on your site that re-sends the same cookie from the server; page caching does not affect it.</p></section>
+</main></body></html>
