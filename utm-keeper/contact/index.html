@@ -75,5 +75,5 @@ document.getElementById('demo').addEventListener('submit',function(ev){
   window.__renderStatus=render;
 })();
 </script><section class="card"><h2>Safari</h2>
-<p class="small" style="margin:0">Safari limits cookies written by JavaScript to 7 days and clears script-written storage after 7 days without a visit. So on Safari the 30 to 90 days only holds if the visitor returns within 7 days. The usual fix is a tiny uncached endpoint on your site that re-sends the same cookie from the server; page caching does not affect it.</p></section>
+<p class="small" style="margin:0">Safari limits cookies written by JavaScript to 7 days, and to 1 day when the visitor arrives from an ad link that carries a click ID. It also clears script-written storage after 7 days without a visit. So on Safari the 30 to 90 days only holds if the visitor returns within 7 days. The usual fix is a tiny uncached endpoint on your site that re-sends the same cookie from the server; page caching does not affect it.</p></section>
 </main></body></html>
