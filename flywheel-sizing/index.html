@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flywheel sizing, first pass · S'limane Chanchoul</title>
+<meta name="description" content="First-pass sizing of a fixed flywheel and a variable-inertia flywheel for a 1.4-3 MJ pulse inside a 1500-1550 RPM band.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2314202B'/%3E%3Cpath d='M7 23 L13 12 L19 19 L25 8' fill='none' stroke='%232A78D6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='7' cy='23' r='2.6' fill='%23fff'/%3E%3Ccircle cx='25' cy='8' r='2.6' fill='%23E8622C'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface: #fff; --btnbg: #14202B; --btnfg: #fff; --btnhover: #22364a; --ink: #14202B; --paper: #F6F8FA; --slate: #5B6B7A; --rule: #D5DBE1; --blue: #2A78D6; --bar: 3.25rem; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Overpass", system-ui, sans-serif; line-height: 1.55; }
+.bar { height: var(--bar); box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+       padding: 0 1.25rem; border-bottom: 1px solid var(--rule); background: var(--paper); }
+.who { display: flex; align-items: baseline; gap: 0.75rem; min-width: 0; }
+.name { font-weight: 800; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.demo { color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 0.75rem; border-left: 1px solid var(--rule); }
+.links { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; flex-shrink: 0; }
+.links a { color: var(--ink); text-decoration: none; }
+.links a:hover { color: var(--blue); }
+.btn { background: var(--btnbg); color: var(--btnfg) !important; padding: 0.45rem 0.85rem 0.35rem; border-radius: 7px; font-weight: 600; text-decoration: none; display: inline-block; }
+.btn:hover { background: var(--btnhover); }
+.btn.alt { background: var(--surface); color: var(--ink) !important; border: 1px solid var(--ink); }
+a:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+main { max-width: 1040px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.15; margin: 0 0 0.5rem; }
+h2 { font-size: 1.2rem; margin: 2.4rem 0 0.7rem; }
+.lead { color: var(--slate); font-size: 1.1rem; margin: 0 0 1.2rem; max-width: 46rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0 0 1.5rem; }
+img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+figure { margin: 0; }
+figcaption { color: var(--slate); font-size: 0.9rem; margin-top: 0.4rem; }
+.split { display: grid; grid-template-columns: 5fr 4fr; gap: 2rem; align-items: start; }
+ul { padding-left: 1.2rem; margin: 0; }
+li { margin: 0.35rem 0; }
+.small { color: var(--slate); font-size: 0.85rem; margin-top: 2.5rem; }
+@media (max-width: 720px) { .pair, .split { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .demo, .links .all { display: none; } .bar { padding: 0 0.9rem; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Flywheel sizing, first pass</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+  <h1>Flywheel for a 1.4-3 MJ pulse inside 1500-1550 RPM: a first-pass sizing</h1>
+  <p class="lead">Two ways to absorb the pulse with the speed rising by at most 50 RPM: a conventional fixed flywheel, and a variable-inertia one where masses move outward against a spring. Hand calculation in Python, checked a second way in the same script. This is a screening estimate, not a design.</p>
+  <h2>Inputs (from the brief)</h2>
+  <ul><li>Pulse energy: 1.4 MJ to 3 MJ</li><li>Speed band: 1500 to 1550 RPM (157.1 to 162.3 rad/s)</li></ul>
+  <h2>Assumptions (mine, to be replaced by your numbers)</h2>
+  <ul>
+    <li>Steel, density 7850 kg/m&sup3;, allowable rim stress 400 MPa (assumption: includes margin for fatigue; real value needs the actual alloy and load cycles). Poisson ratio 0.29.</li>
+    <li>Fixed flywheel: thin rim at 0.60 m mean radius, or solid disc of the same radius.</li>
+    <li>Variable inertia: masses travel from 0.30 m to 0.60 m; one linear spring with preload; no friction, massless guides, no other rotor inertia, quasi-static motion. Speed is exactly 1500 RPM at 0.30 m and 1550 RPM at 0.60 m.</li>
+  </ul>
+  <h2>Results</h2>
+  <div class="scroll"><table class="t"><thead><tr><th>Quantity</th><th>1.4 MJ</th><th>3.0 MJ</th></tr></thead><tbody>
+  <tr><td>Fixed flywheel: inertia needed (kg m&sup2;)</td><td class="n">1,674</td><td class="n">3,588</td></tr>
+  <tr><td>Thin rim mass at 0.60 m (kg)</td><td class="n">4,651</td><td class="n">9,966</td></tr>
+  <tr><td>Solid disc mass at 0.60 m (kg)</td><td class="n">9,302</td><td class="n">19,932</td></tr>
+  <tr><td>Rim hoop stress at 1550 RPM (MPa)</td><td class="n">74.5</td><td class="n">74.5</td></tr>
+  <tr><td>Disc centre stress at 1550 RPM (MPa)</td><td class="n">30.6</td><td class="n">30.6</td></tr>
+  <tr><td>Variable inertia: moving mass (kg)</td><td class="n">197</td><td class="n">422</td></tr>
+  <tr><td>Its inertia, inner to outer (kg m&sup2;)</td><td class="n">17.7 to 70.9</td><td class="n">38.0 to 151.8</td></tr>
+  <tr><td>Spring stiffness (MN/m)</td><td class="n">5.51</td><td class="n">11.82</td></tr>
+  <tr><td>Spring force, inner to outer (kN, all masses)</td><td class="n">1,457 to 3,111</td><td class="n">3,122 to 6,667</td></tr>
+  <tr><td>Share of the energy stored in the spring</td><td class="n">49%</td><td class="n">49%</td></tr>
+  <tr><td>Stability margin k / (m w&sup2;), must be above 1</td><td class="n">1.063</td><td class="n">1.063</td></tr>
+  <tr><td>Same moving mass, fixed at 0.60 m: speed after the pulse (RPM)</td><td class="n">2,419</td><td class="n">2,419</td></tr>
+  </tbody></table></div>
+  <h2>What this says</h2>
+  <ul>
+    <li>A fixed flywheel can do the job, but it is heavy: about 4.7 to 10 t as a thin rim at 0.60 m. Stress is low (74 MPa), so the limit is mass, not strength.</li>
+    <li>Moving masses cut the moving mass by roughly 24 times in this model, because the spring takes about half of the energy.</li>
+    <li>The cost is in the spring: 1.5 to 6.7 MN, which is the high-cycle fatigue question.</li>
+    <li>The stability margin is only 6%. A 50 RPM band means the centrifugal curve and the spring line are nearly parallel. Small errors in preload, friction or mass can give hunting or snap-through. A tuned spring (progressive or nonlinear) is the first thing to study.</li>
+  </ul>
+  <h2>Formulas</h2>
+  <ul>
+    <li>Fixed: E = &frac12; I (w2&sup2; - w1&sup2;); thin rim I = m r&sup2;; disc I = &frac12; m r&sup2;; rim stress = rho v&sup2;; disc centre stress = (3+nu)/8 rho v&sup2;.</li>
+    <li>Variable: balance m w&sup2; r = F0 + k (r - r1) at both ends; E = &frac12; m (w2&sup2; r2&sup2; - w1&sup2; r1&sup2;) + F0 d + &frac12; k d&sup2;, with d = r2 - r1.</li>
+    <li>Check: the energy is integrated numerically along the equilibrium path (20,001 points) and agrees with the formula; the script also asserts that the speed stays inside 1500-1550 RPM along the whole travel.</li>
+  </ul>
+  <h2>What a full study adds</h2>
+  <ul>
+    <li>Your real geometry, mass and space limits, pulse duration and torque source</li>
+    <li>Nonlinear spring options and the exact force curve against speed</li>
+    <li>Dynamic stability: response time against pulse length, damping, hunting</li>
+    <li>Fatigue life of spring and guides (stress range, material, cycles)</li>
+    <li>Synchronization of several masses, balance, bearing loads, critical speeds</li>
+    <li>An editable calculation sheet with every equation</li>
+  </ul>
+  <p class="small">First-pass screening on the figures in the brief only. Python with numpy. Not a certified design.</p>
+</main>
+<style>table.t{border-collapse:collapse;width:100%;background: var(--surface);font-size:.92rem} .t td,.t th{padding:.45rem .6rem;border-bottom:1px solid var(--rule);text-align:left} .t th{color:var(--slate)} td.n{text-align:right} .scroll{overflow-x:auto}</style>
+</body></html>
