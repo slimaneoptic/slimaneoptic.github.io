@@ -14,7 +14,8 @@
 * { box-sizing: border-box; }
 html, body { margin:0; background:var(--paper); color:var(--ink); font-family:"Overpass", system-ui, sans-serif; line-height:1.55; }
 .bar { height:var(--bar); display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); background:var(--paper); }
-.demo { color:var(--slate); font-weight:600; }
+.who { display:flex; align-items:baseline; gap:.75rem; min-width:0; }
+.demo { color:var(--slate); font-weight:600; padding-left:.75rem; border-left:1px solid var(--rule); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .links a { color:var(--ink); text-decoration:none; font-size:.95rem; margin-left:1.2rem; } .links a:hover { color:var(--blue); }
 .btn { background:var(--btnbg); color:var(--btnfg) !important; padding:.45rem .85rem .35rem; border-radius:7px; font-weight:600; text-decoration:none; display:inline-block; font-size:.92rem; }
 .btn:hover { background:var(--btnhover); } .btn.alt { background:var(--surface); color:var(--ink) !important; border:1px solid var(--ink); }
@@ -32,7 +33,7 @@ td.n,th.n { text-align:right; font-variant-numeric:tabular-nums; }
 .kpi div { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.7rem; font-size:.88rem; color:var(--slate); } .kpi b { display:block; font-size:1.35rem; color:var(--ink); }
 .step { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.9rem 1rem; margin:0 0 .9rem; }
 .step h3 { margin:0 0 .3rem; font-size:1.02rem; } .step p { margin:.3rem 0; color:var(--slate); font-size:.93rem; }
-.step .num { display:inline-block; background:var(--ink); color:#fff; border-radius:50%; width:1.5rem; height:1.5rem; text-align:center; line-height:1.5rem; font-size:.85rem; margin-right:.4rem; }
+.step .num { display:inline-block; background:var(--ink); color:var(--paper); border-radius:50%; width:1.5rem; height:1.5rem; text-align:center; line-height:1.5rem; font-size:.85rem; margin-right:.4rem; }
 details { margin:.5rem 0 0; } summary { cursor:pointer; color:var(--blue); font-size:.9rem; }
 pre { background:var(--code); color:var(--codefg); padding:.8rem; border-radius:7px; overflow-x:auto; font-size:.8rem; line-height:1.45; margin:.4rem 0; }
 .tag { display:inline-block; font-size:.78rem; font-weight:600; padding:.05rem .45rem; border-radius:5px; background:#e8eef5; color:var(--ink); }
