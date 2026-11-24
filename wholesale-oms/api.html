@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wholesale OMS API reference</title>
+<meta name="description" content="Endpoint list generated from the OpenAPI file of the demo backend.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface:#fff; --btnbg:#14202B; --btnfg:#fff; --btnhover:#22364a; --ink:#14202B; --paper:#F6F8FA; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --bar:3.25rem; --code:#0f1b26; --codefg:#dbe7f3; }
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--paper); color:var(--ink); font-family:"Overpass", system-ui, sans-serif; line-height:1.55; }
+.bar { height:var(--bar); display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); background:var(--paper); }
+.demo { color:var(--slate); font-weight:600; }
+.links a { color:var(--ink); text-decoration:none; font-size:.95rem; margin-left:1.2rem; } .links a:hover { color:var(--blue); }
+.btn { background:var(--btnbg); color:var(--btnfg) !important; padding:.45rem .85rem .35rem; border-radius:7px; font-weight:600; text-decoration:none; display:inline-block; font-size:.92rem; }
+.btn:hover { background:var(--btnhover); } .btn.alt { background:var(--surface); color:var(--ink) !important; border:1px solid var(--ink); }
+a:focus-visible, summary:focus-visible { outline:3px solid var(--blue); outline-offset:3px; border-radius:4px; }
+main { max-width:1040px; margin:0 auto; padding:2rem 1rem 3rem; }
+h1 { font-size:clamp(1.6rem,4vw,2.3rem); line-height:1.15; margin:0 0 .5rem; }
+h2 { font-size:1.2rem; margin:2.4rem 0 .7rem; }
+.lead { color:var(--slate); font-size:1.1rem; margin:0 0 1.2rem; max-width:46rem; }
+.actions { display:flex; flex-wrap:wrap; gap:.6rem; margin:0 0 1.2rem; }
+table.t { border-collapse:collapse; width:100%; background:var(--surface); font-size:.92rem; }
+.t td,.t th { padding:.45rem .6rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top; } .t th { color:var(--slate); font-weight:600; }
+td.n,th.n { text-align:right; font-variant-numeric:tabular-nums; }
+.scroll { overflow-x:auto; border:1px solid var(--rule); border-radius:8px; background:var(--surface); }
+.kpi { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin:1rem 0; }
+.kpi div { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.7rem; font-size:.88rem; color:var(--slate); } .kpi b { display:block; font-size:1.35rem; color:var(--ink); }
+.step { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.9rem 1rem; margin:0 0 .9rem; }
+.step h3 { margin:0 0 .3rem; font-size:1.02rem; } .step p { margin:.3rem 0; color:var(--slate); font-size:.93rem; }
+.step .num { display:inline-block; background:var(--ink); color:#fff; border-radius:50%; width:1.5rem; height:1.5rem; text-align:center; line-height:1.5rem; font-size:.85rem; margin-right:.4rem; }
+details { margin:.5rem 0 0; } summary { cursor:pointer; color:var(--blue); font-size:.9rem; }
+pre { background:var(--code); color:var(--codefg); padding:.8rem; border-radius:7px; overflow-x:auto; font-size:.8rem; line-height:1.45; margin:.4rem 0; }
+.tag { display:inline-block; font-size:.78rem; font-weight:600; padding:.05rem .45rem; border-radius:5px; background:#e8eef5; color:var(--ink); }
+.note { color:var(--slate); font-size:.88rem; }
+ul { padding-left:1.2rem; margin:0; } li { margin:.3rem 0; }
+.small { color:var(--slate); font-size:.85rem; margin-top:2.5rem; }
+@media (max-width:760px) { .kpi { grid-template-columns:1fr 1fr; } }
+@media (max-width:520px) { .demo { display:none; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <span class="demo">Wholesale order and VAT reporting demo</span>
+  <nav class="links" aria-label="Site"><a href="/#demos">All work</a></nav>
+</header>
+<main>
+
+<h1>API reference</h1>
+<p class="lead">40 endpoints, generated from the OpenAPI file of the running service (Wholesale Order &amp; VAT Reporting API 1.0.0). Log in at <code>POST /auth/token</code>, then send <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+<div class="actions"><a class="btn alt" href="openapi.json">openapi.json</a><a class="btn alt" href="./">Back to the demo</a></div>
+<div class="scroll"><table class="t"><thead><tr><th>Area</th><th>Method</th><th>Path</th><th>Who</th><th>What it does</th></tr></thead><tbody><tr><td>audit</td><td><b>GET</b></td><td><code>/audit-log</code></td><td>admin</td><td>Audit trail (admin): who changed what, old and new values</td></tr><tr><td>auth</td><td><b>GET</b></td><td><code>/auth/me</code></td><td>staff, admin</td><td>Current user</td></tr><tr><td>auth</td><td><b>POST</b></td><td><code>/auth/token</code></td><td>public</td><td>Log in (OAuth2 password flow)</td></tr><tr><td>customers and products</td><td><b>GET</b></td><td><code>/customers</code></td><td>staff, admin</td><td>List customers (search, export filter, pagination)</td></tr><tr><td>customers and products</td><td><b>POST</b></td><td><code>/customers</code></td><td>staff, admin</td><td>Create a customer</td></tr><tr><td>customers and products</td><td><b>GET</b></td><td><code>/customers/{cid}</code></td><td>staff, admin</td><td>Get a customer</td></tr><tr><td>customers and products</td><td><b>PATCH</b></td><td><code>/customers/{cid}</code></td><td>staff, admin</td><td>Update a customer</td></tr><tr><td>customers and products</td><td><b>GET</b></td><td><code>/products</code></td><td>staff, admin</td><td>List products</td></tr><tr><td>customers and products</td><td><b>POST</b></td><td><code>/products</code></td><td>staff, admin</td><td>Create a product</td></tr><tr><td>customers and products</td><td><b>PATCH</b></td><td><code>/products/{pid}</code></td><td>staff, admin</td><td>Update a product</td></tr><tr><td>orders</td><td><b>GET</b></td><td><code>/orders</code></td><td>staff, admin</td><td>List orders (filters: status, customer, date range, number)</td></tr><tr><td>orders</td><td><b>POST</b></td><td><code>/orders</code></td><td>staff, admin</td><td>Create an order (draft)</td></tr><tr><td>orders</td><td><b>GET</b></td><td><code>/orders/{oid}</code></td><td>staff, admin</td><td>Get one order with lines and payment status</td></tr><tr><td>orders</td><td><b>PATCH</b></td><td><code>/orders/{oid}</code></td><td>staff, admin</td><td>Update order header (pricing fields: draft only)</td></tr><tr><td>orders</td><td><b>POST</b></td><td><code>/orders/{oid}/lines</code></td><td>staff, admin</td><td>Add a line (draft only)</td></tr><tr><td>orders</td><td><b>PUT</b></td><td><code>/orders/{oid}/lines</code></td><td>staff, admin</td><td>Replace all lines (draft only)</td></tr><tr><td>orders</td><td><b>DELETE</b></td><td><code>/orders/{oid}/lines/{line_id}</code></td><td>staff, admin</td><td>Delete a line (draft only)</td></tr><tr><td>orders</td><td><b>POST</b></td><td><code>/orders/{oid}/status</code></td><td>staff, admin</td><td>Move order: draft -&gt; confirmed -&gt; shipped -&gt; completed; cancel from draft/confirmed</td></tr><tr><td>payments and refunds</td><td><b>GET</b></td><td><code>/orders/{oid}/payments</code></td><td>staff, admin</td><td>Payments of an order</td></tr><tr><td>payments and refunds</td><td><b>POST</b></td><td><code>/orders/{oid}/payments</code></td><td>staff, admin</td><td>Record a payment</td></tr><tr><td>payments and refunds</td><td><b>GET</b></td><td><code>/orders/{oid}/refunds</code></td><td>staff, admin</td><td>Refunds of an order</td></tr><tr><td>payments and refunds</td><td><b>GET</b></td><td><code>/payments</code></td><td>staff, admin</td><td>List payments (date range, order)</td></tr><tr><td>payments and refunds</td><td><b>POST</b></td><td><code>/payments/{pid}/refunds</code></td><td>staff, admin</td><td>Refund part or all of a payment (cannot exceed it)</td></tr><tr><td>payments and refunds</td><td><b>GET</b></td><td><code>/refunds</code></td><td>staff, admin</td><td>List refunds (date range, order)</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/by-customer</code></td><td>staff, admin</td><td>Per-customer breakdown for a date range</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/by-rate</code></td><td>staff, admin</td><td>Net sales and output VAT per VAT rate and period</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/export.csv</code></td><td>staff, admin</td><td>CSV export of one report</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/export.xlsx</code></td><td>staff, admin</td><td>Excel workbook: Summary, By rate, By customer, Transactions</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/summary</code></td><td>staff, admin</td><td>Monthly + quarterly + year summary for a year</td></tr><tr><td>reports</td><td><b>GET</b></td><td><code>/reports/transactions</code></td><td>staff, admin</td><td>Ledger: every order line, payment and refund (paginated)</td></tr><tr><td>settings and tax rates</td><td><b>GET</b></td><td><code>/settings</code></td><td>staff, admin</td><td>Business settings</td></tr><tr><td>settings and tax rates</td><td><b>PUT</b></td><td><code>/settings</code></td><td>admin</td><td>Update business settings (taxpayer type etc.)</td></tr><tr><td>settings and tax rates</td><td><b>GET</b></td><td><code>/tax-rates</code></td><td>staff, admin</td><td>List VAT rates (effective-dated)</td></tr><tr><td>settings and tax rates</td><td><b>POST</b></td><td><code>/tax-rates</code></td><td>admin</td><td>Add a VAT rate row</td></tr><tr><td>settings and tax rates</td><td><b>GET</b></td><td><code>/tax-rates/lookup</code></td><td>staff, admin</td><td>Which rate applies for taxpayer type + category on a date</td></tr><tr><td>settings and tax rates</td><td><b>PATCH</b></td><td><code>/tax-rates/{rate_id}</code></td><td>admin</td><td>Edit a rate row (existing orders keep their snapshot)</td></tr><tr><td>system</td><td><b>GET</b></td><td><code>/health</code></td><td>public</td><td>Liveness check</td></tr><tr><td>users (admin)</td><td><b>GET</b></td><td><code>/users</code></td><td>admin</td><td>List users</td></tr><tr><td>users (admin)</td><td><b>POST</b></td><td><code>/users</code></td><td>admin</td><td>Create a user</td></tr><tr><td>users (admin)</td><td><b>PATCH</b></td><td><code>/users/{user_id}</code></td><td>admin</td><td>Change role, active flag, name or password</td></tr></tbody></table></div>
+<p class="small">Money is returned as exact decimal strings. List endpoints take <code>page</code> and <code>page_size</code>. Errors use plain messages: 401 not logged in, 403 wrong role, 404 not found, 409 not allowed in the current state, 422 invalid input.</p>
+
+</main>
+</body></html>

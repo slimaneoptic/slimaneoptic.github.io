@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wholesale order and VAT reporting demo</title>
+<meta name="description" content="A working order management and VAT reporting backend (FastAPI + MySQL): orders, payments, refunds, monthly and quarterly reports, Excel and CSV export.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root { --surface:#fff; --btnbg:#14202B; --btnfg:#fff; --btnhover:#22364a; --ink:#14202B; --paper:#F6F8FA; --slate:#5B6B7A; --rule:#D5DBE1; --blue:#2A78D6; --bar:3.25rem; --code:#0f1b26; --codefg:#dbe7f3; }
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--paper); color:var(--ink); font-family:"Overpass", system-ui, sans-serif; line-height:1.55; }
+.bar { height:var(--bar); display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:0 1.25rem; border-bottom:1px solid var(--rule); background:var(--paper); }
+.demo { color:var(--slate); font-weight:600; }
+.links a { color:var(--ink); text-decoration:none; font-size:.95rem; margin-left:1.2rem; } .links a:hover { color:var(--blue); }
+.btn { background:var(--btnbg); color:var(--btnfg) !important; padding:.45rem .85rem .35rem; border-radius:7px; font-weight:600; text-decoration:none; display:inline-block; font-size:.92rem; }
+.btn:hover { background:var(--btnhover); } .btn.alt { background:var(--surface); color:var(--ink) !important; border:1px solid var(--ink); }
+a:focus-visible, summary:focus-visible { outline:3px solid var(--blue); outline-offset:3px; border-radius:4px; }
+main { max-width:1040px; margin:0 auto; padding:2rem 1rem 3rem; }
+h1 { font-size:clamp(1.6rem,4vw,2.3rem); line-height:1.15; margin:0 0 .5rem; }
+h2 { font-size:1.2rem; margin:2.4rem 0 .7rem; }
+.lead { color:var(--slate); font-size:1.1rem; margin:0 0 1.2rem; max-width:46rem; }
+.actions { display:flex; flex-wrap:wrap; gap:.6rem; margin:0 0 1.2rem; }
+table.t { border-collapse:collapse; width:100%; background:var(--surface); font-size:.92rem; }
+.t td,.t th { padding:.45rem .6rem; border-bottom:1px solid var(--rule); text-align:left; vertical-align:top; } .t th { color:var(--slate); font-weight:600; }
+td.n,th.n { text-align:right; font-variant-numeric:tabular-nums; }
+.scroll { overflow-x:auto; border:1px solid var(--rule); border-radius:8px; background:var(--surface); }
+.kpi { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin:1rem 0; }
+.kpi div { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.7rem; font-size:.88rem; color:var(--slate); } .kpi b { display:block; font-size:1.35rem; color:var(--ink); }
+.step { background:var(--surface); border:1px solid var(--rule); border-radius:8px; padding:.9rem 1rem; margin:0 0 .9rem; }
+.step h3 { margin:0 0 .3rem; font-size:1.02rem; } .step p { margin:.3rem 0; color:var(--slate); font-size:.93rem; }
+.step .num { display:inline-block; background:var(--ink); color:#fff; border-radius:50%; width:1.5rem; height:1.5rem; text-align:center; line-height:1.5rem; font-size:.85rem; margin-right:.4rem; }
+details { margin:.5rem 0 0; } summary { cursor:pointer; color:var(--blue); font-size:.9rem; }
+pre { background:var(--code); color:var(--codefg); padding:.8rem; border-radius:7px; overflow-x:auto; font-size:.8rem; line-height:1.45; margin:.4rem 0; }
+.tag { display:inline-block; font-size:.78rem; font-weight:600; padding:.05rem .45rem; border-radius:5px; background:#e8eef5; color:var(--ink); }
+.note { color:var(--slate); font-size:.88rem; }
+ul { padding-left:1.2rem; margin:0; } li { margin:.3rem 0; }
+.small { color:var(--slate); font-size:.85rem; margin-top:2.5rem; }
+@media (max-width:760px) { .kpi { grid-template-columns:1fr 1fr; } }
+@media (max-width:520px) { .demo { display:none; } }
+</style>
+<link rel="stylesheet" href="/theme.css">
+<script src="/theme.js"></script>
+<script defer src="/hit.js"></script>
+</head>
+<body>
+<header class="bar">
+  <div class="who"><a class="name" href="/">S'limane Chanchoul</a><span class="demo">Wholesale order and VAT reporting demo</span></div>
+  <nav class="links" aria-label="Site"><a class="all" href="/#demos">All work</a></nav>
+</header>
+<main>
+
+<h1>Wholesale orders, payments and VAT reports</h1>
+<p class="lead">A working backend (Python, FastAPI, MySQL 8.4) that takes wholesale orders, tracks payments and refunds, works out the VAT on every line, and gives you monthly and quarterly reports as Excel or CSV.</p>
+<div class="kpi"><div>Automated tests, all passing<b>39</b></div><div>API endpoints<b>40</b></div><div>Report formats<b>Excel + CSV</b></div><div>Database<b>MySQL 8.4.13</b></div></div>
+<div class="actions"><a class="btn" href="report-2026.xlsx">Sample Excel report</a><a class="btn alt" href="transactions-2026.csv">Transactions CSV</a><a class="btn alt" href="api.html">API reference</a><a class="btn alt" href="schema.sql">Database schema</a><a class="btn alt" href="wholesale-oms-source.zip">Source code (.zip)</a></div>
+<p class="note">Everything below was produced by running the real code against a real MySQL database. The customers and orders are fictional sample data.</p>
+
+<h2>A real run, step by step</h2>
+<p>These are the actual calls and answers from one run, in order. Open "Show the request and response" on any step if you want the raw JSON.</p>
+<div class="step"><h3><span class="num">1</span>Log in</h3><p>Standard username and password login. The token goes into every later call. The saved copy hides the real token and password.</p><details><summary>Show the request and response (200)</summary><pre>{
+  &quot;request&quot;: &quot;POST /auth/token&quot;,
+  &quot;body&quot;: {
+    &quot;username&quot;: &quot;sample.staff&quot;,
+    &quot;password&quot;: &quot;&lt;redacted&gt;&quot;
+  }
+}</pre><pre>{
+  &quot;status&quot;: 200,
+  &quot;body&quot;: {
+    &quot;access_token&quot;: &quot;&lt;jwt, shortened&gt;&quot;,
+    &quot;token_type&quot;: &quot;bearer&quot;
+  }
+}</pre></details></div><div class="step"><h3><span class="num">2</span>Create a customer</h3><p>A domestic customer. Export customers are flagged <code>is_export</code> and are zero-rated automatically.</p><details><summary>Show the request and response (201)</summary><pre>{
+  &quot;request&quot;: &quot;POST /customers&quot;,
+  &quot;body&quot;: {
+    &quot;name&quot;: &quot;Sample Walkthrough Trading Co.&quot;,
+    &quot;tax_id&quot;: &quot;91310000SAMPLE0WALK&quot;,
+    &quot;address&quot;: &quot;Sample Road 8, Shanghai&quot;,
+    &quot;is_export&quot;: false
+  }
+}</pre><pre>{
+  &quot;status&quot;: 201,
+  &quot;body&quot;: {
+    &quot;name&quot;: &quot;Sample Walkthrough Trading Co.&quot;,
+    &quot;tax_id&quot;: &quot;91310000SAMPLE0WALK&quot;,
+    &quot;address&quot;: &quot;Sample Road 8, Shanghai&quot;,
+    &quot;contact&quot;: &quot;&quot;,
+    &quot;is_export&quot;: false,
+    &quot;id&quot;: 7,
+    &quot;is_active&quot;: true
+  }
+}</pre></details></div><div class="step"><h3><span class="num">3</span>Create an order with tax-inclusive prices and a discount</h3><p>Prices are quoted with VAT included. The 200.00 discount is spread over the two lines by value, and each paid amount is split into net and VAT at that line's rate. The order is 10920.00 = 9814.24 net + 1105.76 VAT.</p><div class="scroll"><table class="t"><thead><tr><th>Line</th><th>Price you quote</th><th class="n">Order discount share</th><th class="n">Paid by customer</th><th class="n">Rate</th><th class="n">Net sale</th><th class="n">VAT</th></tr></thead><tbody>
+<tr><td>Steel bolts M8 (box of 500)</td><td>50.000 x 128.00 = 6400.00</td><td class="n">-115.11</td><td class="n">6284.89</td><td class="n">13%</td><td class="n">5561.85</td><td class="n">723.04</td></tr>
+<tr><td>Rice, 25 kg bag</td><td>40.000 x 118.00 = 4720.00</td><td class="n">-84.89</td><td class="n">4635.11</td><td class="n">9%</td><td class="n">4252.39</td><td class="n">382.72</td></tr>
+<tr><td><b>Order</b></td><td>11120.00 less 200.00 discount</td><td class="n"></td><td class="n"><b>10920.00</b></td><td></td><td class="n"><b>9814.24</b></td><td class="n"><b>1105.76</b></td></tr></tbody></table></div><details><summary>Show the request and response (201)</summary><pre>{
+  &quot;request&quot;: &quot;POST /orders&quot;,
+  &quot;body&quot;: {
+    &quot;customer_id&quot;: 7,
+    &quot;order_date&quot;: &quot;2026-11-24&quot;,
+    &quot;price_mode&quot;: &quot;inclusive&quot;,
+    &quot;discount&quot;: &quot;200.00&quot;,
+    &quot;notes&quot;: &quot;Walkthrough order&quot;,
+    &quot;lines&quot;: [
+      {
+        &quot;description&quot;: &quot;Steel bolts M8 (box of 500)&quot;,
+        &quot;quantity&quot;: &quot;50&quot;,
+        &quot;unit_price&quot;: &quot;128.00&quot;,
+        &quot;tax_category&quot;: &quot;standard&quot;
+      },
+      {
+        &quot;description&quot;: &quot;Rice, 25 kg bag&quot;,
+        &quot;quantity&quot;: &quot;40&quot;,
+        &quot;unit_price&quot;: &quot;118.00&quot;,
+        &quot;tax_category&quot;: &quot;reduced&quot;
+      }
+    ]
+  }
+}</pre><pre>{
+  &quot;status&quot;: 201,
+  &quot;body&quot;: {
+    &quot;number&quot;: &quot;SO-2026-000031&quot;,
+    &quot;status&quot;: &quot;draft&quot;,
+    &quot;payment_status&quot;: &quot;unpaid&quot;,
+    &quot;price_mode&quot;: &quot;inclusive&quot;,
+    &quot;currency&quot;: &quot;CNY&quot;,
+    &quot;order_date&quot;: &quot;2026-11-24&quot;,
+    &quot;discount&quot;: &quot;200.00&quot;,
+    &quot;list_total&quot;: &quot;11120.00&quot;,
+    &quot;discount_total&quot;: &quot;200.00&quot;,
+    &quot;net_total&quot;: &quot;9814.24&quot;,
+    &quot;tax_total&quot;: &quot;1105.76&quot;,
+    &quot;gross_total&quot;: &quot;10920.00&quot;,
+    &quot;paid_total&quot;: &quot;0.00&quot;,
+    &quot;refunded_total&quot;: &quot;0.00&quot;,
+    &quot;balance_due&quot;: &quot;10920.00&quot;,
+    &quot;lines&quot;: [
+      {
+        &quot;description&quot;: &quot;Steel bolts M8 (box of 500)&quot;,
+        &quot;quantity&quot;: &quot;50.000&quot;,
+        &quot;unit_price&quot;: &quot;128.00&quot;,
+        &quot;tax_rate&quot;: &quot;0.1300&quot;,
+        &quot;list_amount&quot;: &quot;6400.00&quot;,
+        &quot;order_discount_alloc&quot;: &quot;115.11&quot;,
+        &quot;net_amount&quot;: &quot;5561.85&quot;,
+        &quot;tax_amount&quot;: &quot;723.04&quot;,
+        &quot;gross_amount&quot;: &quot;6284.89&quot;
+      },
+      {
+        &quot;description&quot;: &quot;Rice, 25 kg bag&quot;,
+        &quot;quantity&quot;: &quot;40.000&quot;,
+        &quot;unit_price&quot;: &quot;118.00&quot;,
+        &quot;tax_rate&quot;: &quot;0.0900&quot;,
+        &quot;list_amount&quot;: &quot;4720.00&quot;,
+        &quot;order_discount_alloc&quot;: &quot;84.89&quot;,
+        &quot;net_amount&quot;: &quot;4252.39&quot;,
+        &quot;tax_amount&quot;: &quot;382.72&quot;,
+        &quot;gross_amount&quot;: &quot;4635.11&quot;
+      }
+    ]
+  }
+}</pre></details></div><div class="step"><h3><span class="num">4</span>Workflow rules are enforced</h3><p>Skipping a step is refused with a plain message: <i>Cannot move order SO-2026-000031 from &#x27;draft&#x27; to &#x27;shipped&#x27;. Allowed from &#x27;draft&#x27;: confirmed, cancelled.</i> Then the order is confirmed (status now <b>confirmed</b>); from here its lines are locked.</p><details><summary>Show the request and response (200)</summary><pre>{
+  &quot;request&quot;: &quot;POST /orders/31/status&quot;,
+  &quot;body&quot;: {
+    &quot;status&quot;: &quot;confirmed&quot;
+  }
+}</pre><pre>{
+  &quot;status&quot;: 200,
+  &quot;body&quot;: {
+    &quot;id&quot;: 31,
+    &quot;number&quot;: &quot;SO-2026-000031&quot;,
+    &quot;customer_id&quot;: 7,
+    &quot;customer_name&quot;: &quot;Sample Walkthrough Trading Co.&quot;,
+    &quot;status&quot;: &quot;confirmed&quot;,
+    &quot;payment_status&quot;: &quot;unpaid&quot;,
+    &quot;price_mode&quot;: &quot;inclusive&quot;,
+    &quot;currency&quot;: &quot;CNY&quot;,
+    &quot;order_date&quot;: &quot;2026-11-24&quot;,
+    &quot;discount&quot;: &quot;200.00&quot;,
+    &quot;notes&quot;: &quot;Walkthrough order&quot;,
+    &quot;fapiao_no&quot;: null,
+    &quot;list_total&quot;: &quot;11120.00&quot;,
+    &quot;discount_total&quot;: &quot;200.00&quot;,
+    &quot;net_total&quot;: &quot;9814.24&quot;,
+    &quot;tax_total&quot;: &quot;1105.76&quot;,
+    &quot;gross_total&quot;: &quot;10920.00&quot;,
+    &quot;paid_total&quot;: &quot;0.00&quot;,
+    &quot;refunded_total&quot;: &quot;0.00&quot;,
+    &quot;balance_due&quot;: &quot;10920.00&quot;,
+    &quot;lines&quot;: [
+      {
+        &quot;id&quot;: 66,
+        &quot;line_no&quot;: 1,
+        &quot;product_id&quot;: null,
+        &quot;description&quot;: &quot;Steel bolts M8 (box of 500)&quot;,
+        &quot;quantity&quot;: &quot;50.000&quot;,
+        &quot;unit_price&quot;: &quot;128.00&quot;,
+        &quot;line_discount&quot;: &quot;0.00&quot;,
+        &quot;tax_category&quot;: &quot;standard&quot;,
+        &quot;tax_rate&quot;: &quot;0.1300&quot;,
+        &quot;list_amount&quot;: &quot;6400.00&quot;,
+        &quot;order_discount_alloc&quot;: &quot;115.11&quot;,
+        &quot;net_amount&quot;: &quot;5561.85&quot;,
+        &quot;tax_amount&quot;: &quot;723.04&quot;,
+        &quot;gross_amount&quot;: &quot;6284.89&quot;
+      },
+      {
+        &quot;id&quot;: 67,
+        &quot;line_no&quot;: 2,
+        &quot;product_id&quot;: null,
+        &quot;description&quot;: &quot;Rice, 25 kg bag&quot;,
+        &quot;quantity&quot;: &quot;40.000&quot;,
+        &quot;unit_price&quot;: &quot;118.00&quot;,
+        &quot;line_discount&quot;: &quot;0.00&quot;,
+        &quot;tax_category&quot;: &quot;reduced&quot;,
+        &quot;tax_rate&quot;: &quot;0.0900&quot;,
+        &quot;list_amount&quot;: &quot;4720.00&quot;,
+        &quot;order_discount_alloc&quot;: &quot;84.89&quot;,
+        &quot;net_amount&quot;: &quot;4252.39&quot;,
+        &quot;tax_amount&quot;: &quot;382.72&quot;,
+        &quot;gross_amount&quot;: &quot;4635.11&quot;
+      }
+    ]
+  }
+}</pre></details></div><div class="step"><h3><span class="num">5</span>Record a partial payment</h3><p>5000.00 received by bank transfer against an order of 10920.00.</p><details><summary>Show the request and response (201)</summary><pre>{
+  &quot;request&quot;: &quot;POST /orders/31/payments&quot;,
+  &quot;body&quot;: {
+    &quot;amount&quot;: &quot;5000.00&quot;,
+    &quot;method&quot;: &quot;bank_transfer&quot;,
+    &quot;reference&quot;: &quot;BANK-DEMO-0001&quot;,
+    &quot;paid_at&quot;: &quot;2026-11-24T14:00:00+08:00&quot;
+  }
+}</pre><pre>{
+  &quot;status&quot;: 201,
+  &quot;body&quot;: {
+    &quot;id&quot;: 29,
+    &quot;order_id&quot;: 31,
+    &quot;amount&quot;: &quot;5000.00&quot;,
+    &quot;method&quot;: &quot;bank_transfer&quot;,
+    &quot;reference&quot;: &quot;BANK-DEMO-0001&quot;,
+    &quot;paid_at&quot;: &quot;2026-11-24T06:00:00Z&quot;
+  }
+}</pre></details></div><div class="step"><h3><span class="num">6</span>Refund part of it</h3><p>A refund of 500.00 linked to that payment carries 50.63 of VAT and 449.37 net, in proportion to the order's VAT share. Trying to refund more than was paid is refused: <i>Refund of 5000.01 exceeds what is left on payment 29: paid 5000.00, already refunded 0.00, refundable 5000.00</i> The order afterwards is <b>partially_refunded</b>: paid 5000.00, refunded 500.00, still due 5920.00.</p><details><summary>Show the request and response (201)</summary><pre>{
+  &quot;request&quot;: &quot;POST /payments/29/refunds&quot;,
+  &quot;body&quot;: {
+    &quot;amount&quot;: &quot;500.00&quot;,
+    &quot;reason&quot;: &quot;Two damaged bags&quot;,
+    &quot;credit_note_no&quot;: &quot;CN-DEMO-0001&quot;,
+    &quot;refunded_at&quot;: &quot;2026-11-24T16:00:00+08:00&quot;
+  }
+}</pre><pre>{
+  &quot;status&quot;: 201,
+  &quot;body&quot;: {
+    &quot;id&quot;: 8,
+    &quot;order_id&quot;: 31,
+    &quot;payment_id&quot;: 29,
+    &quot;amount&quot;: &quot;500.00&quot;,
+    &quot;vat_amount&quot;: &quot;50.63&quot;,
+    &quot;net_amount&quot;: &quot;449.37&quot;,
+    &quot;reason&quot;: &quot;Two damaged bags&quot;,
+    &quot;credit_note_no&quot;: &quot;CN-DEMO-0001&quot;,
+    &quot;refunded_at&quot;: &quot;2026-11-24T08:00:00Z&quot;
+  }
+}</pre></details></div><div class="step"><h3><span class="num">7</span>Monthly report and Excel export</h3><p>November 2026 in the monthly summary: 7 orders, net sales 304195.60, output VAT 24653.10, refunds credited 50.63 VAT, VAT after refunds 24602.47, payments received 190068.70. The same data downloads as an Excel workbook (19075 bytes). The sample files below were produced this way.</p><details><summary>Show the request and response (200)</summary><pre>{
+  &quot;request&quot;: &quot;GET /reports/summary?year=2026&amp;period=month&quot;
+}</pre><pre>{
+  &quot;status&quot;: 200,
+  &quot;body&quot;: [
+    {
+      &quot;period_type&quot;: &quot;month&quot;,
+      &quot;period&quot;: &quot;2026-11&quot;,
+      &quot;orders&quot;: 7,
+      &quot;gross_before_discount&quot;: &quot;328990.00&quot;,
+      &quot;discounts&quot;: &quot;1180.00&quot;,
+      &quot;net_sales&quot;: &quot;304195.60&quot;,
+      &quot;output_vat&quot;: &quot;24653.10&quot;,
+      &quot;total_invoiced&quot;: &quot;328848.70&quot;,
+      &quot;refunds_gross&quot;: &quot;500.00&quot;,
+      &quot;refunds_net&quot;: &quot;449.37&quot;,
+      &quot;refunds_vat&quot;: &quot;50.63&quot;,
+      &quot;payments_received&quot;: &quot;190068.70&quot;,
+      &quot;outstanding_receivables&quot;: &quot;138780.00&quot;,
+      &quot;net_sales_after_refunds&quot;: &quot;303746.23&quot;,
+      &quot;vat_after_refunds&quot;: &quot;24602.47&quot;
+    }
+  ]
+}</pre></details></div>
+
+<h2>How the VAT is decided</h2>
+<p>The rate is looked up from a table by taxpayer type, product category and the <b>order date</b>, then stored on each order line. If a rate changes later, old orders do not change. Another country is a set of new rows in that table, not new code.</p>
+<div class="scroll"><table class="t"><thead><tr><th>Taxpayer</th><th>What</th><th class="n">Rate</th><th>Valid</th></tr></thead><tbody><tr><td>General taxpayer</td><td>Goods (standard)</td><td class='n'>13%</td><td>from 2026-01-01</td></tr><tr><td>General taxpayer</td><td>Reduced-rate goods (e.g. agricultural products, books)</td><td class='n'>9%</td><td>from 2026-01-01</td></tr><tr><td>General taxpayer</td><td>Services</td><td class='n'>6%</td><td>from 2026-01-01</td></tr><tr><td>General taxpayer</td><td>Exports (zero-rated)</td><td class='n'>0%</td><td>from 2026-01-01</td></tr><tr><td>Small-scale taxpayer</td><td>Levy rate, all domestic categories</td><td class='n'>3%</td><td>from 2026-01-01 (applies again after 2027-12-31)</td></tr><tr><td>Small-scale taxpayer</td><td>Preferential rate</td><td class='n'>1%</td><td>2026-01-01 to 2027-12-31</td></tr></tbody></table></div>
+<p class="note">China VAT preset, per 2026 VAT Law summaries; confirm with your accountant. The business taxpayer type (general or small-scale) is a setting. Amounts round half-up to 0.01 per line; for tax-inclusive prices net = gross / (1 + rate) and VAT = gross - net, so the pieces always add up exactly.</p>
+
+<h2>What the reports look like</h2>
+<p>From the fictional sample orders (July to November 2026, CNY, tax-inclusive and tax-exclusive prices, discounts, one export customer, part payments and refunds). Refund VAT is credited in the month of the refund.</p>
+<div class="scroll"><table class="t"><thead><tr><th>Period</th><th class='n'>Orders</th><th class='n'>Net sales</th><th class='n'>Output VAT</th><th class='n'>Refund VAT credited</th><th class='n'>Payments received</th><th class='n'>Outstanding</th></tr></thead><tbody><tr><td>2026-07</td><td class='n'>5</td><td class='n'>313082.18</td><td class='n'>28822.02</td><td class='n'>0.00</td><td class='n'>67574.00</td><td class='n'>274330.20</td></tr><tr><td>2026-08</td><td class='n'>4</td><td class='n'>783909.31</td><td class='n'>45373.77</td><td class='n'>1317.39</td><td class='n'>503247.70</td><td class='n'>423465.58</td></tr><tr><td>2026-09</td><td class='n'>6</td><td class='n'>384271.04</td><td class='n'>24411.71</td><td class='n'>0.00</td><td class='n'>330787.62</td><td class='n'>124977.63</td></tr><tr><td>2026-10</td><td class='n'>6</td><td class='n'>85616.65</td><td class='n'>3967.45</td><td class='n'>427.77</td><td class='n'>213391.73</td><td class='n'>1170.00</td></tr><tr><td>2026-11</td><td class='n'>7</td><td class='n'>304195.60</td><td class='n'>24653.10</td><td class='n'>50.63</td><td class='n'>190068.70</td><td class='n'>138780.00</td></tr></tbody></table></div>
+<p class="note">The Excel file has four sheets: Summary, By rate, By customer and Transactions (every order line, payment and refund with date, customer, rate, net and VAT). Header row frozen, number formats and column widths set.</p>
+
+<h2>Tests</h2>
+<p><b>39 passed, 0 failed</b> in 8.97 s, run on 2026-11-24 against a real MySQL 8.4.13 container (not a stand-in database).</p>
+<ul>
+<li>Rounding: tax-inclusive and tax-exclusive, half-up, net + VAT always equal to the total</li>
+<li>Mixed rates in one order; order discount spread exactly over the lines; discounts reduce the taxable amount</li>
+<li>Zero-rated export; rate effective dates (small-scale 1% on 2027-12-31, 3% on 2028-01-01); old orders keep their rate when a rate changes</li>
+<li>Order workflow including refused moves; locked lines after confirmation; payment statuses; refunds cannot exceed the payment</li>
+<li>Report totals equal the sum of the ledger and the order totals; months and quarters add up to the year; CSV and Excel structure</li>
+<li>Logins, wrong passwords, deactivated users, admin versus staff permissions, audit trail</li>
+<li>Adding another country's tax rates as data only</li>
+</ul>
+
+<h2>Also included</h2>
+<ul>
+<li>Admin and staff roles; admin manages users, tax rates and settings; every change to orders, payments, refunds and rates is written to an audit log with old and new values.</li>
+<li>Filters and pages on every list (status, customer, date range).</li>
+<li>Invoice (fapiao) number on orders and a credit-note reference on refunds, as plain fields.</li>
+<li>Setup and test instructions in the README (inside the zip). A Docker Compose file for MySQL and the app is included as a starting point; the run on this page used MySQL in Docker and the app in a Python environment.</li>
+</ul>
+
+<h2>Not covered, honestly</h2>
+<ul>
+<li>No link to the Golden Tax system or e-invoicing: invoice numbers are just stored.</li>
+<li>Output VAT only: no input VAT deduction, withholding or local surcharges.</li>
+<li>The rates are a starting preset, not tax advice.</li>
+<li>One currency per order, no exchange-rate conversion in the reports.</li>
+</ul>
+
+<h2>Downloads</h2>
+<ul>
+<li><a href="report-2026.xlsx">report-2026.xlsx</a>: the Excel report (4 sheets)</li>
+<li><a href="transactions-2026.csv">transactions-2026.csv</a> and <a href="summary-2026.csv">summary-2026.csv</a>: the same data as CSV</li>
+<li><a href="schema.sql">schema.sql</a>: MySQL schema (10 tables), exported from the running database</li>
+<li><a href="api.html">api.html</a> and <a href="openapi.json">openapi.json</a>: the API reference</li>
+<li><a href="wholesale-oms-source.zip">wholesale-oms-source.zip</a>: source code, tests, README, saved walkthrough</li>
+</ul>
+<p class="small">Sample data is fictional. Built with Python 3.12, FastAPI, SQLAlchemy, MySQL 8.4 and openpyxl.</p>
+
+</main>
+</body></html>
